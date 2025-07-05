@@ -1,0 +1,51 @@
+[
+  {
+    "id": 2,
+    "template_name": "249_1",
+    "create_time": "2024/01/02 11:00:00",
+    "update_time": "2024/01/02 11:00:00",
+    "PfuW_Ith_20mA": "po",
+    "OuterBox": "carton_no",
+    "BlisterSN": "box_no",
+    "ImuA_Pop_2.5mW": "im",
+    "SE_200_3000uW": "se",
+    "Barcode": "w_sn",
+    "SN": "b_sn",
+    "批次": "pch",
+    "Ith_mA": "ith",
+    "PN": "pn",
+    "SEN": "sen"
+  },
+  {
+    "id": 3,
+    "template_name": "A965",
+    "create_time": "2025/06/12 13:53:57",
+    "update_time": null,
+    "Imon": "im",
+    "deviceinfo_id": "",
+    "time": "",
+    "外箱号": "carton_no",
+    "Sensitivity": "",
+    "Po": "po",
+    "Ith": "ith",
+    "SN": "sn",
+    "Vf": "vf"
+  },
+  {
+    "id": 4,
+    "template_name": "249",
+    "create_time": "2025/06/12 19:48:53",
+    "update_time": "2025/06/12 19:49:51",
+    "外箱": "carton_no",
+    "Ith_mA": "ith",
+    "BOSA_MAKER": "",
+    "ImuA_Pop_2": "im",
+    "BOSA_VOP": "",
+    "BOSA_SN": "sn",
+    "内盒": "box_no",
+    "批次": "pch",
+    "BOSA_VBR": "",
+    "SE_200_3000uW": "se",
+    "PfuW_Ith_20mA": "po"
+  }
+]
