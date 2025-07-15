@@ -1,7 +1,11 @@
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
 
-use crate::{store::Store, utils::error::{MyError, MyTip}, widgets::dialog::ErrprModalAction};
+use crate::{
+    store::Store,
+    utils::error::{MyError, MyTip},
+    widgets::dialog::ErrprModalAction,
+};
 
 live_design! {
     use link::theme::*;
@@ -10,14 +14,10 @@ live_design! {
 
     use crate::shared::styles::*;
     use crate::shared::widgets::*;
-    // use crate::shared::popup_notification::*;
     use crate::shared::widgets::SidebarMenuButton;
-    // use crate::shared::download_notification_popup::DownloadNotificationPopup;
-    // use crate::shared::moly_server_popup::MolyServerPopup;
     use crate::shared::desktop_buttons::MolyDesktopButton;
 
     use crate::export::export_view::ExportScreen;
-    // use crate::settings::moly_server_screen::MolyServerScreen;
     use crate::settings::providers_screen::ProvidersScreen;
     use crate::widgets::dialog::*;
 
@@ -25,7 +25,7 @@ live_design! {
     ICON_CHAT = dep("crate://self/resources/icons/chat.svg")
     ICON_LOCAL = dep("crate://self/resources/icons/local.svg")
     ICON_CLOUD = dep("crate://self/resources/icons/cloud.svg")
-    ICON_MOLYSERVER = dep("crate://self/resources/images/providers/molyserver.png")
+    ICON_MOLYSERVER = dep("crate://self/resources/images/logo.png")
 
     ApplicationPages = <RoundedShadowView> {
         width: Fill, height: Fill
@@ -50,7 +50,7 @@ live_design! {
     SidebarMenu = <RoundedView> {
         width: 90, height: Fill,
         flow: Down, spacing: 15.0,
-        padding: { top: 40, bottom: 20, left: 0, right: 0 },
+        padding: { top: 40, bottom: 20, left: 10, right: 0 },
 
         align: {x: 0.5, y: 0.0},
 
@@ -62,7 +62,7 @@ live_design! {
 
         logo = <View> {
             width: Fit, height: Fit
-            margin: {bottom: 5}
+            padding: {left:10, bottom:20}
             <Image> {
                 width: 50, height: 50,
                 source: (ICON_MOLYSERVER),
@@ -102,21 +102,30 @@ live_design! {
 
     App = {{App}} {
         ui: <Window> {
-            window: {inner_size: vec2(1440, 1024), title: "Test"},
-            pass: {clear_color: #fff}
-
+            window: {inner_size: vec2(1440, 1024), title: "DPS"},
+            pass: {clear_color: (THEME_COLOR_FG_APP)},
             caption_bar = {
+                draw_bg: { 
+                    fn pixel(self) -> vec4 {
+                        return mix(#C1CDC1,#B0E0E6,self.pos.x);
+                    }
+                }
                 caption_label = <View> {
                     width: Fill, height: Fill,
                     align: {x: 0.5, y: 0.5},
-                    label = <Label> {text: "Test", margin: {left: 100}}
-                }
-                windows_buttons = <View> {
-                    visible: false,
-                    width: Fit, height: Fit,
-                    min = <MolyDesktopButton> {draw_bg: {button_type: WindowsMin}}
-                    max = <MolyDesktopButton> {draw_bg: {button_type: WindowsMax}}
-                    close = <MolyDesktopButton> {draw_bg: {button_type: WindowsClose}}
+                    label = <Label> {
+                        text: "DPS",
+                        draw_text: {
+                            text_style: <THEME_FONT_BOLD> {
+                                font_size: 12
+                            }
+                            color: #000000,
+                        }
+
+                        margin: {left: 100
+
+                        }
+                    }
                 }
             }
 
@@ -156,10 +165,10 @@ live_design! {
                 }
 
             }
-            
-           
+
+
         }
-        
+
     }
 }
 
@@ -172,7 +181,7 @@ pub struct App {
     #[rust]
     pub store: Option<Store>,
     #[rust(Runtime::new().unwrap())]
-    pub rt :Runtime,
+    pub rt: Runtime,
 }
 
 impl LiveRegister for App {
@@ -182,7 +191,6 @@ impl LiveRegister for App {
         crate::export::live_design(cx);
         crate::settings::live_design(cx);
         crate::widgets::live_design(cx);
-
     }
 }
 
@@ -191,18 +199,16 @@ impl AppMain for App {
         self.ui_runner()
             .handle(cx, event, &mut Scope::empty(), self);
         let rt = self.rt.handle().clone();
-        // if let Event::Startup = event {
-        //     self.ui.view(id!(body)).set_visible(cx, false);
-        //     let _guard = rt.enter();
-        //     let store = rt.block_on(async move{
-        //         Store::init().await
-        //     });
-        //     self.store = Some(store);
-        // }
-
+        if let Event::Startup = event {
+            self.ui.view(id!(body)).set_visible(cx, false);
+            let _guard = rt.enter();
+            let store = rt.block_on(async move { Store::init().await });
+            self.store = Some(store);
+        }
+        // println!("store = {:?}",self.store);
         // If the store is not loaded, do not continue with store-dependent logic
         // however, we still want the window to handle Makepad events. (e.g. window initialization events, platform context changes, etc.)
-        self.store = Some(Store { ..Default::default() });
+        // self.store = Some(Store { ..Default::default() });
         let Some(store) = self.store.as_mut() else {
             self.ui.handle_event(cx, event, &mut Scope::empty());
             return;
@@ -236,14 +242,13 @@ impl MatchEvent for App {
                 2 => navigate_to_providers = true,
                 _ => {}
             }
-        } 
+        }
         // Handle navigation after processing all actions
         if navigate_to_providers {
             self.navigate_to(cx, id!(application_pages.providers_frame));
         } else if navigate_to_export {
             self.navigate_to(cx, id!(application_pages.export_frame));
-        } 
-        else if navigate_to_sn {
+        } else if navigate_to_sn {
             self.navigate_to(cx, id!(application_pages.sn_frame));
         }
         for action in actions {
@@ -264,19 +269,16 @@ impl MatchEvent for App {
                     .label(id!(prompt))
                     .set_text(cx, &content);
                 self.ui.modal(id!(dialog_ui)).open(cx);
-                
             }
             if let Some(ErrprModalAction::Close) = action.downcast_ref() {
                 self.ui.modal(id!(dialog_ui)).close(cx);
             }
         }
         cx.redraw_all();
-    
     }
 }
 
 impl App {
-
     fn navigate_to(&mut self, cx: &mut Cx, id: &[LiveId]) {
         let providers_id = id!(application_pages.providers_frame);
         let export_id = id!(application_pages.export_frame);
@@ -297,7 +299,6 @@ impl App {
         self.ui.widget(id).set_visible(cx, true);
     }
 }
-
 
 #[derive(Live, Widget, LiveHook)]
 pub struct MyRoot {

@@ -1,6 +1,7 @@
 use makepad_widgets::*;
+use tokio::runtime::Runtime;
 
-use crate::{store::Store, utils::error::{MyError, MyTip}};
+use crate::{configs::type_config::get_type_names, store::Store, utils::error::{MyError, MyTip}};
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -152,10 +153,17 @@ pub struct ExportScreen {
     #[rust]
     store: Store,
 }
+
 impl Widget for ExportScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        self.view.handle_event(cx, event, scope);
+        if let Some(store) = scope.data.get::<Store>(){
+            self.store = store.clone();
+        }
+        if !self.store.types.is_empty() {
+            self.view.drop_down(id!(type_selector)).set_labels(cx, self.store.types.clone());
+        }
         self.widget_match_event(cx, event, scope);
+        self.view.handle_event(cx, event, scope);
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {

@@ -1,0 +1,26 @@
+[[Template]]
+id = 1
+template_name = "249"
+create_time = "2024/01/01 10:00:00"
+update_time = "2025/07/04 22:55:39"
+bosa_vop = "0.00"
+po = 2
+ith = 2
+bosa_maker = "111026"
+se = 3
+im = 0
+bosa_vbr = "0.00"
+
+[[Template]]
+id = 2
+template_name = "249_1"
+create_time = "2024/01/02 11:00:00"
+update_time = "2024/01/02 11:00:00"
+bosa_vop = "0.00"
+pn = "07103030249"
+ith = 2
+im = 0
+bosa_vbr = "0.00"
+se = 3
+po = 0
+bosa_maker = "111026"

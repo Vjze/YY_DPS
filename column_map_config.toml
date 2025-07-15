@@ -1,0 +1,60 @@
+[[ColumnMapConfig]]
+id = 1
+template_name = "249"
+create_time = "2024/01/02 11:00:00"
+update_time = "2025/06/28 15:28:41"
+Barcode = "w_sn"
+SN = "b_sn"
+Ith_mA = "ith"
+PN = "pn"
+PfuW_Ith_20mA = "po"
+BlisterSN = "box_no"
+SE_200_3000uW = "se"
+OuterBox = "carton_no"
+SEN = "sen"
+"批次" = "pch"
+
+[[ColumnMapConfig]]
+id = 2
+template_name = "A965"
+create_time = "2025/06/12 13:53:57"
+update_time = "2025/07/05 00:23:29"
+SN = "sn"
+Vf = "vf"
+time = ""
+Imon = "im"
+Po = "po"
+"外箱号" = "carton_no"
+Ith = "ith"
+
+[[ColumnMapConfig]]
+id = 3
+template_name = "303A0001"
+create_time = "2025/07/01 15:50:12"
+update_time = "2025/07/01 15:52:14"
+NO = ""
+"箱号" = "carton_no"
+ICC = "icc"
+TXITH = "ith"
+PO = "po"
+IM = "im"
+RXVCC = "vcc"
+"盒号" = "box_no"
+SEN = "sen"
+SN = "w_sn"
+VF = "vf"
+
+[[ColumnMapConfig]]
+id = 4
+template_name = "303H0002"
+create_time = "2025/07/01 17:02:32"
+update_time = "2025/07/05 00:10:49"
+Imon = "im"
+Po = '"po"'
+deviceinf = '""'
+Vf = '"vf"'
+VBR = '"vbr"'
+Sensitivity = '""'
+SN = '"w_sn"'
+Ith = '"ith"'
+time = '""'

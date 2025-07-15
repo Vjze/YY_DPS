@@ -77,12 +77,12 @@ live_design! {
 
     }
 
-
+    
 
     pub Providers = {{Providers}} {
                 width: 200, height: Fill
                 flow: Down, spacing: 10
-                padding: {left: 10, right: 10}
+                padding: {left: 10, right: 10, top:5}
                 providers_list = <PortalList> {
                     width: Fill, height: Fill
                     provider_item = <ProviderItem> {}
@@ -95,9 +95,9 @@ live_design! {
                 //     (ICON_OPENROUTER),
                 //     (ICON_MOLYSERVER),
                 // ]
-
-
-
+            
+        
+        
 
     }
 }
@@ -110,19 +110,13 @@ struct Providers {
     selected_provider: Option<String>,
 }
 impl LiveHook for Providers {
-    fn before_apply(
-        &mut self,
-        cx: &mut Cx,
-        _apply: &mut Apply,
-        _index: usize,
-        _nodes: &[LiveNode],
-    ) {
+    fn before_apply(&mut self, cx: &mut Cx, _apply: &mut Apply, _index: usize, _nodes: &[LiveNode]) {
+        
+   
         // 设置一个默认选中项，例如“类型设置”
         self.selected_provider = Some("类型设置".to_string());
         // 确保在初始化时触发一次视图切换
-        cx.action(ConnectionSettingsAction::ProviderSelected(
-            "类型设置".to_string(),
-        ));
+        cx.action(ConnectionSettingsAction::ProviderSelected("类型设置".to_string()));
     }
 }
 
@@ -187,7 +181,9 @@ impl WidgetMatchEvent for Providers {
             if let ConnectionSettingsAction::ProviderSelected(provider_url) = action.cast() {
                 self.selected_provider = Some(provider_url);
             }
+
         }
+        
     }
 }
 
@@ -272,23 +268,23 @@ impl ProviderItemRef {
         //     let label_view = inner.view(id!(provider_icon_label));
         //     label_view.set_visible(cx, false);
         // } else {
-        // Hide the image
-        inner.view(id!(image_wrapper)).set_visible(cx, false);
+            // Hide the image
+            inner.view(id!(image_wrapper)).set_visible(cx, false);
 
-        // Show the label
-        let label_view = inner.view(id!(label_wrapper));
-        label_view.set_visible(cx, true);
+            // Show the label
+            let label_view = inner.view(id!(label_wrapper));
+            label_view.set_visible(cx, true);
 
-        // Get first character of the provider name
-        let first_char = provider
-            .chars()
-            .next()
-            .map(|c| c.to_uppercase().to_string())
-            .unwrap_or_default();
+            // Get first character of the provider name
+            let first_char = provider
+                .chars()
+                .next()
+                .map(|c| c.to_uppercase().to_string())
+                .unwrap_or_default();
 
-        label_view
-            .label(id!(initial_label))
-            .set_text(cx, &first_char);
+            label_view
+                .label(id!(initial_label))
+                .set_text(cx, &first_char);
         // }
 
         if is_selected && cx.display_context.is_desktop() {

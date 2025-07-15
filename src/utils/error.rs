@@ -8,8 +8,10 @@ pub enum MyError {
     IoError(#[from] std::io::Error),
     #[error("没有找到任何型号!!!")]
     UnLoadedTypes,
-    #[error("JSON序列化失败!{0}")]
-    WriteToJsonErr(#[from] serde_json::Error),
+    #[error("TOML序列化失败!{0}")]
+    ReadToTomlErr(#[from] toml::de::Error),
+    #[error("TOML反序列化失败!{0}")]
+    WriteToTomlErr(#[from] toml::ser::Error),
     #[error("{0}不存在!!")]
     None(String),
     #[error("{0}已存在!!")]
@@ -18,6 +20,8 @@ pub enum MyError {
     NoResult(String),
     #[error("{0}写入错误,{1}!!")]
     WriteErr(String,String),
+    #[error("型号 {0}导出错误!!错误原因:{1}")]
+    WriteToExcelErr(String,String),
     #[error("未知错误")]
     Unknown,
 }
@@ -29,6 +33,8 @@ pub enum MyTip {
     UpdateDone(String),
     #[error("{0}添加完成!!")]
     AddDone(String),
+    #[error("型号 {0}导出完成!!")]
+    ExportDone(String),
     #[error("未知错误")]
     Unknown,
 }

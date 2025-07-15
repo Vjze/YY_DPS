@@ -27,7 +27,7 @@ live_design! {
             flow: Down, spacing: 20
 
             <Label> {
-                text: "map_view"
+                text: "map_view-todo!"
                 draw_text:{
                     text_style: <BOLD_FONT>{font_size: 25}
                     color: #000

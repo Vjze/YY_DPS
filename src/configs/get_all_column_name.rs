@@ -1,34 +1,52 @@
 use std::{collections::HashMap, path::PathBuf};
 
+use serde::{Deserialize, Serialize};
 use tokio::fs;
 
-// const JSON_FILE_PATH: &str = r"E:\Rust\hyd_datas_export\rust\src\all_column_name.json"; // JSON 文件路径
-const JSON_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\all_column_name.json"; // JSON 文件路径
-pub async fn get_all_name() -> Result<Vec<String>, String> {
-    let data = load_data().await?;
-    let mut all_keys: Vec<String> = data.keys().map(|s| s.to_string()).collect();
-    // 对键进行排序，以便每次返回的顺序都是一致的
-    all_keys.sort();
-    Ok(all_keys)
+const TOML_FILE_PATH: &str = "././all_column_name.toml"; // TOML 文件路径
+// const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\all_column_name.toml"; // TOML 文件路径
+// 定义结构体来匹配 TOML 文件中的键值对
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AllColumnNames {
+    // 使用 HashMap 来灵活地存储所有列名和对应的中文描述
+    #[serde(flatten)] // 将所有字段平铺到 HashMap 中
+    pub columns: HashMap<String, String>,
 }
-pub async fn load_data() -> Result<HashMap<String, String>, String> {
+
+fn get_file_path() -> PathBuf {
+    PathBuf::from(TOML_FILE_PATH)
+}/// 加载所有列名配置数据
+pub async fn load_all_column_names() -> Result<Vec<String>, String> {
     let path = get_file_path();
     if !path.exists() {
-        // 如果文件不存在，则创建空文件并返回空的 HashMap
-        fs::write(&path, "{}") // 注意：现在创建的是一个空 JSON 对象 {}
+        fs::write(&path, "")
             .await
-            .map_err(|e| format!("创建 JSON 文件失败: {}", e))?;
-        return Ok(HashMap::new());
+            .map_err(|e| format!("创建 TOML 文件失败: {}", e))?;
+        return Ok(Vec::new());
     }
 
     let contents = fs::read_to_string(&path)
         .await
-        .map_err(|e| format!("读取 JSON 文件失败: {}", e))?;
-    // 直接尝试将内容解析为 HashMap<String, String>
-    serde_json::from_str(&contents).map_err(|e| format!("解析 JSON 文件失败: {}", e))
+        .map_err(|e| format!("读取 TOML 文件失败: {}", e))?;
+
+    let all_names: AllColumnNames = toml::from_str(&contents)
+        .map_err(|e| format!("解析 TOML 文件失败: {}", e))?;
+    let mut all_name = vec![];
+    for (key,_value) in all_names.columns {
+        all_name.push(key);
+    }
+    Ok(all_name)
 }
 
-/// 获取 JSON 文件路径
-fn get_file_path() -> PathBuf {
-    PathBuf::from(JSON_FILE_PATH)
+/// 保存所有列名配置数据
+pub async fn save_all_column_names(data: &HashMap<String, String>) -> Result<(), String> {
+    let path = get_file_path();
+    let all_names = AllColumnNames {
+        columns: data.clone(),
+    };
+    let toml_string = toml::to_string_pretty(&all_names)
+        .map_err(|e| format!("序列化数据到 TOML 失败: {}", e))?;
+    fs::write(&path, toml_string)
+        .await
+        .map_err(|e| format!("写入 TOML 文件失败: {}", e))
 }
