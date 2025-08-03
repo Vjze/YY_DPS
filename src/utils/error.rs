@@ -8,6 +8,8 @@ pub enum MyError {
     IoError(#[from] std::io::Error),
     #[error("没有找到任何型号!!!")]
     UnLoadedTypes,
+    #[error("没有找到任何模板!!!")]
+    UnLoadedTemplates,
     #[error("TOML序列化失败!{0}")]
     ReadToTomlErr(#[from] toml::de::Error),
     #[error("TOML反序列化失败!{0}")]
@@ -22,8 +24,15 @@ pub enum MyError {
     WriteErr(String,String),
     #[error("型号 {0}导出错误!!错误原因:{1}")]
     WriteToExcelErr(String,String),
+    #[error("箱号不能为空!!!")]
+    CartonNoEmpty,
+    #[error("数据查询错误!!")]
+    QueryErr,
+    #[error("{0}")]
+    Zdyknown(String),
     #[error("未知错误")]
     Unknown,
+    
 }
 #[derive(Error, Debug)]
 pub enum MyTip {
@@ -35,6 +44,8 @@ pub enum MyTip {
     AddDone(String),
     #[error("型号 {0}导出完成!!")]
     ExportDone(String),
+    #[error("{0}")]
+    Zdyknown(String),
     #[error("未知错误")]
     Unknown,
 }

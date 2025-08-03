@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Data {
+    pub yypn: String,
     pub sn: String,
     pub ith: String,
     pub vf: String,
@@ -21,6 +22,7 @@ pub struct Data {
     pub result: String,
     pub tester: String,
     pub i_xtalk: String,
+    pub mdpid: String
 }
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
 pub struct CartonData {

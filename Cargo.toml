@@ -7,7 +7,7 @@ edition = "2024"
 makepad-widgets ={ git = "https://github.com/makepad/makepad",branch = "dev"}
 toml = "0.9.2"
 serde = { version = "1.0.219", features = ["derive"] }
-tokio = { version = "1.46.1", features = ["full"] }
+tokio = { version = "1.47.0", features = ["full"] }
 tokio-util = { version = "0.7.9", features = ["net", "compat"] }
 chrono = { version = "0.4.41" }
 tiberius = { version = "0.12.2", features = [
@@ -24,7 +24,61 @@ rand = { version = "0.9.1"}
 rand_distr = {version = "0.5.1"}
 futures = {version = "0.3.31"}
 regex ={ version = "1.10.0"}
+rust_xlsxwriter = "0.89"
+bb8-tiberius = "0.16"
+bb8 = "0.9"
+num_cpus = "1.16"
+
+[package.metadata.packager]
+product_name = "yy_dps"
+identifier = "org.wjz.yy_dps"
+
+icons = ["./packaging/logo.png"]
+out_dir = "./dist"
+
+resources = [
+    { src = "./dist/resources/makepad_widgets", target = "makepad_widgets" },
+    { src = "./dist/resources/yy_dps", target = "yy_dps" },
+    { src = "./dist/resources/makepad_fonts_chinese_bold", target = "makepad_fonts_chinese_bold" },
+    { src = "./dist/resources/makepad_fonts_chinese_bold_2", target = "makepad_fonts_chinese_bold_2" },
+    { src = "./dist/resources/makepad_fonts_chinese_regular", target = "makepad_fonts_chinese_regular" },
+    { src = "./dist/resources/makepad_fonts_chinese_regular_2", target = "makepad_fonts_chinese_regular_2" },
+    { src = "./dist/resources/makepad_fonts_emoji", target = "makepad_fonts_emoji" },
+]
+before-each-package-command = """
+robius-packaging-commands before-each-package \
+    --force-makepad \
+    --binary-name yy_dps \
+    --path-to-binary ./target/release/yy_dps
+"""
+
+[package.metadata.packager.deb]
+depends = "./dist/depends_deb.txt"
+desktop_template = "./packaging/yy_dps.desktop"
+section = "utils"
+
+[package.metadata.packager.macos]
+minimum_system_version = "11.0"
+frameworks = [ ]
+info_plist_path = "./packaging/Info.plist"
+entitlements = "./packaging/Entitlements.plist"
+signing_identity = "Developer ID Application: AppChef Inc. (SFVQ5V48GD)"
 
 
+## Configuration for `cargo packager`'s generation of a macOS `.dmg`.
+[package.metadata.packager.dmg]
+background = "./packaging/Robrix macOS dmg background.png"
+window_size = { width = 960, height = 540 }
+app_position = { x = 200, y = 250 }
+application_folder_position = { x = 760, y = 250 }
+
+
+## Configuration for `cargo packager`'s generation of a Windows `.exe` setup installer.
+[package.metadata.packager.nsis]
+## See this: <https://nsis.sourceforge.io/Docs/Chapter4.html#varconstant>
+appdata_paths = [
+    "$APPDATA/$PUBLISHER/$PRODUCTNAME",
+    "$LOCALAPPDATA/$PRODUCTNAME",
+]
 [profile.release]
 codegen-units = 16

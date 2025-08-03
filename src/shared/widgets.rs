@@ -435,7 +435,7 @@ live_design! {
         }
     }
 
-    pub MolySwitch = <Toggle> {
+    pub MySwitch = <Toggle> {
         // U+200e as text.
         // Nasty trick cause not setting `text` nor using a simple space works to
         // render the widget without label.

@@ -78,7 +78,7 @@ impl MetaRef {
     }
 
     /// Calls `get_value_mut` on the inner widget.
-    pub fn get_value_mut<T: Any>(&self) -> Option<RefMut<T>> {
+    pub fn get_value_mut<T: Any>(&self) -> Option<RefMut<'_,T>> {
         let Some(inner) = self.borrow_mut() else {
             return None;
         };

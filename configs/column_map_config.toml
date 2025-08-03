@@ -1,0 +1,104 @@
+[[ColumnMapConfig]]
+id = 1
+template_name = "249"
+create_time = "2024/01/02 11:00:00"
+update_time = "2025/06/28 15:28:41"
+Barcode = "w_sn"
+"批次" = "pch"
+PfuW_Ith_20mA = "po"
+Ith_mA = "ith"
+BlisterSN = "box_no"
+SEN = "sen"
+SE_200_3000uW = "se"
+PN = "pn"
+SN = "b_sn"
+OuterBox = "carton_no"
+
+[[ColumnMapConfig]]
+id = 2
+template_name = "A965"
+create_time = "2025/06/12 13:53:57"
+update_time = "2025/07/05 00:23:29"
+Po = "po"
+"外箱号" = "carton_no"
+time = ""
+SN = "sn"
+Vf = "vf"
+Ith = "ith"
+Imon = "im"
+
+[[ColumnMapConfig]]
+id = 3
+template_name = "303A0001"
+create_time = "2025/07/01 15:50:12"
+update_time = "2025/07/14 17:40:06"
+TXITH = "ith"
+ICC = "icc"
+VF = "vf"
+PO = "po"
+SEN = "sen"
+IM = "im"
+"盒号" = "box_no"
+SN = "sn"
+"箱号" = "carton_no"
+
+[[ColumnMapConfig]]
+id = 4
+template_name = "303H0002"
+create_time = "2025/07/01 17:02:32"
+update_time = "2025/07/05 00:10:49"
+Ith = '"ith"'
+Imon = "im"
+Sensitivity = '""'
+time = '""'
+deviceinf = '""'
+SN = '"w_sn"'
+Po = '"po"'
+VBR = '"vbr"'
+Vf = '"vf"'
+
+[[ColumnMapConfig]]
+id = 5
+template_name = "585"
+create_time = "2025/07/16 18:24:59"
+"beforeTC-Po(mW)" = ""
+"测试人" = ""
+"afterTC-Vf(V)" = ""
+"deltaP（dB）" = ""
+"测试时间" = ""
+SN = ""
+"发货时间" = ""
+"afterTC-Im(uA)" = ""
+"R(A/W)" = ""
+"外包商代码" = ""
+"afterTC-Ith(mA)" = ""
+"客户品号" = ""
+"T-垂直角度" = ""
+T-PKINK = ""
+T-ImKINK = ""
+M = ""
+"工单单号(必填)" = ""
+OuterBox = ""
+"beforeTC-SE(W/A)" = ""
+"产品品号(必填)" = ""
+"Sen（dBm）" = ""
+BlisterSN = ""
+"MN(必填)" = ""
+"beforeTC-Ith(mA)" = ""
+"外向交货单号" = ""
+"工位" = ""
+Barcode = ""
+"型号（必填）" = ""
+"beforeTC-Vf(V)" = ""
+"Vbr(V)" = ""
+"Vbr模块调测推荐值" = ""
+PN = ""
+T-RS = ""
+"包装箱号" = ""
+"afterTC-SE(W/A)" = ""
+"Icc(mA)" = ""
+"beforeTC-Im(uA)" = ""
+"外向交货单行号" = ""
+"afterTC-Po(mW)" = ""
+"ID(nA)" = ""
+"T-水平角度" = ""

@@ -9,9 +9,17 @@ use tokio::fs;
 use crate::utils::error::{MyError, MyTip};
 
 // 定义 TOML 文件的路径
-const TOML_FILE_PATH: &str = "././type_config.toml";
+const TOML_FILE_PATH: &str = "././configs/type_config.toml";
 // const JSON_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\type_config.toml"; // TOML 文件路径
 
+// 定义 infos 结构体，用于匹配 TOML 文件中的 [ConfigType.infos]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Infos {
+    pub is_have_pch: bool,
+    pub carton_pch: bool,
+    pub box_pch: bool,
+    pub jz_band: bool,
+}
 // 定义根结构体，用于匹配 TOML 文件中的 [[ConfigType]]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TypeConfigRoot {
@@ -26,14 +34,17 @@ pub struct ConfigType {
     pub type_name: String,
     pub create_time: String,
     pub update_time: Option<String>,
+    pub infos: Infos,
     pub template: HashMap<String, String>,
 }
 
 /// 获取指定类型名称的类型信息列表
-pub async fn get_type_infos(type_name: String) -> Result<Vec<String>, MyError> {
+pub async fn get_type_infos(type_name: String) -> Result<(Vec<String>, Infos), MyError> {
     // 使用 ? 运算符替代 unwrap()，以传播可能的错误
     let data = load_data().await?;
     let mut type_infos = Vec::new();
+    let mut infos = Infos::default();
+
     if data.is_empty() {
         return Err(MyError::NoResult(format!("型号: {}", type_name)));
     };
@@ -49,9 +60,10 @@ pub async fn get_type_infos(type_name: String) -> Result<Vec<String>, MyError> {
                 }
                 type_infos.push(value.to_string());
             }
+            infos = data_item.infos;
         }
     }
-    Ok(type_infos)
+    Ok((type_infos, infos))
 }
 
 /// 获取所有类型名称的列表
@@ -71,7 +83,11 @@ pub async fn get_type_names() -> Result<Vec<String>, MyError> {
 }
 
 /// 添加新类型配置
-pub async fn add_new_type(type_name: String, templates: Vec<String>) -> Result<MyTip, MyError> {
+pub async fn add_new_type(
+    type_name: String,
+    templates: Vec<String>,
+    infos: Infos,
+) -> Result<MyTip, MyError> {
     let mut data = load_data().await?;
     let now = Local::now().format("%Y/%m/%d %H:%M:%S").to_string();
 
@@ -92,6 +108,7 @@ pub async fn add_new_type(type_name: String, templates: Vec<String>) -> Result<M
         create_time: now.clone(),
         update_time: None,
         template,
+        infos,
     };
     data.push(new_type);
 
@@ -100,7 +117,11 @@ pub async fn add_new_type(type_name: String, templates: Vec<String>) -> Result<M
 }
 
 /// 更新现有类型配置
-pub async fn update_type(type_name: String, template: Vec<String>) -> Result<MyTip, MyError> {
+pub async fn update_type(
+    type_name: String,
+    template: Vec<String>,
+    infos: Infos,
+) -> Result<MyTip, MyError> {
     let mut data = load_data().await?;
     let now = Local::now().format("%Y/%m/%d %H:%M:%S").to_string();
 
@@ -130,6 +151,7 @@ pub async fn update_type(type_name: String, template: Vec<String>) -> Result<MyT
     // 查找并更新类型
     if let Some(item) = data.iter_mut().find(|item| item.type_name == type_name) {
         item.template = template;
+        item.infos = infos;
         item.update_time = Some(now);
         save_data(&data).await?;
         Ok(MyTip::UpdateDone(format!("型号: {}", type_name)))
@@ -168,16 +190,13 @@ pub async fn load_data() -> Result<Vec<ConfigType>, MyError> {
     let path = get_file_path();
     if !path.exists() {
         // 如果文件不存在，则创建空文件并返回空向量
-        fs::write(&path, "[]")
-            .await?;
+        fs::write(&path, "[]").await?;
         return Ok(Vec::new());
     }
 
-    let contents = fs::read_to_string(&path)
-        .await?;
-    println!("con = {}",contents);
-    let config_root: TypeConfigRoot =
-        toml::from_str(&contents)?;
+    let contents = fs::read_to_string(&path).await?;
+    println!("con = {}", contents);
+    let config_root: TypeConfigRoot = toml::from_str(&contents)?;
     Ok(config_root.types)
 }
 

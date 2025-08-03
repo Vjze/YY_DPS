@@ -1,0 +1,91 @@
+[[ConfigType]]
+id = 1
+type_name = "249"
+create_time = "2024/01/01 10:00:00"
+update_time = "2025/07/31 02:08:56"
+
+[ConfigType.infos]
+is_have_pch = true
+carton_pch = true
+box_pch = false
+jz_band = false
+
+[ConfigType.template]
+11 = "249"
+
+[[ConfigType]]
+id = 2
+type_name = "256"
+create_time = "2024/01/02 11:00:00"
+update_time = "2025/07/31 02:21:41"
+
+[ConfigType.infos]
+is_have_pch = false
+carton_pch = false
+box_pch = true
+jz_band = true
+
+[ConfigType.template]
+4 = "256"
+6 = "256_2"
+5 = "256_1"
+
+[[ConfigType]]
+id = 3
+type_name = "A965"
+create_time = "2025/06/12 10:11:14"
+update_time = "2025/07/29 22:37:03"
+
+[ConfigType.infos]
+is_have_pch = true
+carton_pch = true
+box_pch = false
+jz_band = false
+
+[ConfigType.template]
+4 = "A965"
+
+[[ConfigType]]
+id = 4
+type_name = "486"
+create_time = "2025/06/26 15:33:42"
+update_time = "2025/07/31 02:16:12"
+
+[ConfigType.infos]
+is_have_pch = false
+carton_pch = false
+box_pch = false
+jz_band = false
+
+[ConfigType.template]
+5 = "20250626 15000pcs条码绑定数据"
+
+[[ConfigType]]
+id = 5
+type_name = "303A0001"
+create_time = "2025/07/01 15:52:44"
+update_time = "2025/07/01 15:53:01"
+
+[ConfigType.infos]
+is_have_pch = false
+carton_pch = false
+box_pch = false
+jz_band = false
+
+[ConfigType.template]
+1 = "303A0001"
+
+[[ConfigType]]
+id = 6
+type_name = "303H0002"
+create_time = "2025/07/01 16:34:24"
+update_time = "2025/07/01 16:35:19"
+
+[ConfigType.infos]
+is_have_pch = false
+carton_pch = false
+box_pch = false
+jz_band = false
+
+[ConfigType.template]
+2 = "303H0002"
