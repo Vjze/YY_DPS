@@ -1,10 +1,10 @@
-use makepad_widgets::{windows::Win32::UI::Controls::TB_ADDSTRINGA, *};
+use makepad_widgets::*;
 use tokio::runtime::Runtime;
 
 use crate::{
     configs::type_config::{Infos, add_new_type, delete_type, get_type_infos, update_type},
     store::Store,
-    utils::error::{MyError, MyTip},
+    utils::error::MyError,
 };
 
 live_design! {
@@ -250,7 +250,7 @@ live_design! {
                                     width: 50,
                                 }
                         }
-                        
+
                         <Label> {
                             text: "启用九州绑定数据查询:"
                             draw_text: {
@@ -392,8 +392,8 @@ impl WidgetMatchEvent for TypeView {
             });
             if !type_infos.0.is_empty() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    store.set_type_infos(type_infos);
-                    
+                    store.type_infos = type_infos;
+
                     self.view
                         .check_box(id!(pch_check))
                         .set_active(cx, store.type_infos.1.is_have_pch);

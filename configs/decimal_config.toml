@@ -2,122 +2,108 @@
 id = 1
 template_name = "249"
 create_time = "2024/01/01 10:00:00"
-update_time = "2025/07/04 22:55:39"
+update_time = "2025/08/06 18:25:53"
+
 [Template.int]
-im = 0
-ith = 2
+kink = 0
 se = 3
-po = 2
+ith = 2
+sen = 3
+icc = 3
+im = 0
+mdpid = 2
 vf = 0
 res = 2
-sen = 3
+po = 2
+iop = 2
 rs = 2
-kink = 0
+i_xtalk = 2
 imkink = 2
-icc = 3
 idark = 2
+
 [Template.string]
-bosa_maker = "111026"
-bosa_vbr = "0.00"
+bosa_vbr1 = "0.00"
+bosa_maker1 = "111026"
+bosa_vbr3 = "0.00"
 bosa_vop = "0.00"
+bosa_vbr = "0.00"
+rows = "2"
+bosa_maker2 = "111026"
+bosa_vbr2 = "0.00"
+bosa_vop1 = "0.00"
+bosa_maker3 = "111026"
+bosa_vop2 = "0.00"
+bosa_vop3 = "0.00"
+bosa_maker = "111026"
+
 [Template.infos]
-rows = 1
-"A1" = "Test"
-"E8" = "Date"
+E3 = "EEE"
+F4 = "fff"
+E8 = "Date"
+A1 = "Test"
 
 [[Template]]
 id = 2
 template_name = "249_1"
 create_time = "2024/01/02 11:00:00"
 update_time = "2024/01/02 11:00:00"
-bosa_maker = "111026"
-pn = "07103030249"
+
+[Template.int]
 im = 0
-bosa_vbr = "0.00"
-se = 3
-ith = 2
-bosa_vop = "0.00"
-po = 0
-[Template.infos]
-
-[[Template]]
-id = 3
-template_name = "303A0001"
-create_time = "2025/07/14 17:35:07"
-update_time = "2025/07/14 17:39:50"
-vf = 2
-"盒号" = ""
-ICC = ""
-SEN = ""
-se = 3
-sen = 2
-im = 2
-TXITH = ""
-po = 2
-SN = ""
-ith = 2
-"箱号" = ""
-VF = ""
-IM = ""
-PO = ""
 res = 2
-"NO." = ""
-RXVCC = "3.3"
-unit = "Mw"
-
-[[Template]]
-id = 4
-template_name = "585"
-create_time = "2025/07/16 18:25:46"
-update_time = "2025/07/16 20:46:37"
-res = 2
-"Sen（dBm）" = ""
-"客户品号" = ""
-"T-水平角度" = ""
-SN = ""
-BlisterSN = ""
-"beforeTC-SE(W/A)" = ""
-"deltaP（dB）" = ""
-"beforeTC-Po(mW)" = ""
-"外向交货单行号" = ""
-Barcode = ""
-"beforeTC-Ith(mA)" = ""
-se = 3
-"ID(nA)" = ""
-ith = 2
-"测试人" = ""
-T-RS = ""
-"Vbr(V)" = ""
-"R(A/W)" = ""
-"afterTC-Vf(V)" = ""
-"Vbr模块调测推荐值" = ""
 po = 2
-"T-垂直角度" = ""
-PN = ""
-"测试时间" = ""
-"Icc(mA)" = ""
-"MN(必填)" = ""
-"beforeTC-Vf(V)" = ""
-sen = 2
-"产品品号(必填)" = ""
-M = ""
-"beforeTC-Im(uA)" = ""
-im = 2
-"包装箱号" = ""
-"发货时间" = ""
-T-ImKINK = ""
-vf = 2
-"型号（必填）" = ""
-"afterTC-Po(mW)" = ""
-T-PKINK = ""
-"外包商代码" = ""
-"外向交货单号" = ""
-"工单单号(必填)" = "11025"
-OuterBox = ""
-"afterTC-Im(uA)" = ""
-"afterTC-SE(W/A)" = ""
-"afterTC-Ith(mA)" = ""
 rs = 2
-unit = "Mw"
-"工位" = ""
+idark = 2
+
+[Template.string]
+bosa_maker3 = "111026"
+bosa_maker1 = "111026"
+bosa_vop3 = "0.00"
+bosa_vop2 = "0.00"
+
 [Template.infos]
+E8 = "Date"
+F4 = "fff"
+
+[[Template]]
+id = 5
+template_name = "2491"
+create_time = "2025/08/06 17:17:40"
+
+[Template.int]
+rs = 2
+se = 3
+po = 2
+vf = 0
+idark = 2
+iop = 2
+mdpid = 2
+imkink = 2
+i_xtalk = 2
+kink = 0
+icc = 3
+im = 0
+ith = 2
+res = 2
+sen = 3
+
+[Template.string]
+rows = "2"
+bosa_maker3 = "111026"
+bosa_vop1 = "0.00"
+bosa_vbr1 = "0.00"
+bosa_vop2 = "0.00"
+bosa_maker = "111026"
+bosa_maker2 = "111026"
+bosa_vbr = "0.00"
+bosa_vop = "0.00"
+bosa_vbr3 = "0.00"
+bosa_vbr2 = "0.00"
+bosa_vop3 = "0.00"
+bosa_maker1 = "111026"
+
+[Template.infos]
+A1 = "Test"
+E3 = "EEE"
+E8 = "Date"
+F4 = "fff"

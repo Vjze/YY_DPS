@@ -21,7 +21,7 @@ live_design! {
     pub SIDEBAR_FONT_COLOR_HOVER = (MAIN_BG_COLOR)
     pub SIDEBAR_FONT_COLOR_SELECTED = (MAIN_BG_COLOR)
 
-    pub SIDEBAR_BG_COLOR_SELECTED = #344054    
+    pub SIDEBAR_BG_COLOR_SELECTED = #344054
     pub SIDEBAR_BG_COLOR_HOVER = #677483
 
     pub SidebarMenuButton = <RadioButton> {
@@ -112,5 +112,5 @@ live_design! {
         }
     }
 
-    
+
 }

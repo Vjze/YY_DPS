@@ -1,10 +1,10 @@
 pub use makepad_widgets;
 pub mod app;
+pub mod configs;
 pub mod export;
 pub mod settings;
 pub mod shared;
 pub mod store;
-pub mod utils;
-pub mod configs;
-pub mod widgets;
 pub mod structs;
+pub mod utils;
+pub mod widgets;

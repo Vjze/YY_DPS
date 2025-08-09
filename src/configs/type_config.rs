@@ -1,9 +1,10 @@
-use chrono::Local;
-use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
     path::PathBuf,
 };
+
+use chrono::Local;
+use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::utils::error::{MyError, MyTip};
@@ -195,7 +196,6 @@ pub async fn load_data() -> Result<Vec<ConfigType>, MyError> {
     }
 
     let contents = fs::read_to_string(&path).await?;
-    println!("con = {}", contents);
     let config_root: TypeConfigRoot = toml::from_str(&contents)?;
     Ok(config_root.types)
 }

@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use bb8_tiberius::ConnectionManager;
 use chrono::NaiveDateTime;
 
-use crate::{structs::Data, utils::error::MyError};
-
 use super::query_utils::*;
+use crate::{structs::Data, utils::error::MyError};
 
 fn format_data(data: Vec<Data>) -> Vec<HashMap<String, String>> {
     data.into_iter()
@@ -479,12 +478,8 @@ pub async fn execute_query(
     // println!("执行查询: {}", sql_text_s);
     // let mut client = client().await?;
     let mut client = pool.get().await.unwrap();
-    let stream = client
-        .query(sql_text_s, &[&1i32])
-        .await?;
-    let rowsets = stream
-        .into_results()
-        .await?;
+    let stream = client.query(sql_text_s, &[&1i32]).await?;
+    let rowsets = stream.into_results().await?;
 
     let mut sn_map: HashMap<String, Data> = HashMap::new();
     for rows in rowsets {
@@ -537,7 +532,7 @@ pub async fn execute_query(
 
     let datas: Vec<Data> = sn_map.into_iter().map(|(_, v)| v).collect();
     if datas.is_empty() {
-         return Err(MyError::NoResult(format!("")));
+        return Err(MyError::NoResult(format!("")));
     }
     Ok(datas)
 }

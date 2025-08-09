@@ -2,7 +2,6 @@ use makepad_widgets::*;
 
 use crate::store::Store;
 
-
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -11,7 +10,7 @@ live_design! {
     RowHeaderLabel = <View> {
         width: 100
         height: Fit
-        align: {x: 0.0, y: 0.5}
+        align: {x: 0.0, y: 0.5  }
         label = <Label> {
             width: Fit
             draw_text: {
@@ -26,15 +25,15 @@ live_design! {
         align: {x: 0.0, y: 0.5}
         width: Fill
         height: 50,
-        padding: {top: 10, bottom: 10, left: 20, right: 20}
+        // padding: {top: 10, bottom: 10, left: 20, right: 20}
         // Heads-up: the spacing and row header widths need to match the row values
         spacing: 30,
-        show_bg: true
-        draw_bg: {
-            fn pixel(self) -> vec4 {
-                return mix(#AFEEEE,#DCDCDC,self.pos.x);
-            }
-        }
+        // show_bg: true
+        // draw_bg: {
+        //     fn pixel(self) -> vec4 {
+        //         return mix(#AFEEEE,#DCDCDC,self.pos.x);
+        //     }
+        // }
 
 
         <RowHeaderLabel> {  label = {text: "箱号"} }
@@ -49,8 +48,8 @@ live_design! {
     pub InfosTable = {{InfosTable}} <RoundedView> {
             width: Fill,
             height: Fill,
-            align: {x: 0.5, y: 0.5}
             flow: Down,
+            padding: {left:15}
             // show_bg: true
             // draw_bg: {
             //     // color: #f9f9f9,
@@ -64,7 +63,7 @@ live_design! {
             }
             list = <PortalList> {
                 drag_scrolling: false
-                
+
                 ItemRow = <DataRow> {
                     cursor: Default
                 }

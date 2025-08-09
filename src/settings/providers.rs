@@ -77,7 +77,7 @@ live_design! {
 
     }
 
-    
+
 
     pub Providers = {{Providers}} {
                 width: 200, height: Fill
@@ -95,9 +95,9 @@ live_design! {
                 //     (ICON_OPENROUTER),
                 //     (ICON_MOLYSERVER),
                 // ]
-            
-        
-        
+
+
+
 
     }
 }
@@ -110,13 +110,19 @@ struct Providers {
     selected_provider: Option<String>,
 }
 impl LiveHook for Providers {
-    fn before_apply(&mut self, cx: &mut Cx, _apply: &mut Apply, _index: usize, _nodes: &[LiveNode]) {
-        
-   
+    fn before_apply(
+        &mut self,
+        cx: &mut Cx,
+        _apply: &mut Apply,
+        _index: usize,
+        _nodes: &[LiveNode],
+    ) {
         // 设置一个默认选中项，例如“类型设置”
         self.selected_provider = Some("类型设置".to_string());
         // 确保在初始化时触发一次视图切换
-        cx.action(ConnectionSettingsAction::ProviderSelected("类型设置".to_string()));
+        cx.action(ConnectionSettingsAction::ProviderSelected(
+            "类型设置".to_string(),
+        ));
     }
 }
 
@@ -161,29 +167,14 @@ impl Widget for Providers {
     }
 }
 
-// impl Providers {
-//     fn get_provider_icon(&self, provider: String) -> Option<LiveDependency> {
-//         self.provider_icons
-//             .iter()
-//             .find(|icon| {
-//                 icon.as_str()
-//                     .to_lowercase()
-//                     .contains(&provider.to_lowercase())
-//             })
-//             .cloned()
-//     }
-// }
-
 impl WidgetMatchEvent for Providers {
-    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
+    fn handle_actions(&mut self, _cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
         for action in actions {
             // Handle selected provider
             if let ConnectionSettingsAction::ProviderSelected(provider_url) = action.cast() {
                 self.selected_provider = Some(provider_url);
             }
-
         }
-        
     }
 }
 
@@ -222,69 +213,29 @@ impl WidgetMatchEvent for ProviderItem {
     }
 }
 
-// impl ProviderItem {
-//     /// Toggles the visibility of the connection status icons
-//     fn update_connection_status(
-//         &mut self,
-//         cx: &mut Cx,
-//         connection_status: &ProviderConnectionStatus,
-//     ) {
-//         self.view(id!(connection_status_success)).set_visible(
-//             cx,
-//             *connection_status == ProviderConnectionStatus::Connected,
-//         );
-//         self.view(id!(connection_status_failure)).set_visible(
-//             cx,
-//             *connection_status == ProviderConnectionStatus::Disconnected,
-//         );
-//         self.view(id!(connection_status_loading)).set_visible(
-//             cx,
-//             *connection_status == ProviderConnectionStatus::Connecting,
-//         );
-//     }
-// }
-
 impl ProviderItemRef {
-    fn set_provider(
-        &mut self,
-        cx: &mut Cx,
-        provider: String,
-        // icon_path: Option<LiveDependency>,
-        is_selected: bool,
-    ) {
+    fn set_provider(&mut self, cx: &mut Cx, provider: String, is_selected: bool) {
         let Some(mut inner) = self.borrow_mut() else {
             return;
         };
         inner.provider = provider.clone();
 
-        // Determine whether to show image or label
-        // if let Some(icon) = icon_path {
-        //     // Show the image
-        //     inner.view(id!(image_wrapper)).set_visible(cx, true);
-        //     let image = inner.image(id!(provider_icon_image));
-        //     let _ = image.load_image_dep_by_path(cx, icon.as_str());
+        inner.view(id!(image_wrapper)).set_visible(cx, false);
 
-        //     // Hide the label
-        //     let label_view = inner.view(id!(provider_icon_label));
-        //     label_view.set_visible(cx, false);
-        // } else {
-            // Hide the image
-            inner.view(id!(image_wrapper)).set_visible(cx, false);
+        // Show the label
+        let label_view = inner.view(id!(label_wrapper));
+        label_view.set_visible(cx, true);
 
-            // Show the label
-            let label_view = inner.view(id!(label_wrapper));
-            label_view.set_visible(cx, true);
+        // Get first character of the provider name
+        let first_char = provider
+            .chars()
+            .next()
+            .map(|c| c.to_uppercase().to_string())
+            .unwrap_or_default();
 
-            // Get first character of the provider name
-            let first_char = provider
-                .chars()
-                .next()
-                .map(|c| c.to_uppercase().to_string())
-                .unwrap_or_default();
-
-            label_view
-                .label(id!(initial_label))
-                .set_text(cx, &first_char);
+        label_view
+            .label(id!(initial_label))
+            .set_text(cx, &first_char);
         // }
 
         if is_selected && cx.display_context.is_desktop() {

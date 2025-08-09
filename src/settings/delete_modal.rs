@@ -3,10 +3,11 @@ live_design!(
     use link::theme::*;
     use link::shaders::*;
     use link::widgets::*;
-    use crate::shared::style::*;
 
+    use crate::shared::widgets::*;
+    use crate::shared::styles::*;
 
-    pub ErrorDialog = {{ErrorDialog}} {
+    pub DeleteModal = {{DeleteModal}} {
         width: Fit,
         height: Fit,
 
@@ -77,7 +78,7 @@ live_design!(
 
                         }
                 <Label> {
-                    text: "提示"
+                    text: "删除"
                     draw_text: {
                         text_style:{font_size: 16},
                         color: #000
@@ -90,24 +91,41 @@ live_design!(
                 flow: Down,
                 padding:{left: 15}
                 spacing: 40
-                prompt = <Label> {
-                    width: Fill
-                    draw_text: {
-                        text_style: {
-                            font_size: 14
-                        },
-                        color: #000
-                        wrap: Word
+                    <View> {
+                        height: Fit,
+                        align: {x:0.5, y:0.5}
+                        spacing: 15,
+                        padding: {left: 15, right: 15}
+                        <Label> {
+                            width: Fill
+                            draw_text: {
+                                text_style: {
+                                    font_size: 14
+                                },
+                                color: #000
+                                wrap: Word
+                            }
+                            text: "是否确认删除?"
+                        }
+
                     }
-                    text: "提示内容"
-                }
+
                 <View> {
                     width: Fill, height: Fit
                     flow: Right,
                     align: {x: 1.0, y: 1.0}
                     padding: 15
-
-
+                    spacing: 15,
+                    <Label> {
+                        width: Fill
+                        draw_text: {
+                            text_style: {
+                                font_size: 14
+                            },
+                            color: #000
+                            wrap: Word
+                        }
+                    }
                     accept_button = <Button> {
                         width: 100
                         height: 40
@@ -129,28 +147,46 @@ live_design!(
 
                          }
                     }
+                    cancel_button = <Button> {
+                        width: 100
+                        height: 40
+                        padding: {left: 15, right: 15}
+
+                        text: "取消"
+                        draw_text: {
+                            color: #000000,
+                            text_style: {
+                                font_size:16
+                            }
+                        }
+                        draw_bg: {
+                            uniform border_size: 1.0
+                            uniform border_radius: 5.0
+                            uniform color: #AFEEEE
+                            uniform color_hover: #9370DB
+                            uniform color_disabled: #DCDCDC
+
+                         }
+                    }
                 }
             }
         }
 
     }
 );
-#[derive(Clone)]
-pub struct ErrorDialogProps {
-    pub error_text: String,
-}
-// 添加 ErrorDialog 结构体和实现
+
 #[derive(Live, LiveHook, Widget)]
-pub struct ErrorDialog {
+pub struct DeleteModal {
     #[deref]
     view: View,
 }
 #[derive(Clone, Debug, DefaultNone)]
-pub enum ErrprModalAction {
+pub enum DeleteModalAction {
+    Action,
     None,
     Close,
 }
-impl Widget for ErrorDialog {
+impl Widget for DeleteModal {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
@@ -160,25 +196,15 @@ impl Widget for ErrorDialog {
         self.view.draw_walk(cx, scope, walk)
     }
 }
-impl WidgetMatchEvent for ErrorDialog {
+impl WidgetMatchEvent for DeleteModal {
     fn handle_actions(&mut self, _cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
         let accept_button = self.button(id!(accept_button));
-        let accept_button_clicked = accept_button.clicked(actions);
-        if accept_button_clicked {
-            Cx::post_action(ErrprModalAction::Close);
+        let cancel_button = self.button(id!(cancel_button));
+        if cancel_button.clicked(actions) {
+            Cx::post_action(DeleteModalAction::Close);
         }
-    }
-}
-impl ErrorDialog {
-    fn initialize_with_data(&mut self, cx: &mut Cx, error_text: String) {
-        self.label(id!(prompt)).set_text(cx, &error_text);
-    }
-}
-
-impl ErrorDialogRef {
-    pub fn initialize_with_data(&self, cx: &mut Cx, error_text: String) {
-        if let Some(mut inner) = self.borrow_mut() {
-            inner.initialize_with_data(cx, error_text);
+        if accept_button.clicked(actions) {
+            Cx::post_action(DeleteModalAction::Action);
         }
     }
 }

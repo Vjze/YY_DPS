@@ -2,8 +2,6 @@ use std::collections::HashMap;
 
 use makepad_widgets::*;
 
-
-
 live_design! {
     use makepad_widgets::base::*;
     use makepad_widgets::widget::*;
@@ -40,13 +38,13 @@ live_design! {
             flow: Down
             width: Fill
             align: {x: 0.0, y: 0.5}
-            
+
             h_wrapper = <View> {
                 flow: Right
                 width: Fit
                 padding: {top: 10, bottom: 10, left: 20, right: 20}
                 spacing: 30
-    
+
                 carton_no = <Col> {}
                 box_no =  <Col> {}
                 sn =  <Col> {}
@@ -58,7 +56,7 @@ live_design! {
             }
             separator_line = <Line> {}
         }
-        
+
     }
 }
 
@@ -74,7 +72,7 @@ impl Widget for DataRow {
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
-        if let Some(data) = scope.data.get::<HashMap<String,String>>() {
+        if let Some(data) = scope.data.get::<HashMap<String, String>>() {
             let carton_nos = data.get("carton_no").unwrap().clone();
             let label = self.label(id!(h_wrapper.carton_no.label));
             label.set_text(cx, &carton_nos);

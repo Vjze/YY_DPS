@@ -22,7 +22,7 @@ pub struct Data {
     pub result: String,
     pub tester: String,
     pub i_xtalk: String,
-    pub mdpid: String
+    pub mdpid: String,
 }
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
 pub struct CartonData {
@@ -46,9 +46,9 @@ pub struct BandData {
     pub band_worker: String,
 }
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
-pub struct Datas{
+pub struct Datas {
     pub carton_data: CartonData,
     pub pack_data: PackData,
     pub sn_data: Data,
-    pub band_data: BandData
+    pub band_data: BandData,
 }

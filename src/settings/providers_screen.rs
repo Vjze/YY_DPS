@@ -1,4 +1,5 @@
 use makepad_widgets::*;
+
 use super::providers::ConnectionSettingsAction;
 
 live_design! {
@@ -98,34 +99,60 @@ impl Widget for ProvidersScreen {
 }
 
 impl WidgetMatchEvent for ProvidersScreen {
-    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
         let stack_navigation = self.stack_navigation(id!(navigation));
         stack_navigation.handle_stack_view_actions(cx, actions);
 
         for action in actions {
             if let ConnectionSettingsAction::ProviderSelected(address) = action.cast() {
                 self.selected_provider = Some(address)
-               
             }
         }
-      
+
         if let Some(view) = &self.selected_provider {
             let view = view.as_str();
             match view {
                 "类型设置" => {
-                    self.view.widget(id!(setting_view)).widget(id!(type_frame)).set_visible(cx, true);
-                    self.view.widget(id!(setting_view)).widget(id!(template_frame)).set_visible(cx, false);
-                    self.view.widget(id!(setting_view)).widget(id!(map_frame)).set_visible(cx, false);
+                    self.view
+                        .widget(id!(setting_view))
+                        .widget(id!(type_frame))
+                        .set_visible(cx, true);
+                    self.view
+                        .widget(id!(setting_view))
+                        .widget(id!(template_frame))
+                        .set_visible(cx, false);
+                    self.view
+                        .widget(id!(setting_view))
+                        .widget(id!(map_frame))
+                        .set_visible(cx, false);
                 }
                 "模板设置" => {
-                    self.view.widget(id!(setting_view)).widget(id!(type_frame)).set_visible(cx, false);
-                    self.view.widget(id!(setting_view)).widget(id!(template_frame)).set_visible(cx, true);
-                    self.view.widget(id!(setting_view)).widget(id!(map_frame)).set_visible(cx, false);
+                    self.view
+                        .widget(id!(setting_view))
+                        .widget(id!(type_frame))
+                        .set_visible(cx, false);
+                    self.view
+                        .widget(id!(setting_view))
+                        .widget(id!(template_frame))
+                        .set_visible(cx, true);
+                    self.view
+                        .widget(id!(setting_view))
+                        .widget(id!(map_frame))
+                        .set_visible(cx, false);
                 }
                 _ => {
-                    self.view.widget(id!(setting_view)).widget(id!(type_frame)).set_visible(cx, false);
-                    self.view.widget(id!(setting_view)).widget(id!(template_frame)).set_visible(cx, false);
-                    self.view.widget(id!(setting_view)).widget(id!(map_frame)).set_visible(cx, true);
+                    self.view
+                        .widget(id!(setting_view))
+                        .widget(id!(type_frame))
+                        .set_visible(cx, false);
+                    self.view
+                        .widget(id!(setting_view))
+                        .widget(id!(template_frame))
+                        .set_visible(cx, false);
+                    self.view
+                        .widget(id!(setting_view))
+                        .widget(id!(map_frame))
+                        .set_visible(cx, true);
                 }
             }
         }

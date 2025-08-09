@@ -105,7 +105,7 @@ live_design! {
             window: {inner_size: vec2(1440, 1024), title: "DPS"},
             pass: {clear_color: (THEME_COLOR_FG_APP)},
             caption_bar = {
-                draw_bg: { 
+                draw_bg: {
                     fn pixel(self) -> vec4 {
                         return mix(#C1CDC1,#B0E0E6,self.pos.x);
                     }

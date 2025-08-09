@@ -1,4 +1,3 @@
-
 use rand_distr::{Distribution as _, Normal};
 pub fn before_vf_num(vf: f64) -> f64 {
     let stddev = vf * 0.005;
@@ -120,4 +119,3 @@ pub fn calculate_tc(pf_initial: f64, pf_final: f64) -> f64 {
 
     tc
 }
-

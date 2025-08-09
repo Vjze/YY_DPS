@@ -6,6 +6,8 @@ pub enum MyError {
     DbConnectionError(#[from] tiberius::error::Error),
     #[error("IO 错误: {0}")]
     IoError(#[from] std::io::Error),
+    #[error("并发查询错误: {0}")]
+    TokioError(#[from] tokio::task::JoinError),
     #[error("没有找到任何型号!!!")]
     UnLoadedTypes,
     #[error("没有找到任何模板!!!")]
@@ -21,9 +23,9 @@ pub enum MyError {
     #[error("{0}没有数据!!")]
     NoResult(String),
     #[error("{0}写入错误,{1}!!")]
-    WriteErr(String,String),
+    WriteErr(String, String),
     #[error("型号 {0}导出错误!!错误原因:{1}")]
-    WriteToExcelErr(String,String),
+    WriteToExcelErr(String, String),
     #[error("箱号不能为空!!!")]
     CartonNoEmpty,
     #[error("数据查询错误!!")]
@@ -32,7 +34,6 @@ pub enum MyError {
     Zdyknown(String),
     #[error("未知错误")]
     Unknown,
-    
 }
 #[derive(Error, Debug)]
 pub enum MyTip {

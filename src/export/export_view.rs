@@ -1,7 +1,7 @@
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
 
-use crate::{configs::type_config::get_type_names, store::Store, utils::error::{MyError, MyTip}};
+use crate::{export::works::carton_query::do_carton_query, store::Store};
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -10,7 +10,7 @@ live_design! {
     use crate::shared::styles::*;
     use crate::shared::modal::*;
     use crate::shared::widgets::*;
-
+    use crate::widgets::table::InfosTable;
     FirstRow = <View> {
         width: Fill,
         height: 100,
@@ -118,7 +118,7 @@ live_design! {
 
              }
         }
-        
+
 
         qty_label = <Label> {
             padding: {
@@ -139,10 +139,10 @@ live_design! {
             width: Fill,
             height: Fill,
             flow: Down,
-            spacing:20,
             <FirstRow> {
 
             }
+            <InfosTable> {}
         }
     }
 }
@@ -150,17 +150,21 @@ live_design! {
 pub struct ExportScreen {
     #[deref]
     view: View,
-    #[rust]
-    store: Store,
+    #[rust(Runtime::new().unwrap())]
+    pub rt: Runtime,
 }
 
 impl Widget for ExportScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        if let Some(store) = scope.data.get::<Store>(){
-            self.store = store.clone();
-        }
-        if !self.store.types.is_empty() {
-            self.view.drop_down(id!(type_selector)).set_labels(cx, self.store.types.clone());
+        if let Some(store) = scope.data.get::<Store>() {
+            self.view
+                .drop_down(id!(type_selector))
+                .set_labels(cx, store.types.clone());
+            if store.datas.is_empty() {
+                self.view.button(id!(export_btn)).set_disabled(cx, true);
+            } else {
+                self.view.button(id!(export_btn)).set_disabled(cx, false);
+            }
         }
         self.widget_match_event(cx, event, scope);
         self.view.handle_event(cx, event, scope);
@@ -175,16 +179,32 @@ impl WidgetMatchEvent for ExportScreen {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
         let input = self.view.text_input(id!(carton_input));
         let query_btn = self.view.button(id!(query_btn));
-        let export_btn = self.view.button(id!(export_btn));
+        let _export_btn = self.view.button(id!(export_btn));
+        let type_name = self.view.drop_down(id!(type_selector));
+        let rt = self.rt.handle().clone();
         if input.text().is_empty() {
             query_btn.set_text(cx, "批量查询");
         } else {
             query_btn.set_text(cx, "箱号查询");
         }
-        if self.store.datas.is_empty() {
-            export_btn.set_disabled(cx, true);
-        } else {
-            export_btn.set_disabled(cx, false);
+
+        if query_btn.clicked(actions) {
+            let _guard = rt.enter();
+            let carton = input.text().clone();
+            if let Some(store) = scope.data.get_mut::<Store>() {
+                let pool = store.sql_pool.clone().unwrap();
+                let res = rt.block_on(async move {
+                    do_carton_query(carton, &pool, type_name.selected_label()).await
+                });
+                match res {
+                    Ok(r) => {
+                        store.datas = r;
+                    }
+                    Err(e) => {
+                        Cx::post_action(e);
+                    }
+                }
+            }
         }
     }
 }

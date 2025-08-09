@@ -1,18 +1,23 @@
+use std::{collections::HashMap, sync::Arc};
+
 use chrono::{Local, NaiveDateTime};
 // use hashbrown::HashMap;
 use rayon::prelude::*;
 use regex::Regex;
-use toml::Value;
-use std::{collections::HashMap, sync::Arc};
 use umya_spreadsheet::{
-    reader::xlsx::read, writer::xlsx::write, Border, Font, HorizontalAlignmentValues, Style,
-    VerticalAlignmentValues,
+    Border, Font, HorizontalAlignmentValues, Style, VerticalAlignmentValues, reader::xlsx::read,
+    writer::xlsx::write,
 };
 
-
-use crate::{configs::{column_map_config::get_template_map_config, decimal_config::{get_decimal_config_value, DecimalConfig}, type_config::get_type_infos}, utils::error::{MyError, MyTip}};
-
 use super::excel_utils::{before_im_num, before_ith_num, before_po, before_vf_num, calculate_tc};
+use crate::{
+    configs::{
+        column_map_config::get_template_map_config,
+        decimal_config::{DecimalConfig, get_decimal_config_value},
+        type_config::get_type_infos,
+    },
+    utils::error::{MyError, MyTip},
+};
 
 // 单元格更新结构
 #[derive(Debug)]
@@ -38,7 +43,9 @@ pub async fn write_to_excel(
             let template_path = template_path.clone();
             tokio::spawn(async move {
                 let result = async {
-                    let decimal_config = get_decimal_config_value(template_name.clone()).await.unwrap();
+                    let decimal_config = get_decimal_config_value(template_name.clone())
+                        .await
+                        .unwrap();
                     let template_path = format!("{}{}.xlsx", template_path, template_name);
                     let mut book = read(&template_path)
                         .map_err(|_| format!("无法读取模板文件: {}", template_path))?;
@@ -56,14 +63,8 @@ pub async fn write_to_excel(
                         headers = Default::default();
                     }
                     // 获取 rows 字段，确保是整数
-                    let rows = decimal_config
-                        .tables
-                        .get("rows")
-                        .and_then(|v| v.as_integer())
-                        .ok_or(MyError::Zdyknown(
-                            "rows 字段不存在或不是整数".to_string(),
-                        )).unwrap();
-                    let header_rows_to_scan = if rows == 1 {
+                    let rows = decimal_config.strings.get("rows").unwrap();
+                    let header_rows_to_scan = if rows == "1" {
                         vec![highest_row]
                     } else {
                         vec![highest_row - 1, highest_row]
@@ -72,23 +73,17 @@ pub async fn write_to_excel(
                     let table_infos = decimal_config.tables.clone();
                     for (key, value) in table_infos {
                         let cell = sheet.get_cell_mut(key);
-                        match value {
-                            Value::String(s) if s == "Date" => {
-                                let date = Local::now().date_naive();
-                                cell.set_value(date.to_string());
-                            }
-                            Value::String(s) if s == "DateTime" => {
-                                let datetime = Local::now().format("%Y-%m-%d %H:%M:%S");
-                                cell.set_value(datetime.to_string());
-                            }
-                            Value::String(s) if s == "Quantity" => {
-                                let len = datas.len();
-                                cell.set_value(len.to_string());
-                            }
-                            _ => {
-                                // 其他类型直接转为字符串
-                                cell.set_value(value.to_string().trim_matches('"').to_string());
-                            }
+                        if value == "Date" {
+                            let date = Local::now().date_naive();
+                            cell.set_value(date.to_string());
+                        } else if value == "DateTime" {
+                            let datetime = Local::now().format("%Y-%m-%d %H:%M:%S");
+                            cell.set_value(datetime.to_string());
+                        } else if value == "Quantity" {
+                            let len = datas.len();
+                            cell.set_value(len.to_string());
+                        } else {
+                            cell.set_value(value.to_string().trim_matches('"').to_string());
                         }
                     }
                     // 从第1列开始，按列遍历
@@ -156,19 +151,15 @@ pub async fn write_to_excel(
                                             config.clone(),
                                         );
                                         let new_header = row_value_header.1;
-                                        let row_value = if new_header == "deviceinf"
-                                            || new_header == "no"
-                                        {
-                                            let row = row_idx + 1;
-                                            row.to_string()
-                                        } else {
-                                            row_value_header.0
-                                        };
-                                        let (value, _decimals) = format_with_decimals(
-                                            &row_value,
-                                            &config,
-                                            &new_header,
-                                        );
+                                        let row_value =
+                                            if new_header == "deviceinf" || new_header == "no" {
+                                                let row = row_idx + 1;
+                                                row.to_string()
+                                            } else {
+                                                row_value_header.0
+                                            };
+                                        let (value, _decimals) =
+                                            format_with_decimals(&row_value, &config, &new_header);
 
                                         CellUpdate { col, row, value }
                                     }
@@ -226,7 +217,7 @@ pub async fn write_to_excel(
         Ok(MyTip::ExportDone(type_name.clone()))
     } else {
         let error = errors.join(";");
-        Err(MyError::WriteToExcelErr(type_name.clone(),error))
+        Err(MyError::WriteToExcelErr(type_name.clone(), error))
     }
 }
 
@@ -238,7 +229,7 @@ fn format_with_decimals(
     // 先检查 numbers 是否包含 header（小数位数配置）
     if let Some(decimals) = config.numbers.get(header) {
         if let Ok(num) = val.parse::<f64>() {
-            let decimals = decimals.round() as usize; // 将 f64 转换为 usize
+            let decimals = decimals.clone() as usize; // 将 f64 转换为 usize
             let formatted_string = format!("{:.decimals$}", num, decimals = decimals);
             return (formatted_string, Some(decimals));
         }
@@ -268,7 +259,7 @@ fn calculate_row_value(
     column_mapping: Arc<HashMap<String, String>>,
     config: Arc<DecimalConfig>, // 修改为接收整个 DecimalConfig
 ) -> (String, String) {
-     // 优先处理 column_name_mapping
+    // 优先处理 column_name_mapping
     if let Some(col_mapping) = column_mapping.get(&header) {
         if !col_mapping.is_empty() {
             if col_mapping == "none" {
@@ -435,7 +426,6 @@ fn calculate_row_value(
         )
     }
 }
-
 
 fn apply_cell_style(style: &mut Style) {
     style

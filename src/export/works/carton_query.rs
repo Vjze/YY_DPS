@@ -1,3 +1,14 @@
+use std::collections::{HashMap, HashSet}; // 引入 HashSet
+
+use bb8_tiberius::ConnectionManager;
+use chrono::NaiveDateTime;
+use tokio::{
+    fs,
+    io::{AsyncBufReadExt as _, BufReader},
+    task,
+};
+
+use super::query_utils::build_query_sql;
 use crate::{
     configs::type_config::get_type_infos,
     export::works::sn_query::execute_query,
@@ -5,11 +16,41 @@ use crate::{
     utils::error::MyError,
 };
 
-use super::query_utils::build_query_sql;
-use bb8_tiberius::ConnectionManager;
-use chrono::NaiveDateTime;
-use std::collections::{HashMap, HashSet}; // 引入 HashSet
+async fn get_info() -> anyhow::Result<Vec<String>, MyError> {
+    let pick = rfd::AsyncFileDialog::new().pick_file().await;
+    let path = if let Some(path) = pick {
+        path.path().display().to_string()
+    } else {
+        return Err(MyError::Zdyknown(format!("未选择文件.")));
+    };
+    let op = fs::File::open(&path).await?;
+    let mut infos = vec![];
+    let mut reader = BufReader::new(op).lines();
+    while let Ok(Some(line)) = reader.next_line().await {
+        infos.push(line);
+    }
 
+    Ok(infos)
+}
+pub async fn do_carton_query(
+    carton: String,
+    pool: &bb8::Pool<ConnectionManager>,
+    typeinfos: String,
+) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
+    if carton.is_empty() {
+        let cartons = get_info().await?;
+        let mut datas = Vec::new();
+        for carton in cartons {
+            let typeinfos = typeinfos.clone();
+            let res = carton_query_datas(carton.clone(), &pool, typeinfos).await?;
+            datas.extend(res);
+        }
+
+        Ok(datas)
+    } else {
+        carton_query_datas(carton, pool, typeinfos).await
+    }
+}
 pub async fn carton_query_datas(
     carton: String,
     pool: &bb8::Pool<ConnectionManager>,
@@ -47,39 +88,35 @@ pub async fn carton_query_datas(
         .iter()
         .map(|s| format!("'{}'", s.sn_data.sn))
         .collect::<Vec<String>>();
-    let datas = {
+
+    let datas = if sn_placeholders.len() < 1000 {
         let sn_list = sn_placeholders.join(", ");
         let sql_text_s = build_query_sql(&sn_list, pool).await?;
         execute_query(&sql_text_s, pool).await?
-    };
-    // let datas = if sn_placeholders.len() < 1000 {
-    //     let sn_list = sn_placeholders.join(", ");
-    //     let sql_text_s = build_query_sql(&sn_list, pool).await?;
-    //     execute_query(&sql_text_s, pool).await?
-    // } else {
-    //     // 创建拥有的 String，避免临时值
-    //     let v1 = sn_placeholders[..1000].join(", ");
-    //     let v2 = sn_placeholders[1000..].join(", ");
-    //     let pool = pool.clone();
-    //     let pool1 = pool.clone();
-    //     // 使用 tokio::try_join! 并行执行
-    //     let (data1, data2) = tokio::try_join!(
-    //         task::spawn(async move {
-    //             let sql_text_s_1 = build_query_sql(&v1, &pool).await?;
-    //             execute_query(&sql_text_s_1, &pool).await
-    //         }),
-    //         task::spawn(async move {
-    //             let sql_text_s_2 = build_query_sql(&v2, &pool1).await?;
-    //             execute_query(&sql_text_s_2, &pool1).await
-    //         })
-    //     )
-    //     .unwrap();
+    } else {
+        // 创建拥有的 String，避免临时值
+        let v1 = sn_placeholders[..1000].join(", ");
+        let v2 = sn_placeholders[1000..].join(", ");
+        let pool = pool.clone();
+        let pool1 = pool.clone();
+        // 使用 tokio::try_join! 并行执行
+        let (data1, data2) = tokio::try_join!(
+            task::spawn(async move {
+                let sql_text_s_1 = build_query_sql(&v1, &pool).await?;
+                execute_query(&sql_text_s_1, &pool).await
+            }),
+            task::spawn(async move {
+                let sql_text_s_2 = build_query_sql(&v2, &pool1).await?;
+                execute_query(&sql_text_s_2, &pool1).await
+            })
+        )
+        .unwrap();
 
-    //     // 合并结果
-    //     let mut data1 = data1?;
-    //     data1.extend(data2?);
-    //     data1
-    // };
+        // 合并结果
+        let mut data1 = data1?;
+        data1.extend(data2?);
+        data1
+    };
 
     // 合并 TestDate 数据并转换为 HashMap
     let mut all = all_datas
@@ -147,19 +184,19 @@ async fn get_all_data_for_box_with_pch_with_jzband(
     let mut client = pool.get().await.unwrap();
     let mut all_datas = Vec::new();
     let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
-    println!("执行get_all_data_for_box_with_pch_with_jzband：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter 
+    println!("执行get_all_data_for_box_with_pch_with_jzband：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
             from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no 
-            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY 
-            where b.CartonNo='{}' and b.PnOptionID = '-100' 
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+            where b.CartonNo='{}' and b.PnOptionID = '-100'
             order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",carton);
     let stream = client
         .query(
-            "select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter 
+            "select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
             from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no 
-            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY 
-            where b.CartonNo=@P1 and b.PnOptionID = '-100' 
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+            where b.CartonNo=@P1 and b.PnOptionID = '-100'
             order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
             &[&carton],
         )
@@ -261,19 +298,19 @@ async fn get_all_data_for_box_with_pch(
     let mut client = pool.get().await.unwrap();
     let mut all_datas = Vec::new();
     let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
-    println!("执行get_all_data_for_box_with_pch：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter 
+    println!("执行get_all_data_for_box_with_pch：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
     from [mes_Factory].[dbo].[MaterialPackSn] a
-    inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no 
-    inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY 
-    where b.CartonNo='{}' and b.PnOptionID = '-100' 
+    inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+    inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+    where b.CartonNo='{}' and b.PnOptionID = '-100'
     order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",carton);
     let stream = client
         .query(
-            "select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter 
+            "select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
             from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no 
-            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY 
-            where b.CartonNo=@P1 and b.PnOptionID = '-100' 
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+            where b.CartonNo=@P1 and b.PnOptionID = '-100'
             order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
             &[&carton],
         )
@@ -367,19 +404,19 @@ async fn get_all_data_for_carton_with_pch_with_jzband(
     let mut client = pool.get().await.unwrap();
     let mut all_datas = Vec::new();
     let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
-    println!("执行get_all_data_for_carton_with_pch_with_jzband：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter 
+    println!("执行get_all_data_for_carton_with_pch_with_jzband：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
             from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no 
-            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on b.CartonNo=c.LABEL_KEY 
-            where b.CartonNo='{}' and b.PnOptionID = '-100' 
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on b.CartonNo=c.LABEL_KEY
+            where b.CartonNo='{}' and b.PnOptionID = '-100'
             order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",carton);
     let stream = client
         .query(
-            "select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter 
+            "select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
             from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no 
-            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on b.CartonNo=c.LABEL_KEY 
-            where b.CartonNo=@P1 and b.PnOptionID = '-100' 
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on b.CartonNo=c.LABEL_KEY
+            where b.CartonNo=@P1 and b.PnOptionID = '-100'
             order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
             &[&carton],
         )
@@ -482,19 +519,19 @@ async fn get_all_data_for_carton_with_pch(
     let mut client = pool.get().await.unwrap();
     let mut all_datas = Vec::new();
     let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
-    println!("执行get_all_data_for_carton_with_pch：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter 
+    println!("执行get_all_data_for_carton_with_pch：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
             from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no 
-            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on b.CartonNo=c.LABEL_KEY 
-            where b.CartonNo='{}' and b.PnOptionID = '-100' 
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on b.CartonNo=c.LABEL_KEY
+            where b.CartonNo='{}' and b.PnOptionID = '-100'
             order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",carton);
     let stream = client
         .query(
-            "select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter 
+            "select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
             from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no 
-            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on b.CartonNo=c.LABEL_KEY 
-            where b.CartonNo=@P1 and b.PnOptionID = '-100' 
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on b.CartonNo=c.LABEL_KEY
+            where b.CartonNo=@P1 and b.PnOptionID = '-100'
             order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
             &[&carton],
         )
@@ -751,7 +788,7 @@ async fn get_data_no_pch_with_jzband(
                 }
             }
         }
-        Err(_) =>  {return Err(MyError::NoResult(format!("箱号:{carton}")))}
+        Err(_) => return Err(MyError::NoResult(format!("箱号:{carton}"))),
     }
     for data in &mut all_datas {
         // 获取 band_data
@@ -762,7 +799,7 @@ async fn get_data_no_pch_with_jzband(
         data.band_data = band_data;
     }
     if all_datas.is_empty() {
-         return Err(MyError::NoResult(format!("箱号:{carton}")));
+        return Err(MyError::NoResult(format!("箱号:{carton}")));
     }
     Ok(all_datas)
 }
@@ -781,9 +818,7 @@ async fn get_band_data(
             &[&sn],
         )
         .await?; // 添加错误处理
-    let rowets = stream
-        .into_row()
-        .await?; // 添加错误处理
+    let rowets = stream.into_row().await?; // 添加错误处理
     let (b_sn, w_sn, band_worker, band_time) = match rowets {
         Some(row) => {
             let b_sn = row.get::<&str, _>(0).unwrap_or_default().to_string();
