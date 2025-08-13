@@ -32,6 +32,8 @@ pub enum MyError {
     QueryErr,
     #[error("{0}")]
     Zdyknown(String),
+    #[error("所有查询条件不能为空!!!/n最少输入一个查询条件")]
+    AllNone,
     #[error("未知错误")]
     Unknown,
 }

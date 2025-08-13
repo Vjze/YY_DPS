@@ -1,6 +1,6 @@
-use chrono::{Local, NaiveDateTime};
 use std::{collections::HashMap, sync::Arc};
-use toml::Value;
+
+use chrono::{Local, NaiveDateTime};
 // use hashbrown::HashMap;
 use rayon::prelude::*;
 use regex::Regex;
@@ -63,16 +63,10 @@ pub async fn write_to_excel(
                         headers = Default::default();
                     }
                     // 获取 rows 字段，确保是整数
-                    let rows = if let Some(value) = decimal_config.strings.get("rows") {
-                        value.trim().to_string()
-                    } else {
-                        "1".to_string() // 默认值
-                    };
+                    let rows = decimal_config.strings.get("rows").unwrap();
                     let header_rows_to_scan = if rows == "1" {
-                        println!("进入了 'if' 分支，rows == '1'");
                         vec![highest_row]
                     } else {
-                        println!("进入了 'else' 分支，rows != '1'");
                         vec![highest_row - 1, highest_row]
                     };
                     // 处理 table_infos
@@ -116,13 +110,17 @@ pub async fn write_to_excel(
                         // 将拼接后的表头添加到 headers 列表中
                         headers.push(combined_header_for_col);
                     }
-                    println!("获取到的列名: {:?}", headers);
                     let headers = headers
                         .iter()
-                        .map(|h| re.replace_all(h, "").to_string())
+                        .map(|h| {
+                            if let Some(captures) = re.captures(&h) {
+                                let extracted = captures.get(0).map(|m| m.as_str()).unwrap_or("");
+                                extracted.to_string()
+                            } else {
+                                h.to_string()
+                            }
+                        })
                         .collect::<Vec<_>>();
-                    println!("格式化后的列名: {:?}", headers);
-
                     let last_row = sheet.get_highest_row();
                     let decimal_config = Arc::new(decimal_config);
                     // 异步获取 column_name_mapping
@@ -153,19 +151,16 @@ pub async fn write_to_excel(
                                             config.clone(),
                                         );
                                         let new_header = row_value_header.1;
-                                        let row_value = if new_header == "deviceinfo_id"
-                                            || new_header == "NO."
-                                        {
-                                            let row = row_idx + 1;
-                                            row.to_string()
-                                        } else {
-                                            row_value_header.0
-                                        };
-                                        let (value,_r) = format_with_decimals(
-                                            &row_value,
-                                            &config,
-                                            &new_header
-                                        );
+                                        let row_value =
+                                            if new_header == "deviceinf" || new_header == "no" {
+                                                let row = row_idx + 1;
+                                                row.to_string()
+                                            } else {
+                                                row_value_header.0
+                                            };
+                                        let (value, _decimals) =
+                                            format_with_decimals(&row_value, &config, &new_header);
+
                                         CellUpdate { col, row, value }
                                     }
                                 })
@@ -228,140 +223,210 @@ pub async fn write_to_excel(
 
 fn format_with_decimals(
     val: &str,
-    decimal_config: &DecimalConfig,
+    config: &Arc<DecimalConfig>,
     header: &str,
 ) -> (String, Option<usize>) {
-    // 优先处理数值格式化
-    if let Some(n) = decimal_config.numbers.get(header) {
+    // 先检查 numbers 是否包含 header（小数位数配置）
+    if let Some(decimals) = config.numbers.get(header) {
         if let Ok(num) = val.parse::<f64>() {
-            let decimals = *n as usize;
-
-            // 使用 f64 确保精度，并手动四舍五入
-            let factor = 10_f64.powi(decimals as i32);
-            let rounded_num = (num * factor).round() / factor;
-
-            let formatted_string = format!("{:.decimals$}", rounded_num, decimals = decimals);
+            let decimals = decimals.clone() as usize; // 将 f64 转换为 usize
+            let formatted_string = format!("{:.decimals$}", num, decimals = decimals);
             return (formatted_string, Some(decimals));
         }
     }
 
-    // 如果没有数值配置，则处理字符串配置（例如，"Mw" 或 "Uw"）
-    if let Some(s) = decimal_config.strings.get(header) {
-        let s = s.to_string().replace("\\\"", "").replace("\"", "");
+    // 再检查 strings 是否包含 header（字符串或单位）
+    if let Some(s) = config.strings.get(header) {
         if !s.is_empty() {
-             // 这里的逻辑可以根据你的需求来调整。
-             // 例如，如果s是单位，你可能不希望直接返回s，
-             // 而应该将单位与值拼接。
-             // 比如 "2.250 Mw"
-             // 目前的代码逻辑是如果 s 不为空，就直接返回 s，这可能不是你想要的。
-             return (s, None);
+            if s == "mw" || s == "uw" {
+                (val.to_string(), None)
+            } else {
+                (s.to_string(), None) // 直接使用配置中的字符串
+            }
+        } else {
+            (val.to_string(), None)
         }
+    } else {
+        // 如果 numbers 和 strings 都没有匹配，直接返回原值
+        (val.to_string(), None)
     }
-
-    // 默认返回原始值
-    (val.to_string(), None)
 }
+
 // 计算 row_value 的独立函数
 fn calculate_row_value(
     mut header: String,
     row_data: &HashMap<String, String>,
     column_mapping: Arc<HashMap<String, String>>,
-    config: Arc<DecimalConfig>,
+    config: Arc<DecimalConfig>, // 修改为接收整个 DecimalConfig
 ) -> (String, String) {
     // 优先处理 column_name_mapping
     if let Some(col_mapping) = column_mapping.get(&header) {
-        if col_mapping != "none" && !col_mapping.is_empty() {
-            header = col_mapping.to_string();
+        if !col_mapping.is_empty() {
+            if col_mapping == "none" {
+                header = header;
+            } else {
+                header = col_mapping.to_string();
+            }
         }
     }
 
-    let normalized_header = header.to_lowercase();
-    let result_value = match normalized_header.as_str() {
-        "beforetc-ith(ma)" => {
-            let ith_value = row_data
+    // 规范化表头：转为小写，移除空格和括号
+    // let normalized_header = header.clone().to_lowercase();
+    // .replace(" ", "")
+    // .replace("(", "")
+    // .replace(")", "");
+    let normalized_header = header;
+    // 模糊匹配逻辑，统一处理 beforeTC 和非 beforeTC 情况
+    // if normalized_header.contains("ith") {
+    if normalized_header == "beforeTC-Ith(mA)" {
+        let before_ith = before_ith_num(
+            row_data
                 .get("ith")
                 .unwrap_or(&"".to_string())
                 .parse::<f64>()
-                .unwrap_or(0.0);
-            format!("{:.2}", before_ith_num(ith_value))
-        }
-        "beforetc-im(ua)" => {
-            let im_value = row_data
+                .unwrap_or(0.0),
+        );
+        let b_ith = format!("{:.2}", before_ith);
+        (b_ith, normalized_header.clone())
+    } else if normalized_header == "beforeTC-Im(uA)" {
+        let before_im = before_im_num(
+            row_data
                 .get("im")
                 .unwrap_or(&"".to_string())
                 .parse::<f64>()
-                .unwrap_or(0.0);
-            format!("{:.2}", before_im_num(im_value))
+                .unwrap_or(0.0),
+        );
+        let b_im = format!("{:.2}", before_im);
+        (b_im, normalized_header.clone())
+    } else if normalized_header == "beforeTC-Po(mW)" {
+        if let Some(unit) = config.strings.get("unit") {
+            let unit = unit.to_string().replace("\\\"", "").replace("\"", "");
+            if unit.to_string().to_lowercase() == "uw" {
+                let po = before_po(
+                    row_data
+                        .get("po")
+                        .unwrap_or(&"".to_string())
+                        .parse::<f64>()
+                        .unwrap_or(0.0),
+                );
+                let before_po = format!("{:.2}", po);
+                (before_po, normalized_header.clone())
+            } else {
+                let po = before_po(
+                    row_data
+                        .get("po")
+                        .unwrap_or(&"".to_string())
+                        .parse::<f64>()
+                        .unwrap_or(0.0),
+                );
+                let po = po / 1000.0;
+                let before_po = format!("{:.2}", po);
+                (before_po, normalized_header.clone())
+            }
+        } else {
+            let po = before_po(
+                row_data
+                    .get("po")
+                    .unwrap_or(&"".to_string())
+                    .parse::<f64>()
+                    .unwrap_or(0.0),
+            );
+            let before_po = format!("{:.2}", po);
+            (before_po, normalized_header.clone())
         }
-        "beforetc-po(mw)" | "po" => {
-            let po_value = get_raw_po_value(row_data);
-            let unit = get_config_unit(&config);
-
-            let final_po = match normalized_header.as_str() {
-                "beforetc-po(mw)" => before_po(po_value),
-                "po" => po_value,
-                _ => po_value,
-            };
-
-            let converted_value = match unit.as_deref() {
-                Some("uw") => final_po,
-                Some("mw") => final_po / 1000.0,
-                _ => final_po,
-            };
-
-            converted_value.to_string()
+    } else if normalized_header == "po" {
+        if let Some(unit) = config.strings.get("unit") {
+            let unit = unit.to_string().replace("\\\"", "").replace("\"", "");
+            if unit.to_string().to_lowercase() == "uw" {
+                let po = row_data
+                    .get("po")
+                    .unwrap_or(&"".to_string())
+                    .parse::<f32>()
+                    .unwrap();
+                (po.to_string(), normalized_header.clone())
+            } else {
+                let po = row_data
+                    .get("po")
+                    .unwrap_or(&"".to_string())
+                    .parse::<f32>()
+                    .unwrap();
+                let po = po / 1000.0;
+                (po.to_string(), normalized_header.clone())
+            }
+        } else {
+            let po = row_data
+                .get("po")
+                .unwrap_or(&"".to_string())
+                .parse::<f32>()
+                .unwrap();
+            let po = po / 1000.0;
+            (
+                // row_data.get("po").unwrap_or(&"".to_string()).to_string(),
+                po.to_string(),
+                normalized_header.clone(),
+            )
         }
-        "beforetc-vf(v)" => {
-            let vf_value = row_data
+    } else if normalized_header == "beforeTC-Vf(V)" {
+        let before_vf = before_vf_num(
+            row_data
                 .get("vf")
                 .unwrap_or(&"".to_string())
                 .parse::<f64>()
-                .unwrap_or(0.0);
-            format!("{:.2}", before_vf_num(vf_value))
-        }
-        "beforetc-se(w/a)" => {
-            let po_value = before_po(get_raw_po_value(row_data)) / 1000.0;
-            let before_se = po_value / 20.0;
-            format!("{:.3}", before_se)
-        }
-        "deltap（db）" => {
-            let po_value = get_raw_po_value(row_data) / 1000.0;
-            let before_po = before_po(po_value);
-            calculate_tc(po_value, before_po).to_string()
-        }
-        "testtime" => {
-            if let Some(date_str) = row_data.get("testtime") {
-                if let Ok(datetime) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%d %H:%M:%S") {
-                    datetime.date().to_string()
-                } else {
-                    "".to_string()
-                }
-            } else {
-                "".to_string()
-            }
-        }
-        "no." => (row_data.get("NO.")).unwrap_or(&"".to_string()).to_string(),
-        "deviceinfo_id" => (row_data.get("deviceinfo_id")).unwrap_or(&"".to_string()).to_string(),
-        _ => row_data.get(&header).unwrap_or(&"".to_string()).to_string(),
-    };
+                .unwrap_or(0.0),
+        );
+        let b_vf = format!("{:.2}", before_vf);
+        (b_vf, normalized_header.clone())
+    } else if normalized_header == "beforeTC-SE(W/A)" {
+        let po = before_po(
+            row_data
+                .get("po")
+                .unwrap_or(&"".to_string())
+                .parse::<f64>()
+                .unwrap_or(0.0),
+        );
+        let po = po / 1000.0;
+        let before_se = po / 20.0;
+        let b_se = format!("{:.3}", before_se);
+        (b_se, normalized_header.clone())
+    } else if normalized_header == "deltaP（dB）" {
+        let po = row_data
+            .get("po")
+            .unwrap_or(&"".to_string())
+            .parse::<f64>()
+            .unwrap_or(0.0)
+            / 1000.0;
+        let before_po = before_po(po);
+        let tc = calculate_tc(po, before_po).to_string();
+        // let delta = format!("{:.3}", tc);
 
-    (result_value, header)
+        (tc, normalized_header.clone())
+    } else if normalized_header == "testtime" {
+        let date = row_data
+            .get("testtime")
+            .unwrap_or(&"".to_string())
+            .to_string();
+        let datetime = NaiveDateTime::parse_from_str(&date, "%Y-%m-%d %H:%M:%S").unwrap();
+
+        let date = datetime.date().to_string();
+        (date, normalized_header.clone())
+    } else if normalized_header == "time" {
+        let date = row_data
+            .get("carton_packtime")
+            .unwrap_or(&"".to_string())
+            .to_string();
+        (date, normalized_header.clone())
+    } else {
+        // 在没有特殊匹配规则的情况下，使用规范化后的 header 来获取 row_data 中的值
+        (
+            row_data
+                .get(&normalized_header)
+                .unwrap_or(&"".to_string())
+                .to_string(),
+            normalized_header.clone(),
+        )
+    }
 }
-fn get_raw_po_value(row_data: &HashMap<String, String>) -> f64 {
-    row_data
-        .get("po")
-        .unwrap_or(&"".to_string())
-        .parse::<f64>()
-        .unwrap_or(0.0)
-}
-fn get_config_unit(config: &Arc<DecimalConfig>) -> Option<String> {
-    config.strings.get("unit").map(|s| {
-        s.to_string()
-            .replace("\\\"", "")
-            .replace("\"", "")
-            .to_lowercase()
-    })
-}
+
 fn apply_cell_style(style: &mut Style) {
     style
         .get_borders_mut()

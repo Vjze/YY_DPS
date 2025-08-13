@@ -24,7 +24,6 @@ rand = { version = "0.9.1"}
 rand_distr = {version = "0.5.1"}
 futures = {version = "0.3.31"}
 regex ={ version = "1.10.0"}
-rust_xlsxwriter = "0.89"
 bb8-tiberius = "0.16"
 bb8 = "0.9"
 num_cpus = "1.16"

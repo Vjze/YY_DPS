@@ -16,7 +16,7 @@ live_design! {
     use crate::shared::widgets::*;
     use crate::shared::widgets::SidebarMenuButton;
     use crate::shared::desktop_buttons::MolyDesktopButton;
-
+    use crate::querys::querys_view::QueryScreen;
     use crate::export::export_view::ExportScreen;
     use crate::settings::providers_screen::ProvidersScreen;
     use crate::widgets::dialog::*;
@@ -43,7 +43,7 @@ live_design! {
         }
 
         export_frame = <ExportScreen> {visible: true}
-        // sn_frame = <MolyServerScreen> {visible: false}
+        querys_frame = <QueryScreen> {visible: false}
         providers_frame = <ProvidersScreen> {visible: false}
     }
 
@@ -191,6 +191,8 @@ impl LiveRegister for App {
         crate::export::live_design(cx);
         crate::settings::live_design(cx);
         crate::widgets::live_design(cx);
+        crate::querys::live_design(cx);
+
     }
 }
 
@@ -249,7 +251,7 @@ impl MatchEvent for App {
         } else if navigate_to_export {
             self.navigate_to(cx, id!(application_pages.export_frame));
         } else if navigate_to_sn {
-            self.navigate_to(cx, id!(application_pages.sn_frame));
+            self.navigate_to(cx, id!(application_pages.querys_frame));
         }
         for action in actions {
             if let Some(err) = action.downcast_ref::<MyError>() {
@@ -282,7 +284,7 @@ impl App {
     fn navigate_to(&mut self, cx: &mut Cx, id: &[LiveId]) {
         let providers_id = id!(application_pages.providers_frame);
         let export_id = id!(application_pages.export_frame);
-        let sn_id = id!(application_pages.sn_frame);
+        let sn_id = id!(application_pages.querys_frame);
 
         if id != providers_id {
             self.ui.widget(providers_id).set_visible(cx, false);

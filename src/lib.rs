@@ -8,3 +8,4 @@ pub mod store;
 pub mod structs;
 pub mod utils;
 pub mod widgets;
+pub mod querys;

@@ -160,7 +160,7 @@ impl Widget for ExportScreen {
             self.view
                 .drop_down(id!(type_selector))
                 .set_labels(cx, store.types.clone());
-            if store.datas.is_empty() {
+            if store.datas.is_none() {
                 self.view.button(id!(export_btn)).set_disabled(cx, true);
             } else {
                 self.view.button(id!(export_btn)).set_disabled(cx, false);
@@ -198,10 +198,11 @@ impl WidgetMatchEvent for ExportScreen {
                 });
                 match res {
                     Ok(r) => {
-                        store.datas = r;
+                        store.datas = Some(r);
                     }
                     Err(e) => {
                         Cx::post_action(e);
+                        store.datas = None;
                     }
                 }
             }

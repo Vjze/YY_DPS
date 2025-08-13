@@ -17,7 +17,7 @@ pub struct Store {
     pub templates: Vec<String>,
     pub all_column_name: Vec<String>,
     pub sql_tables: Vec<String>,
-    pub datas: Vec<HashMap<String, String>>,
+    pub datas: Option<Vec<HashMap<String, String>>>,
     pub type_infos: (Vec<String>, Infos),
     pub template_infos: DecimalConfig,
     pub map_infos: HashMap<String, String>,
