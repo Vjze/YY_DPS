@@ -1,5 +1,7 @@
 use makepad_widgets::*;
 
+use crate::store::Store;
+
 use super::providers::ConnectionSettingsAction;
 
 live_design! {
@@ -14,6 +16,7 @@ live_design! {
     use crate::settings::type_setting_view::TypeView;
     use crate::settings::template_setting_view::TemplateView;
     use crate::settings::map_setting_view::MapView;
+    use crate::widgets::login_view::LoginView;
 
     HorizontalSeparator = <RoundedView> {
         width: 2, height: Fill
@@ -45,13 +48,14 @@ live_design! {
     pub ProvidersScreen = {{ProvidersScreen}} {
         width: Fill, height: Fill
         spacing: 20
-        flow: Down
-
-        header = <View> {
+        flow: Overlay
+        <View> {
+            width: Fill, height: Fill
+            flow: Down
+            header = <View> {
             height: Fit
             spacing: 20
             flow: Down
-
             padding: {left: 30, top: 40}
             <Label> {
                 draw_text:{
@@ -75,8 +79,17 @@ live_design! {
                 padding: {top: 10}
                 providers = <Providers> {}
                 setting_view = <SettingPages> {}
+                
+        }
+        }
+        
+        login_view = <Modal> {
+            content : {
+                <LoginView> {}
+            } 
         }
     }
+    
 }
 
 #[derive(Widget, LiveHook, Live)]
@@ -89,6 +102,13 @@ pub struct ProvidersScreen {
 
 impl Widget for ProvidersScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        if let Some(store) = scope.data.get_mut::<Store>(){
+            if store.logined {
+                self.view.modal(id!(login_view)).close(cx);
+            }else{
+                self.view.modal(id!(login_view)).open(cx);
+            }
+        }
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
     }

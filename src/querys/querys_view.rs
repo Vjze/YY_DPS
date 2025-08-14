@@ -345,26 +345,26 @@ live_design! {
 
              }
         }
-        test_btn = <Button> {
-            width: Fit
-            height: 40
-            padding: {left: 20, right: 20, top: 0, bottom: 0}
-            text: "测试"
-            draw_text: {
-                color: #000000,
-                text_style: {
-                    font_size:16
-                }
-            }
-            draw_bg: {
-                uniform border_size: 1.0
-                uniform border_radius: 5.0
-                uniform color: #AFEEEE
-                uniform color_hover: #9370DB
-                uniform color_disabled: #DCDCDC
+        // test_btn = <Button> {
+        //     width: Fit
+        //     height: 40
+        //     padding: {left: 20, right: 20, top: 0, bottom: 0}
+        //     text: "测试"
+        //     draw_text: {
+        //         color: #000000,
+        //         text_style: {
+        //             font_size:16
+        //         }
+        //     }
+        //     draw_bg: {
+        //         uniform border_size: 1.0
+        //         uniform border_radius: 5.0
+        //         uniform color: #AFEEEE
+        //         uniform color_hover: #9370DB
+        //         uniform color_disabled: #DCDCDC
 
-             }
-        }
+        //      }
+        // }
 
         qty_label = <Label> {
             padding: {

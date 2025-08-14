@@ -36,8 +36,9 @@ pub async fn do_carton_query(
     carton: String,
     pool: &bb8::Pool<ConnectionManager>,
     typeinfos: String,
+    is_multi: bool,
 ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
-    if carton.is_empty() {
+    if carton.is_empty() && is_multi{
         let cartons = get_info().await?;
         let mut datas = Vec::new();
         for carton in cartons {

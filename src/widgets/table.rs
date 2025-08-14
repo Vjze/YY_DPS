@@ -6,6 +6,8 @@ live_design! {
     use link::theme::*;
     use link::shaders::*;
     use link::widgets::*;
+    use crate::shared::styles::*;
+    use crate::shared::widgets::*;
     use crate::widgets::row::*;
     RowHeaderLabel = <View> {
         width: 100,
@@ -21,18 +23,17 @@ live_design! {
             }
         }
     }
-    HeaderRow = <RoundedView> {
+    HeaderRow = <View> {
         align: {x: 0.0, y: 0.5}
         width: Fill
         height: Fit,
-        // padding: {top: 10, bottom: 10, left: 20, right: 20}
-        // Heads-up: the spacing and row header widths need to match the row values
         spacing: 30,
         show_bg: true
         draw_bg: {
-            color: #F2F4F7;
+            fn pixel(self) -> vec4 {
+                return #F2F4F7;
+            }
         }
-
 
         <RowHeaderLabel> {width: 180, label = {text: "箱号"} }
         <RowHeaderLabel> {width: 180, label = {text: "盒号"} }      
@@ -48,14 +49,13 @@ live_design! {
             height: Fill,
             show_bg: true
             draw_bg: {
-                color: (MAIN_BG_COLOR)
+                color: (MAIN_BG_COLOR),
                 border_radius: 5
                 uniform shadow_color: #0001
                 shadow_radius: 12.0,
                 shadow_offset: vec2(0.0,-1.5)
             }
             flow: Down,
-            padding: {left:15}
             HeaderRow = <HeaderRow> {
                 cursor: Default
             }

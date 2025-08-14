@@ -13,8 +13,7 @@ live_design! {
     use crate::widgets::table::InfosTable;
     FirstRow = <View> {
         width: Fill,
-        height: 100,
-        padding: 15,
+        height: Fit,
         spacing:20,
         // show_bg: true,
         // draw_bg: {
@@ -139,9 +138,9 @@ live_design! {
             width: Fill,
             height: Fill,
             flow: Down,
-            <FirstRow> {
-
-            }
+            padding: 15,
+            spacing: 10,
+            <FirstRow> {}
             <InfosTable> {}
         }
     }
@@ -191,10 +190,11 @@ impl WidgetMatchEvent for ExportScreen {
         if query_btn.clicked(actions) {
             let _guard = rt.enter();
             let carton = input.text().clone();
+            let is_multi = query_btn.text() == "批量查询";
             if let Some(store) = scope.data.get_mut::<Store>() {
                 let pool = store.sql_pool.clone().unwrap();
                 let res = rt.block_on(async move {
-                    do_carton_query(carton, &pool, type_name.selected_label()).await
+                    do_carton_query(carton, &pool, type_name.selected_label(), is_multi).await
                 });
                 match res {
                     Ok(r) => {

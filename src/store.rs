@@ -23,6 +23,7 @@ pub struct Store {
     pub map_infos: HashMap<String, String>,
     pub sql_pool: Option<bb8::Pool<ConnectionManager>>,
     pub grid_area: Area, // 存储 DecimalGrid 的 Area
+    pub logined: bool,
 }
 
 impl Store {
@@ -48,28 +49,28 @@ impl Store {
                 Vec::default()
             }
         };
-        let sql_pool = match client().await {
-            Ok(res) => Some(res),
-            Err(e) => {
-                Cx::post_action(e);
-                None
-            }
-        };
-        let pool = sql_pool.clone().unwrap();
-        let sql_tables = match get_tables(&pool).await{
-            Ok(res) => {
-                res
-            },
-            Err(e) => {
-                Cx::post_action(e);
-                Vec::default()
-            },
-        };
+        // let sql_pool = match client().await {
+        //     Ok(res) => Some(res),
+        //     Err(e) => {
+        //         Cx::post_action(e);
+        //         None
+        //     }
+        // };
+        // let pool = sql_pool.clone().unwrap();
+        // let sql_tables = match get_tables(&pool).await{
+        //     Ok(res) => {
+        //         res
+        //     },
+        //     Err(e) => {
+        //         Cx::post_action(e);
+        //         Vec::default()
+        //     },
+        // };
         Self {
             types,
             templates,
-            sql_pool,
-            sql_tables,
+            // sql_pool,
+            // sql_tables,
             all_column_name,
             ..Default::default()
         }

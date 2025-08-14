@@ -20,7 +20,7 @@ live_design! {
     use crate::export::export_view::ExportScreen;
     use crate::settings::providers_screen::ProvidersScreen;
     use crate::widgets::dialog::*;
-
+    
 
     ICON_CHAT = dep("crate://self/resources/icons/chat.svg")
     ICON_LOCAL = dep("crate://self/resources/icons/local.svg")
@@ -207,10 +207,6 @@ impl AppMain for App {
             let store = rt.block_on(async move { Store::init().await });
             self.store = Some(store);
         }
-        // println!("store = {:?}",self.store);
-        // If the store is not loaded, do not continue with store-dependent logic
-        // however, we still want the window to handle Makepad events. (e.g. window initialization events, platform context changes, etc.)
-        // self.store = Some(Store { ..Default::default() });
         let Some(store) = self.store.as_mut() else {
             self.ui.handle_event(cx, event, &mut Scope::empty());
             return;
