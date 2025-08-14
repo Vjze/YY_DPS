@@ -8,7 +8,7 @@ live_design! {
     use link::widgets::*;
     use crate::widgets::row::*;
     RowHeaderLabel = <View> {
-        width: 100
+        width: 100,
         height: Fit
         align: {x: 0.0, y: 0.5  }
         label = <Label> {
@@ -24,40 +24,38 @@ live_design! {
     HeaderRow = <RoundedView> {
         align: {x: 0.0, y: 0.5}
         width: Fill
-        height: 50,
+        height: Fit,
         // padding: {top: 10, bottom: 10, left: 20, right: 20}
         // Heads-up: the spacing and row header widths need to match the row values
         spacing: 30,
-        // show_bg: true
-        // draw_bg: {
-        //     fn pixel(self) -> vec4 {
-        //         return mix(#AFEEEE,#DCDCDC,self.pos.x);
-        //     }
-        // }
+        show_bg: true
+        draw_bg: {
+            color: #F2F4F7;
+        }
 
 
-        <RowHeaderLabel> {  label = {text: "箱号"} }
-        <RowHeaderLabel> {  label = {text: "盒号"} }
-        <RowHeaderLabel> {  label = {text: "Sn"} }
-        <RowHeaderLabel> {  label = {text: "Ith"} }
-        <RowHeaderLabel> {  label = {text: "Pf"} }
-        <RowHeaderLabel> {  label = {text: "Se"} }
-        <RowHeaderLabel> {  label = {text: "Sen"} }
-        <RowHeaderLabel> {  label = {text: "测试时间"} }
+        <RowHeaderLabel> {width: 180, label = {text: "箱号"} }
+        <RowHeaderLabel> {width: 180, label = {text: "盒号"} }      
+        <RowHeaderLabel> {width: 180, label = {text: "Sn"} }
+        <RowHeaderLabel> {width: 70, label = {text: "Ith"} }
+        <RowHeaderLabel> {width: 70, label = {text: "Po"} }
+        <RowHeaderLabel> {width: 70, label = {text: "Se"} }
+        <RowHeaderLabel> {width: 70, label = {text: "Sen"} }
+        <RowHeaderLabel> {width: 300, label = {text: "测试时间"} }
     }
-    pub InfosTable = {{InfosTable}} <RoundedView> {
+    pub InfosTable = {{InfosTable}} <RoundedShadowView> {
             width: Fill,
             height: Fill,
+            show_bg: true
+            draw_bg: {
+                color: (MAIN_BG_COLOR)
+                border_radius: 5
+                uniform shadow_color: #0001
+                shadow_radius: 12.0,
+                shadow_offset: vec2(0.0,-1.5)
+            }
             flow: Down,
             padding: {left:15}
-            // show_bg: true
-            // draw_bg: {
-            //     // color: #f9f9f9,
-            //     border_radius: 5,
-            //     // uniform shadow_color: #0001
-            //     // shadow_radius: 12.0,
-            //     // shadow_offset: vec2(0.0,-1.5)
-            // }
             HeaderRow = <HeaderRow> {
                 cursor: Default
             }

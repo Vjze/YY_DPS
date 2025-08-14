@@ -13,14 +13,14 @@ live_design! {
         width: Fill,
         height: 1,
         // padding: {top: 0, bottom: 0, left: 20, right: 20},
-        margin: {top: 0, bottom: 0, left: 20, right: 20},
+        // margin: {top: 0, bottom: 0, left: 20, right: 20},
         show_bg: true,
         draw_bg: {
             color: #1C1C1C,
         }
     }
     Col = <View> {
-        width: 100
+        width: Fit
         align: {x: 0.0, y: 0.5}
         label = <Label> {
             draw_text: {
@@ -42,17 +42,17 @@ live_design! {
             h_wrapper = <View> {
                 flow: Right
                 width: Fit
-                padding: {top: 10, bottom: 10, left: 20, right: 20}
+                // padding: {top: 10, bottom: 10, left: 20, right: 20}
                 spacing: 30
 
-                carton_no = <Col> {}
-                box_no =  <Col> {}
-                sn =  <Col> {}
-                ith =  <Col> {}
-                pf =  <Col> {}
-                se =  <Col> {}
-                sen =  <Col> {}
-                testtime = <Col> {}
+                carton_no = <Col> {width: 180}
+                box_no =  <Col> {width: 180}
+                sn =  <Col> {width: 180}
+                ith =  <Col> {width: 70}
+                pf =  <Col> {width: 70}
+                se =  <Col> {width: 70}
+                sen =  <Col> {width: 70}
+                testtime = <Col> {width: 300}
             }
             separator_line = <Line> {}
         }
@@ -89,7 +89,7 @@ impl Widget for DataRow {
             let label = self.label(id!(ith.label));
             label.set_text(cx, &iths);
 
-            let pfs = data.get("pf").unwrap().clone();
+            let pfs = data.get("po").unwrap().clone();
             let label = self.label(id!(pf.label));
             label.set_text(cx, &pfs);
 
@@ -101,7 +101,7 @@ impl Widget for DataRow {
             let label = self.label(id!(sen.label));
             label.set_text(cx, &sents);
 
-            let testtimes = data.get("testdate").unwrap().clone();
+            let testtimes = data.get("testtime").unwrap().clone();
             let label = self.label(id!(testtime.label));
             label.set_text(cx, &testtimes);
         };

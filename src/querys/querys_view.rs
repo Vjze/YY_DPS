@@ -2,6 +2,7 @@ use crate::querys::works::box_querys::get_box_datas;
 use crate::querys::works::carton_querys::get_carton_datas;
 use crate::querys::works::sn_query::sn_query_datas;
 use crate::{export::works::carton_query::do_carton_query, store::Store, utils::error::MyError};
+use chrono::Local;
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
 live_design! {
@@ -344,7 +345,26 @@ live_design! {
 
              }
         }
+        test_btn = <Button> {
+            width: Fit
+            height: 40
+            padding: {left: 20, right: 20, top: 0, bottom: 0}
+            text: "测试"
+            draw_text: {
+                color: #000000,
+                text_style: {
+                    font_size:16
+                }
+            }
+            draw_bg: {
+                uniform border_size: 1.0
+                uniform border_radius: 5.0
+                uniform color: #AFEEEE
+                uniform color_hover: #9370DB
+                uniform color_disabled: #DCDCDC
 
+             }
+        }
 
         qty_label = <Label> {
             padding: {
@@ -400,14 +420,14 @@ impl Widget for QueryScreen {
 
 impl WidgetMatchEvent for QueryScreen {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let input = self.view.text_input(id!(carton_input));
+        let input = self.view.text_input(id!(query_input));
         let query_btn = self.view.button(id!(query_btn));
         let _export_btn = self.view.button(id!(export_btn));
         let type_select = self.view.drop_down(id!(type_selector));
         let use_date = self.view.check_box(id!(date));
         let start_time_input = self.view.text_input(id!(start_time_input));
         let end_time_input = self.view.text_input(id!(end_time_input));
-        let pn_select = self.view.text_input(id!(pn_input));
+        let pn_input = self.view.text_input(id!(pn_input));
         let worker_input = self.view.text_input(id!(worker_input));
         let devices = self.view.drop_down(id!(devices_selector));
         let res = self.view.drop_down(id!(result_selector));
@@ -417,7 +437,7 @@ impl WidgetMatchEvent for QueryScreen {
             if input.text().is_empty()
                 && start_time_input.text().is_empty()
                 && end_time_input.text().is_empty()
-                && pn_select.text().is_empty()
+                && pn_input.text().is_empty()
                 && worker_input.text().is_empty()
             {
                 Cx::post_action(MyError::AllNone);
@@ -425,16 +445,17 @@ impl WidgetMatchEvent for QueryScreen {
                 let _guard = rt.enter();
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     let query_input = input.text();
-                    let query_type = type_select.text();
+                    let query_type = type_select.selected_label();
                     let use_date = use_date.active(cx);
                     let query_start_time = start_time_input.text();
                     let query_end_time = end_time_input.text();
-                    let query_pn = pn_select.text();
+                    let query_pn = pn_input.text();
                     let query_worker = worker_input.text();
                     let query_devices = devices.selected_label();
                     let query_result = res.selected_label();
                     let pool = store.sql_pool.clone().unwrap();
-                    if query_type == "sn" {
+                    println!("{}", query_type);
+                    if query_type == "Sn" {
                         let sns = if query_input.is_empty() {
                             vec![]
                         } else {
@@ -504,13 +525,19 @@ impl WidgetMatchEvent for QueryScreen {
                                 Cx::post_action(err);
                                 store.datas = None;
                             }
-                        } 
+                        }
                     }
                 }
             }
         }
+ 
         if use_date.active(cx) {
             self.view.widget(id!(date_view)).set_visible(cx, true);
+            let date = Local::now().date_naive();
+            let start_time = date.format("%Y-%m-%d 00:00:00").to_string();
+            let end_time = date.format("%Y-%m-%d 23:59:59").to_string();
+            start_time_input.set_text(cx, &start_time);
+            end_time_input.set_text(cx, &end_time);
         } else {
             self.view.widget(id!(date_view)).set_visible(cx, false);
         }

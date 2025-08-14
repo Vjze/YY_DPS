@@ -4,38 +4,57 @@ use bb8_tiberius::ConnectionManager;
 use chrono::NaiveDateTime;
 
 use super::query_utils::*;
-use crate::{structs::Data, utils::error::MyError};
+use crate::{
+    structs::{CartonData, Data, Datas, PackData},
+    utils::error::MyError,
+};
 
-fn format_data(data: Vec<Data>) -> Vec<HashMap<String, String>> {
-    data.into_iter()
+fn format_data(datas: Vec<Datas>) -> Vec<HashMap<String, String>> {
+    let all = datas
+        .into_iter()
         .map(|d| {
+            // 展平 Datas 为 HashMap
             let mut map = HashMap::new();
-            map.insert("sn".to_string(), d.sn);
-            map.insert("ith".to_string(), d.ith);
-            map.insert("vf".to_string(), d.vf);
-            map.insert("im".to_string(), d.im);
-            map.insert("po".to_string(), d.po);
-            map.insert("rs".to_string(), d.rs);
-            map.insert("se".to_string(), d.se);
-            map.insert("sen".to_string(), d.sen);
-            map.insert("res".to_string(), d.res);
-            map.insert("icc".to_string(), d.icc);
-            map.insert("vbr".to_string(), d.vbr);
-            map.insert("kink".to_string(), d.kink);
-            map.insert("imkink".to_string(), d.imkink);
-            map.insert("testtime".to_string(), d.testtime);
-            map.insert("tester".to_string(), d.tester);
-            map.insert("iop".to_string(), d.iop);
-            map.insert("idark".to_string(), d.idark);
-            map.insert("result".to_string(), d.result);
-            map.insert("i_xtalk".to_string(), d.i_xtalk);
-            if !d.mdpid.is_empty() {
-                map.insert("mdpid".to_string(), d.mdpid);
-            }
-            map.insert("yypn".to_string(), d.yypn);
+            // CartonData
+            map.insert("carton_no".to_string(), d.carton_data.carton_no);
+            map.insert("pch".to_string(), d.carton_data.pch);
+            map.insert("yypn".to_string(), d.carton_data.yypn);
+            map.insert("carton_worker".to_string(), d.carton_data.carton_worker);
+            map.insert("carton_packtime".to_string(), d.carton_data.carton_packtime);
+            // PackData
+            map.insert("box_no".to_string(), d.pack_data.box_no);
+            map.insert("pack_worker".to_string(), d.pack_data.pack_worker);
+            map.insert("pack_packtime".to_string(), d.pack_data.pack_packtime);
+            // BandData
+            map.insert("w_sn".to_string(), d.band_data.w_sn);
+            map.insert("b_sn".to_string(), d.band_data.b_sn);
+            map.insert("bandtime".to_string(), d.band_data.band_time);
+            map.insert("band_worker".to_string(), d.band_data.band_worker);
+            // Data
+            map.insert("sn".to_string(), d.sn_data.sn);
+            map.insert("ith".to_string(), d.sn_data.ith);
+            map.insert("vf".to_string(), d.sn_data.vf);
+            map.insert("im".to_string(), d.sn_data.im);
+            map.insert("po".to_string(), d.sn_data.po);
+            map.insert("rs".to_string(), d.sn_data.rs);
+            map.insert("se".to_string(), d.sn_data.se);
+            map.insert("iop".to_string(), d.sn_data.iop);
+            map.insert("kink".to_string(), d.sn_data.kink);
+            map.insert("imkink".to_string(), d.sn_data.imkink);
+            map.insert("sen".to_string(), d.sn_data.sen);
+            map.insert("vbr".to_string(), d.sn_data.vbr);
+            map.insert("res".to_string(), d.sn_data.res);
+            map.insert("icc".to_string(), d.sn_data.icc);
+            map.insert("idark".to_string(), d.sn_data.idark);
+            map.insert("testtime".to_string(), d.sn_data.testtime);
+            map.insert("result".to_string(), d.sn_data.result);
+            map.insert("tester".to_string(), d.sn_data.tester);
+            map.insert("i_xtalk".to_string(), d.sn_data.i_xtalk);
+            map.insert("mdpid".to_string(), d.sn_data.mdpid);
             map
         })
-        .collect()
+        .collect::<Vec<HashMap<String, String>>>();
+    all
 }
 
 pub async fn sn_query_datas(
@@ -467,10 +486,142 @@ pub async fn sn_query_datas(
     };
 
     let data = execute_query_sn(&sql_text_s, pool).await?;
-    let datas = format_data(data);
+    let datas = get_all_datas(pool, data).await?;
+    let datas = format_data(datas);
     Ok(datas)
 }
+async fn get_all_datas(
+    pool: &bb8::Pool<ConnectionManager>,
+    sn_data: Vec<Data>,
+) -> Result<Vec<Datas>, MyError> {
+    println!("开始查询Box");
+    let mut datas_list = vec![];
+    let mut box_nos = vec![];
+    let sns = sn_data
+        .iter()
+        .map(|x| x.sn.clone())
+        .collect::<Vec<String>>();
+    let sn = sns.join(", ");
+    let mut client = pool.get().await.unwrap();
+    let sql_text_s = if sns.len() == 1 {
+        format!(
+            "select Pack_no, Sn, creator, createtime
+            from [mes_Factory].[dbo].[MaterialPackSn]
+            where sn IN ('{}') and PnOptionID = '-100'
+            order by CreateTime desc, Pack_no asc",
+            sn
+        )
+    } else {
+        format!(
+            "select Pack_no, Sn, creator, createtime
+            from [mes_Factory].[dbo].[MaterialPackSn]
+            where sn IN ({}) and PnOptionID = '-100'
+            order by CreateTime desc, Pack_no asc",
+            sn
+        )
+    };
+    println!("查询Box的SQL: {}", sql_text_s);
+    let stream = client.simple_query(sql_text_s).await?;
+    let rows = stream.into_results().await?;
+    for rowset in rows {
+        for row in rowset {
+            let box_no = match row.get::<&str, _>(0) {
+                Some(s) => s.to_string(),
+                None => "".to_string(),
+            };
+            if box_no.is_empty() {
+                break;
+            }
+            let sn = row.get::<&str, _>(1).unwrap().to_string();
+            let pack_worker = row.get::<&str, _>(2).unwrap().to_string();
+            let pack_time = row
+                .get::<NaiveDateTime, _>(3)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
 
+            let pack_data = PackData {
+                box_no: box_no.clone(),
+                pack_worker,
+                pack_packtime: pack_time,
+            };
+            let sn_data = sn_data
+                .iter()
+                .find(|x| x.sn == sn)
+                .map(|x| x.clone())
+                .unwrap();
+            let datas = Datas {
+                pack_data: pack_data,
+                sn_data,
+                ..Default::default()
+            };
+            datas_list.push(datas);
+            box_nos.push(box_no.clone());
+        }
+    }
+    println!("查询到的Box数量: {}", box_nos.len());
+
+    if !box_nos.is_empty() {
+        println!("开始查询Caroton");
+        let box_no = datas_list
+            .iter()
+            // .find(|s| s.pack_data.box_no == box_no)
+            .map(|x| x.pack_data.box_no.clone())
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        let sql_text_s = if box_nos.len() == 1 {
+            format!(
+                "select CartonNo, Packing_no from [mes_Factory].[dbo].[packing_carton] 
+            where Packing_no in ('{}') and PnOptionID = '-100'",
+                box_no
+            )
+        } else {
+            format!(
+                "select CartonNo, Packing_no from [mes_Factory].[dbo].[packing_carton] 
+            where Packing_no in ({}) and PnOptionID = '-100'",
+                box_no
+            )
+        };
+        let stream = client.simple_query(sql_text_s).await?;
+
+        let rows = stream.into_results().await?;
+        for rowset in rows {
+            for row in rowset {
+                let carton_no = match row.get::<&str, _>(0) {
+                    Some(s) => s.to_string(),
+                    None => "".to_string(),
+                };
+                let box_no = row.get::<&str, _>(1).unwrap().to_string();
+                let carton_data = CartonData {
+                    carton_no,
+                    ..Default::default()
+                };
+                let box_data = datas_list
+                    .iter()
+                    .find(|x| x.pack_data.box_no == box_no)
+                    .map(|x| x.pack_data.clone())
+                    .unwrap();
+                let sn_data = datas_list
+                    .iter()
+                    .find(|x| x.pack_data.box_no == box_no)
+                    .map(|x| x.sn_data.clone())
+                    .unwrap();
+                let datas = Datas {
+                    pack_data: box_data,
+                    carton_data: carton_data,
+                    sn_data,
+                    ..Default::default()
+                };
+                datas_list.push(datas);
+            }
+        }
+
+        Ok(datas_list)
+    } else {
+        Ok(Vec::new())
+    }
+}
 pub async fn execute_query(
     sql_text_s: &str,
     pool: &bb8::Pool<ConnectionManager>,
@@ -592,6 +743,7 @@ pub async fn execute_query_sn(
     }
 
     let datas: Vec<Data> = sn_map.into_iter().map(|(_, v)| v).collect();
+
     if datas.is_empty() {
         return Err(MyError::NoResult("箱号".to_string()));
     }
