@@ -9,3 +9,4 @@ pub mod structs;
 pub mod utils;
 pub mod widgets;
 pub mod querys;
+pub mod login_view;

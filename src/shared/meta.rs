@@ -65,7 +65,7 @@ impl Meta {
 #[allow(dead_code)]
 impl MetaRef {
     /// Calls `get_value` on the inner widget.
-    pub fn get_value<T: Any>(&self) -> Option<Ref<T>> {
+    pub fn get_value<T: Any>(&self) -> Option<Ref<'_, T>> {
         let Some(inner) = self.borrow() else {
             return None;
         };

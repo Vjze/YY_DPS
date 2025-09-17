@@ -19,7 +19,7 @@ live_design! {
         align: {x:0.5, y:0.5},
         flow: Right
         map_name = <Label> {
-            width: 110,
+            width: 140,
             draw_text: {
                 text_style: <REGULAR_FONT>{
                     font_size: 12
@@ -27,7 +27,7 @@ live_design! {
                 color: #000
             }
         }
-        map_selector = <DropDown> {
+        map_selector = <DropDownFlat> {
             width: 160,height:40
             // labels:["template_1","template_2","template_3"],
             labels: [""],

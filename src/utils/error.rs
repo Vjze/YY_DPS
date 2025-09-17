@@ -54,3 +54,8 @@ pub enum MyTip {
     #[error("未知错误")]
     Unknown,
 }
+#[derive(Debug)]
+pub enum LoginResult {
+   Logined,
+   FreeLogin
+}

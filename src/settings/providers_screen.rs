@@ -1,6 +1,5 @@
 use makepad_widgets::*;
 
-use crate::store::Store;
 
 use super::providers::ConnectionSettingsAction;
 
@@ -83,11 +82,11 @@ live_design! {
         }
         }
         
-        login_view = <Modal> {
-            content : {
-                <LoginView> {}
-            } 
-        }
+        // login_view = <Modal> {
+        //     content : {
+        //         <LoginView> {}
+        //     } 
+        // }
     }
     
 }
@@ -102,13 +101,13 @@ pub struct ProvidersScreen {
 
 impl Widget for ProvidersScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        if let Some(store) = scope.data.get_mut::<Store>(){
-            if store.logined {
-                self.view.modal(id!(login_view)).close(cx);
-            }else{
-                self.view.modal(id!(login_view)).open(cx);
-            }
-        }
+        // if let Some(store) = scope.data.get_mut::<Store>(){
+        //     if store.logined {
+        //         self.view.modal(id!(login_view)).close(cx);
+        //     }else{
+        //         self.view.modal(id!(login_view)).open(cx);
+        //     }
+        // }
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
     }

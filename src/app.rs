@@ -3,7 +3,7 @@ use tokio::runtime::Runtime;
 
 use crate::{
     store::Store,
-    utils::error::{MyError, MyTip},
+    utils::error::{LoginResult, MyError, MyTip},
     widgets::dialog::ErrprModalAction,
 };
 
@@ -20,7 +20,7 @@ live_design! {
     use crate::export::export_view::ExportScreen;
     use crate::settings::providers_screen::ProvidersScreen;
     use crate::widgets::dialog::*;
-    
+    use crate::login_view::LoginScreen;
 
     ICON_CHAT = dep("crate://self/resources/icons/chat.svg")
     ICON_LOCAL = dep("crate://self/resources/icons/local.svg")
@@ -86,49 +86,45 @@ live_design! {
             }
         }
         sn_tab = <SidebarMenuButton> {
-            text: "Sn查询",
+            text: "数据查询",
             draw_icon: {
                 svg_file: (ICON_LOCAL),
             }
         }
         <HorizontalFiller> {}
-        providers_tab = <SidebarMenuButton> {
-            text: "设置",
-            draw_icon: {
-                svg_file: (ICON_CLOUD),
+        set_btn = <View> {
+            align: {y: 1.0}
+            visible: false
+            providers_tab = <SidebarMenuButton> {
+                text: "设置",
+                draw_icon: {
+                    svg_file: (ICON_CLOUD),
+                }
             }
         }
+        
     }
 
     App = {{App}} {
         ui: <Window> {
-            window: {inner_size: vec2(1440, 1024), title: "DPS"},
-            pass: {clear_color: (THEME_COLOR_FG_APP)},
+            window: {inner_size: vec2(1600, 900), title: "DPS"},
+            pass: {clear_color: #FFFFFF00}
             caption_bar = {
-                draw_bg: {
-                    fn pixel(self) -> vec4 {
-                        return mix(#C1CDC1,#B0E0E6,self.pos.x);
-                    }
-                }
-                caption_label = <View> {
-                    width: Fill, height: Fill,
-                    align: {x: 0.5, y: 0.5},
-                    label = <Label> {
-                        text: "DPS",
-                        draw_text: {
-                            text_style: <THEME_FONT_BOLD> {
-                                font_size: 12
-                            }
-                            color: #000000,
-                        }
-
-                        margin: {left: 100
-
+                    caption_label = {
+                        label = {
+                            margin: {left: 65},
+                            align: {x: 0.5},
+                            text: "DPS",
+                            draw_text: {color: #000000}
                         }
                     }
-                }
+                    windows_buttons = {
+                        min   = { draw_bg: {color: #0, color_hover: #9, color_down: #3} }
+                        max   = { draw_bg: {color: #0, color_hover: #9, color_down: #3} }
+                        close = { draw_bg: {color: #0, color_hover: #E81123, color_down: #FF0015} }
+                    }
+                    draw_bg: {color: #F3F3F3},
             }
-
             body = {
                 flow: Overlay
                 width: Fill,
@@ -145,16 +141,15 @@ live_design! {
                     }
 
                     root_adaptive_view = <View> {
-                        // Mobile = {
-                        //     application_pages = <ApplicationPages> {
-                        //         margin: 0
-                        //     }
-                        // }
-
-                        // Desktop = {
+                        visible: false
+                      
                             sidebar_menu = <SidebarMenu> {}
                             application_pages = <ApplicationPages> {}
-                        // }
+                    }
+                    login_view = <View> {
+                        visible: true
+                        login_screen = <LoginScreen> {}
+
                     }
                 }
                 dialog_ui = <Modal> {
@@ -192,7 +187,7 @@ impl LiveRegister for App {
         crate::settings::live_design(cx);
         crate::widgets::live_design(cx);
         crate::querys::live_design(cx);
-
+        crate::login_view::live_design(cx);
     }
 }
 
@@ -211,7 +206,6 @@ impl AppMain for App {
             self.ui.handle_event(cx, event, &mut Scope::empty());
             return;
         };
-
         let scope = &mut Scope::with_data(store);
         self.ui.handle_event(cx, event, scope);
         self.match_event(cx, event);
@@ -270,6 +264,32 @@ impl MatchEvent for App {
             }
             if let Some(ErrprModalAction::Close) = action.downcast_ref() {
                 self.ui.modal(id!(dialog_ui)).close(cx);
+            }
+            if let Some(LoginResult::Logined) = action.downcast_ref() {
+                if let Some(store) = &self.store {
+                    // store.logined = true;
+                    // store.free_login = false;
+                    let show_login = !store.logined;
+                    self.ui.view(id!(login_view)).set_visible(cx, show_login);
+                    self.ui
+                        .view(id!(root_adaptive_view))
+                        .set_visible(cx, !show_login);
+                    self.ui.view(id!(set_btn)).set_visible(cx, true);
+                }
+            }
+            if let Some(LoginResult::FreeLogin) = action.downcast_ref() {
+               
+                if let Some(store) = &self.store {
+                    // store.logined = true;
+                    // store.free_login = true;
+                    let show_login = !store.logined;
+                    self.ui.view(id!(login_view)).set_visible(cx, show_login);
+                    self.ui
+                        .view(id!(root_adaptive_view))
+                        .set_visible(cx, !show_login);
+                    self.ui.button(id!(providers_tab)).set_visible(cx, false);
+                    self.ui.view(id!(set_btn)).set_visible(cx, false);
+                }
             }
         }
         cx.redraw_all();

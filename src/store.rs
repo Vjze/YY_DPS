@@ -24,6 +24,7 @@ pub struct Store {
     pub sql_pool: Option<bb8::Pool<ConnectionManager>>,
     pub grid_area: Area, // 存储 DecimalGrid 的 Area
     pub logined: bool,
+    pub free_login: bool
 }
 
 impl Store {

@@ -113,6 +113,7 @@ live_design! {
 
 
                     <View> {
+                        align: {x: 0.5, y:0.5}
                         height: Fill,
                         width: Fill,
                         flow: Down,

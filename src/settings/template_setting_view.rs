@@ -170,7 +170,7 @@ live_design! {
                         <DecimalGrid> {}
                     }
                     <View> {
-                        height: 265,
+                        height: 300,
                         width: Fill,
                         flow: Down,
                         spacing: 10,
