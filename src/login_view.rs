@@ -126,7 +126,7 @@ live_design! {
                     width: 100,
                     text: "登录"
                     draw_text: {
-                        color: #000,
+                        color: #000000,
                         text_style: {
                             font_size:16
                         }

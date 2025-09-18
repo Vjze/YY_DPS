@@ -28,7 +28,6 @@ live_design!(
                     let border_size = 1;
                     let sdf = Sdf2d::viewport(self.pos * self.rect_size);
                     let body = #fff
-
                     sdf.box(
                         1.,
                         1.,
