@@ -1,7 +1,7 @@
 use crate::querys::works::box_querys::get_box_datas;
 use crate::querys::works::carton_querys::get_carton_datas;
 use crate::querys::works::sn_query::sn_query_datas;
-use crate::{export::works::carton_query::do_carton_query, store::Store, utils::error::MyError};
+use crate::{store::Store, utils::error::MyError};
 use chrono::Local;
 use makepad_widgets::*;
 use tokio::runtime::Runtime;

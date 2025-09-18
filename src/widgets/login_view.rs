@@ -1,6 +1,6 @@
 use makepad_widgets::*;
 
-use crate::{store::Store, utils::error::MyError};
+use crate::store::Store;
 live_design!(
     use link::theme::*;
     use link::shaders::*;
