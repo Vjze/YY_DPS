@@ -126,7 +126,7 @@ live_design! {
                     width: 100,
                     text: "登录"
                     draw_text: {
-                        color: #000,
+                        color: #000000,
                         text_style: {
                             font_size:16
                         }
@@ -163,7 +163,7 @@ impl Widget for LoginScreen {
 }
 
 impl WidgetMatchEvent for LoginScreen {
-    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
+    fn handle_actions(&mut self, _cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
         let user_name = self.view.text_input(id!(user_name));
         let user_password = self.view.text_input(id!(use_password));
         let free_btn = self.view.button(id!(free_btn));

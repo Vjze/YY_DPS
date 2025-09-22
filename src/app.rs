@@ -50,7 +50,7 @@ live_design! {
     SidebarMenu = <RoundedView> {
         width: 90, height: Fill,
         flow: Down, spacing: 15.0,
-        padding: { top: 40, bottom: 20, left: 10, right: 0 },
+        padding: { top: 40, bottom: 10, left: 10, right: 10 },
 
         align: {x: 0.5, y: 0.0},
 
@@ -62,7 +62,7 @@ live_design! {
 
         logo = <View> {
             width: Fit, height: Fit
-            padding: {left:10, bottom:20}
+            padding: {bottom:20}
             <Image> {
                 width: 50, height: 50,
                 source: (ICON_MOLYSERVER),
