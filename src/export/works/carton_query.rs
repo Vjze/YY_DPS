@@ -102,28 +102,7 @@ pub async fn carton_query_datas(
         (false, _, false, true) => get_data_no_pch_with_jzband(carton, pool).await?, // Existing
         (false, _, false, false) => get_data_no_pch(carton, pool).await?,            // Existing
     };
-    // let all_datas = if infos.is_have_pch {
-    //     if infos.jz_band {
-    //         if infos.carton_pch {
-    //             get_all_data_for_carton_with_pch_with_jzband(carton.clone(), pool).await?
-    //         } else {
-    //             get_all_data_for_box_with_pch_with_jzband(carton.clone(), pool).await?
-    //         }
-    //         // get_all_data_for_carton_with_pch(carton.clone(), pool).await?
-    //     } else {
-    //         if infos.carton_pch {
-    //             get_all_data_for_carton_with_pch(carton, pool).await?
-    //         } else {
-    //             get_all_data_for_box_with_pch(carton, pool).await?
-    //         }
-    //     }
-    // } else {
-    //     if infos.jz_band {
-    //         get_data_no_pch_with_jzband(carton, pool).await?
-    //     } else {
-    //         get_data_no_pch(carton, pool).await?
-    //     }
-    // };
+    
 
     // 查询每个 SN 的最新 TestDate
     let sn_placeholders = all_datas
