@@ -20,6 +20,7 @@ pub struct Infos {
     pub carton_pch: bool,
     pub box_pch: bool,
     pub jz_band: bool,
+    pub zdy_box: bool,
 }
 // 定义根结构体，用于匹配 TOML 文件中的 [[ConfigType]]
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

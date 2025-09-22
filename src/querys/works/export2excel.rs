@@ -262,9 +262,7 @@ fn calculate_row_value(
     // 优先处理 column_name_mapping
     if let Some(col_mapping) = column_mapping.get(&header) {
         if !col_mapping.is_empty() {
-            if col_mapping == "none" {
-                header = header;
-            } else {
+            if col_mapping != "none" {
                 header = col_mapping.to_string();
             }
         }

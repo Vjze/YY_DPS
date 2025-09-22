@@ -209,7 +209,7 @@ live_design! {
                         height: Fit, width: Fill,
                         spacing: 10,
                         <Label> {
-                            text: "是否启用批次号查询:"
+                            text: "批次号查询:"
                             draw_text: {
                                 text_style: <REGULAR_FONT>{
                                     font_size: 14
@@ -226,7 +226,7 @@ live_design! {
                             align: {y: 0.5}
 
                             <Label> {
-                            text: "启用箱号查询批次号:"
+                            text: "箱号查询批次号:"
                             draw_text: {
                                 text_style: <REGULAR_FONT>{
                                     font_size: 14
@@ -238,7 +238,7 @@ live_design! {
                                     width: 50,
                                 }
                                 <Label> {
-                                    text: "启用盒号查询批次号:"
+                                    text: "盒号查询批次号:"
                                     draw_text: {
                                         text_style: <REGULAR_FONT>{
                                             font_size: 14
@@ -250,9 +250,20 @@ live_design! {
                                     width: 50,
                                 }
                         }
-
                         <Label> {
-                            text: "启用九州绑定数据查询:"
+                            text: "自定义盒号查询:"
+                            draw_text: {
+                                text_style: <REGULAR_FONT>{
+                                    font_size: 14
+                                }
+                                color: #000
+                            }
+                        }
+                        zdy_box_check = <MySwitch> {
+                            width: 50,
+                        }
+                        <Label> {
+                            text: "九州绑定数据查询:"
                             draw_text: {
                                 text_style: <REGULAR_FONT>{
                                     font_size: 14
@@ -372,6 +383,7 @@ impl WidgetMatchEvent for TypeView {
         let pch_check = self.view.check_box(id!(pch_check));
         let carton_pch_check = self.view.check_box(id!(carton_pch_check));
         let box_pch_check = self.view.check_box(id!(box_pch_check));
+        let zdy_box_check = self.view.check_box(id!(zdy_box_check));
         let jz_band_check = self.view.check_box(id!(jz_band_check));
         let save_type_btn = self.view.button(id!(update_type_btn));
         let del_type_btn = self.view.button(id!(del_type_btn));
@@ -406,12 +418,20 @@ impl WidgetMatchEvent for TypeView {
                     self.view
                         .check_box(id!(jz_band_check))
                         .set_active(cx, store.type_infos.1.jz_band);
+                    self.view
+                        .check_box(id!(zdy_box_check))
+                        .set_active(cx, store.type_infos.1.zdy_box);
                 }
             }
         }
         if let Some(check) = pch_check.changed(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
                 store.type_infos.1.is_have_pch = check;
+            }
+        }
+        if let Some(check) = zdy_box_check.changed(actions) {
+            if let Some(store) = scope.data.get_mut::<Store>() {
+                store.type_infos.1.zdy_box = check;
             }
         }
         if let Some(check) = carton_pch_check.changed(actions) {

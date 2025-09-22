@@ -17,8 +17,11 @@ use crate::{
 };
 
 async fn get_info() -> anyhow::Result<Vec<String>, MyError> {
-    let pick = rfd::AsyncFileDialog::new().pick_file().await;
-    let path = if let Some(path) = pick {
+    let pick = rfd::AsyncFileDialog::new()
+        .pick_file()
+        .await
+        .ok_or(MyError::Zdyknown(format!("选择框关闭，查询取消。")));
+    let path = if let Ok(path) = pick {
         path.path().display().to_string()
     } else {
         return Err(MyError::Zdyknown(format!("未选择文件.")));
@@ -38,7 +41,7 @@ pub async fn do_carton_query(
     typeinfos: String,
     is_multi: bool,
 ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
-    if carton.is_empty() && is_multi{
+    if carton.is_empty() && is_multi {
         let cartons = get_info().await?;
         let mut datas = Vec::new();
         for carton in cartons {
@@ -61,28 +64,66 @@ pub async fn carton_query_datas(
         return Err(MyError::CartonNoEmpty);
     }
     let infos = get_type_infos(typeinfos).await?.1;
-    let all_datas = if infos.is_have_pch {
-        if infos.jz_band {
-            if infos.carton_pch {
-                get_all_data_for_carton_with_pch_with_jzband(carton.clone(), pool).await?
-            } else {
-                get_all_data_for_box_with_pch_with_jzband(carton.clone(), pool).await?
-            }
-            // get_all_data_for_carton_with_pch(carton.clone(), pool).await?
-        } else {
-            if infos.carton_pch {
-                get_all_data_for_carton_with_pch(carton, pool).await?
-            } else {
-                get_all_data_for_box_with_pch(carton, pool).await?
-            }
+    // 将所有并存条件放入 match 元组中，处理所有组合
+    let all_datas = match (
+        infos.is_have_pch,
+        infos.carton_pch,
+        infos.zdy_box,
+        infos.jz_band,
+    ) {
+        // --- 场景 A: is_have_pch = true ---
+
+        // A.1: carton_pch = true (is_have_pch=true, carton_pch=true)
+        (true, true, true, true) => {
+            get_data_for_pch_carton_with_zdy_with_jzband(carton, pool).await?
         }
-    } else {
-        if infos.jz_band {
-            get_data_no_pch_with_jzband(carton, pool).await?
-        } else {
-            get_data_no_pch(carton, pool).await?
+        (true, true, true, false) => {
+            get_data_for_pch_carton_with_zdy_no_jzband(carton, pool).await?
         }
+        (true, true, false, true) => {
+            get_all_data_for_carton_with_pch_with_jzband(carton, pool).await?
+        } // Existing
+        (true, true, false, false) => get_all_data_for_carton_with_pch(carton, pool).await?, // Existing
+
+        // A.2: box_pch = true (is_have_pch=true, carton_pch=false)
+        (true, false, true, true) => {
+            get_data_for_pch_box_with_zdy_with_jzband(carton, pool).await?
+        }
+        (true, false, true, false) => get_data_for_pch_box_with_zdy_no_jzband(carton, pool).await?,
+        (true, false, false, true) => {
+            get_all_data_for_box_with_pch_with_jzband(carton, pool).await?
+        } // Existing
+        (true, false, false, false) => get_all_data_for_box_with_pch(carton, pool).await?, // Existing
+
+        // --- 场景 B: is_have_pch = false ---
+        // 此时 carton_pch 和 box_pch 均为 false，因此第二个参数用 _ 通配
+        (false, _, true, true) => get_data_for_no_pch_with_zdy_with_jzband(carton, pool).await?,
+        (false, _, true, false) => get_data_for_no_pch_with_zdy_no_jzband(carton, pool).await?,
+        (false, _, false, true) => get_data_no_pch_with_jzband(carton, pool).await?, // Existing
+        (false, _, false, false) => get_data_no_pch(carton, pool).await?,            // Existing
     };
+    // let all_datas = if infos.is_have_pch {
+    //     if infos.jz_band {
+    //         if infos.carton_pch {
+    //             get_all_data_for_carton_with_pch_with_jzband(carton.clone(), pool).await?
+    //         } else {
+    //             get_all_data_for_box_with_pch_with_jzband(carton.clone(), pool).await?
+    //         }
+    //         // get_all_data_for_carton_with_pch(carton.clone(), pool).await?
+    //     } else {
+    //         if infos.carton_pch {
+    //             get_all_data_for_carton_with_pch(carton, pool).await?
+    //         } else {
+    //             get_all_data_for_box_with_pch(carton, pool).await?
+    //         }
+    //     }
+    // } else {
+    //     if infos.jz_band {
+    //         get_data_no_pch_with_jzband(carton, pool).await?
+    //     } else {
+    //         get_data_no_pch(carton, pool).await?
+    //     }
+    // };
 
     // 查询每个 SN 的最新 TestDate
     let sn_placeholders = all_datas
@@ -177,6 +218,694 @@ pub async fn carton_query_datas(
     Ok(all)
 }
 
+async fn get_data_for_no_pch_with_zdy_no_jzband(
+    carton: String,
+    pool: &bb8::Pool<ConnectionManager>,
+) -> anyhow::Result<Vec<Datas>, MyError> {
+    // let mut client = client().await?;
+    let mut client = pool.get().await.unwrap();
+    let mut all_datas = Vec::new();
+    let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
+    println!("执行get_data_no_pch：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime
+                from [mes_Factory].[dbo].[MaterialPackSn] a
+                inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+                where b.CartonNo='{}'
+                and b.PnOptionID = '-100' order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",carton);
+    let stream = client
+        .query("select a.sn,c.pkg_no,a.pn,a.creator,a.createtime,b.creator,b.createtime
+                from [mes_Factory].[dbo].[MaterialPackSn] a
+                inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+                inner join [mes_Factory].[dbo].[jz_carton_bind] c on a.Pack_no=c.box_no
+                where b.CartonNo=@P1
+                and b.PnOptionID = '-100' order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",&[&carton],
+        )
+        .await
+        .unwrap();
+    let rows = stream.into_results().await;
+    match rows {
+        Ok(rowsets) => {
+            for i in 0..rowsets.len() {
+                let rows = rowsets.get(i).unwrap();
+                for row in rows {
+                    let sn = match row.get::<&str, _>(0) {
+                        Some(s) => s.to_string(),
+                        None => {
+                            return Err(MyError::NoResult(format!("箱号:{carton}")));
+                        }
+                    };
+                    let box_no = row.get::<&str, _>(1).unwrap().to_string();
+                    let yypn = row.get::<&str, _>(2).unwrap().to_string();
+                    let pack_worker = row.get::<&str, _>(3).unwrap().to_string();
+                    let pack_time = row
+                        .get::<NaiveDateTime, _>(4)
+                        .unwrap()
+                        .format("%Y-%m-%d %H:%M:%S")
+                        .to_string();
+                    let carton_worker = row.get::<&str, _>(5).unwrap().to_string();
+                    let carton_time = row
+                        .get::<NaiveDateTime, _>(6)
+                        .unwrap()
+                        .format("%Y-%m-%d %H:%M:%S")
+                        .to_string();
+
+                    // !!! 添加防重检查 !!!
+                    if seen_sns.contains(&sn) {
+                        // 如果有任何一个重复，则跳过当前数据
+                        continue;
+                    }
+
+                    let carton_data = CartonData {
+                        carton_no: carton.clone(),
+                        yypn,
+                        carton_worker,
+                        carton_packtime: carton_time,
+                        ..Default::default()
+                    };
+                    let pack_data = PackData {
+                        box_no,
+                        pack_worker,
+                        pack_packtime: pack_time,
+                    };
+                    let sn_data = Data {
+                        sn: sn.clone(), // 克隆 sn 用于存储到 HashSet
+                        ..Default::default()
+                    };
+
+                    let data = Datas {
+                        carton_data,
+                        pack_data,
+                        sn_data,
+                        ..Default::default()
+                    };
+                    all_datas.push(data);
+
+                    // 将已添加的 sn, b_sn, w_sn 插入到 HashSet 中
+                    seen_sns.insert(sn);
+                }
+            }
+        }
+        Err(_) => return Err(MyError::NoResult(format!("箱号:{carton}"))),
+    };
+
+    if all_datas.is_empty() {
+        return Err(MyError::NoResult(format!("箱号:{carton}")));
+    }
+    Ok(all_datas)
+}
+async fn get_data_for_no_pch_with_zdy_with_jzband(
+    carton: String,
+    pool: &bb8::Pool<ConnectionManager>,
+) -> anyhow::Result<Vec<Datas>, MyError> {
+    // let mut client = client().await?;
+    let mut client = pool.get().await.unwrap();
+    let mut all_datas = Vec::new();
+    let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
+    let stream = client
+        .query(
+            "select c.sn,a.pkg_no,c.pn,d.creator,c.createtime,b.creator,b.createtime
+            from [mes_Factory].[dbo].[jz_carton_bind] a
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.box_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[MaterialPackSn] c on c.Pack_no=b.Packing_no
+            where b.CartonNo=@P1 and b.PnOptionID = '-100'
+            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
+            &[&carton],
+        )
+        .await
+        .unwrap();
+    let rows = stream.into_results().await;
+    match rows {
+        Ok(rowsets) => {
+            for i in 0..rowsets.len() {
+                let rows = rowsets.get(i).unwrap();
+                for row in rows {
+                    let sn = match row.get::<&str, _>(0) {
+                        Some(s) => s.to_string(),
+                        None => {
+                            return Err(MyError::NoResult(format!("箱号:{carton}")));
+                        }
+                    };
+                    let box_no = row.get::<&str, _>(1).unwrap().to_string();
+                    let yypn = row.get::<&str, _>(2).unwrap().to_string();
+                    let pack_worker = row.get::<&str, _>(3).unwrap().to_string();
+                    let pack_time = row
+                        .get::<NaiveDateTime, _>(4)
+                        .unwrap()
+                        .format("%Y-%m-%d %H:%M:%S")
+                        .to_string();
+                    let carton_worker = row.get::<&str, _>(5).unwrap().to_string();
+                    let carton_time = row
+                        .get::<NaiveDateTime, _>(6)
+                        .unwrap()
+                        .format("%Y-%m-%d %H:%M:%S")
+                        .to_string();
+
+                    // !!! 添加防重检查 !!!
+                    if seen_sns.contains(&sn) {
+                        // 如果有任何一个重复，则跳过当前数据
+                        continue;
+                    }
+
+                    let carton_data = CartonData {
+                        carton_no: carton.clone(),
+                        yypn,
+                        carton_worker,
+                        carton_packtime: carton_time,
+                        ..Default::default()
+                    };
+                    let pack_data = PackData {
+                        box_no,
+                        pack_worker,
+                        pack_packtime: pack_time,
+                    };
+                    let sn_data = Data {
+                        sn: sn.clone(), // 克隆 sn 用于存储到 HashSet
+                        ..Default::default()
+                    };
+
+                    let data = Datas {
+                        carton_data,
+                        pack_data,
+                        sn_data,
+                        ..Default::default()
+                    };
+                    all_datas.push(data);
+
+                    // 将已添加的 sn, b_sn, w_sn 插入到 HashSet 中
+                    seen_sns.insert(sn);
+                }
+            }
+        }
+        Err(_) => return Err(MyError::NoResult(format!("箱号:{carton}"))),
+    }
+    let mut band_datas = vec![];
+    for data in &mut all_datas {
+        // 获取 band_data
+        let band_data = get_band_data(data.sn_data.sn.clone(), pool).await?;
+        // if band_data == Default::default() {
+        //     break;
+        // }
+        // data.band_data = band_data;
+        band_datas.push(band_data);
+    }
+    let a_datas = all_datas
+        .iter_mut()
+        .filter_map(|d| {
+            // 尝试在 band_datas 中找到匹配的元素
+            let b_data = band_datas.iter().find(|b| d.sn_data.sn == b.w_sn);
+
+            // 使用 if let 来安全地处理 Option
+            if let Some(band_data) = b_data {
+                d.band_data = band_data.clone();
+                Some(d.clone())
+            } else {
+                // 如果没有找到匹配的 band_data，就返回 None，filter_map 会自动过滤掉这个元素
+                println!(
+                    "Warning: No matching band_data found for SN: {}",
+                    d.sn_data.sn
+                );
+                d.band_data.w_sn = d.sn_data.sn.clone();
+                Some(d.clone())
+            }
+        })
+        .collect::<Vec<Datas>>();
+    Ok(a_datas)
+}
+async fn get_data_for_pch_box_with_zdy_with_jzband(
+    carton: String,
+    // verified_pchs_string: String,
+    pool: &bb8::Pool<ConnectionManager>,
+) -> anyhow::Result<Vec<Datas>, MyError> {
+    let mut client = pool.get().await.unwrap();
+    let mut all_datas = Vec::new();
+    let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
+    println!("执行get_data_for_pch_box_with_zdy_with_jzband：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
+            from [mes_Factory].[dbo].[MaterialPackSn] a
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+            where b.CartonNo='{}' and b.PnOptionID = '-100'
+            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",carton);
+    let stream = client
+        .query(
+            "select d.sn,a.pkg_no,d.pn,d.creator,d.createtime,b.creator,b.createtime,c.parameter
+            from [mes_Factory].[dbo].[jz_carton_bind] a
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.box_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on d.Pack_no=c.LABEL_KEY
+            inner join [mes_Factory].[dbo].[MaterialPackSn] d on d.Pack_no=b.Packing_no
+            where b.CartonNo=@P1 and b.PnOptionID = '-100'
+            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
+            &[&carton],
+        )
+        .await?;
+
+    let rows = stream.into_results().await?;
+
+    for rowset in rows {
+        for row in rowset {
+            let sn = match row.get::<&str, _>(0) {
+                Some(s) => s.to_string(),
+                None => {
+                    return Err(MyError::NoResult(format!("箱号:{carton}")));
+                }
+            };
+            if seen_sns.contains(&sn) {
+                continue; // 跳过重复的 SN
+            }
+
+            let box_no = row.get::<&str, _>(1).unwrap().to_string();
+            let yypn = row.get::<&str, _>(2).unwrap().to_string();
+            let pack_worker = row.get::<&str, _>(3).unwrap().to_string();
+            let pack_time = row
+                .get::<NaiveDateTime, _>(4)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            let carton_worker = row.get::<&str, _>(5).unwrap().to_string();
+            let carton_time = row
+                .get::<NaiveDateTime, _>(6)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            let p = row.get::<&str, _>(7).unwrap().to_string();
+            println!("完整信息：{}", p);
+            let year = extract_value(&p, "YEAR");
+            let week = extract_value(&p, "WEEK");
+            let pch = match (year, week) {
+                (Some(y), Some(w)) => {
+                    // 只取 YEAR 的最后两位数并拼接 WEEK
+                    let year_last_two = &y[y.len() - 2..]; // 提取最后两位
+                    let pch = format!("{}{}", year_last_two, w);
+                    pch
+                }
+                _ => {
+                    let pch = format!("{}", "None");
+                    pch
+                }
+            };
+            println!("批次号截取: {}", pch);
+            let carton_data = CartonData {
+                pch: pch.clone(), // 使用已经验证的 pch
+                carton_no: carton.clone(),
+                yypn,
+                carton_worker,
+                carton_packtime: carton_time,
+            };
+            let pack_data = PackData {
+                box_no,
+                pack_worker,
+                pack_packtime: pack_time,
+            };
+            let sn_data = Data {
+                sn: sn.clone(),
+                ..Default::default()
+            };
+
+            let data = Datas {
+                carton_data,
+                pack_data,
+                sn_data,
+                ..Default::default()
+            };
+            all_datas.push(data);
+            seen_sns.insert(sn);
+        }
+    }
+
+    let mut band_datas = vec![];
+    for data in &mut all_datas {
+        // 获取 band_data
+        let band_data = get_band_data(data.sn_data.sn.clone(), pool).await?;
+        // if band_data == Default::default() {
+        //     break;
+        // }
+        // data.band_data = band_data;
+        band_datas.push(band_data);
+    }
+    let a_datas = all_datas
+        .iter_mut()
+        .filter_map(|d| {
+            // 尝试在 band_datas 中找到匹配的元素
+            let b_data = band_datas.iter().find(|b| d.sn_data.sn == b.w_sn);
+
+            // 使用 if let 来安全地处理 Option
+            if let Some(band_data) = b_data {
+                d.band_data = band_data.clone();
+                Some(d.clone())
+            } else {
+                // 如果没有找到匹配的 band_data，就返回 None，filter_map 会自动过滤掉这个元素
+                println!(
+                    "Warning: No matching band_data found for SN: {}",
+                    d.sn_data.sn
+                );
+                d.band_data.w_sn = d.sn_data.sn.clone();
+                Some(d.clone())
+            }
+        })
+        .collect::<Vec<Datas>>();
+    Ok(a_datas)
+}
+async fn get_data_for_pch_box_with_zdy_no_jzband(
+    carton: String,
+    // verified_pchs_string: String,
+    pool: &bb8::Pool<ConnectionManager>,
+) -> anyhow::Result<Vec<Datas>, MyError> {
+    let mut client = pool.get().await.unwrap();
+    let mut all_datas = Vec::new();
+    let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
+    println!("执行get_data_for_pch_box_with_zdy_no_jzband：select a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
+    from [mes_Factory].[dbo].[MaterialPackSn] a
+    inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+    inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+    where b.CartonNo='{}' and b.PnOptionID = '-100'
+    order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",carton);
+    let stream = client
+        .query(
+            "select d.sn,a.pkg_no,d.pn,d.creator,d.createtime,b.creator,b.createtime,c.parameter
+            from [mes_Factory].[dbo].[jz_carton_bind] a
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.box_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on d.Pack_no=c.LABEL_KEY
+            inner join [mes_Factory].[dbo].[MaterialPackSn] d on d.Pack_no=b.Packing_no
+            where b.CartonNo=@P1 and b.PnOptionID = '-100'
+            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
+            &[&carton],
+        )
+        .await?;
+
+    let rows = stream.into_results().await?;
+
+    for rowset in rows {
+        for row in rowset {
+            let sn = match row.get::<&str, _>(0) {
+                Some(s) => s.to_string(),
+                None => {
+                    return Err(MyError::NoResult(format!("箱号:{carton}")));
+                }
+            };
+            if seen_sns.contains(&sn) {
+                continue; // 跳过重复的 SN
+            }
+
+            let box_no = row.get::<&str, _>(1).unwrap().to_string();
+            let yypn = row.get::<&str, _>(2).unwrap().to_string();
+            let pack_worker = row.get::<&str, _>(3).unwrap().to_string();
+            let pack_time = row
+                .get::<NaiveDateTime, _>(4)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            let carton_worker = row.get::<&str, _>(5).unwrap().to_string();
+            let carton_time = row
+                .get::<NaiveDateTime, _>(6)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            let p = row.get::<&str, _>(7).unwrap().to_string();
+            println!("完整信息：{}", p);
+            let year = extract_value(&p, "YEAR");
+            let week = extract_value(&p, "WEEK");
+            let pch = match (year, week) {
+                (Some(y), Some(w)) => {
+                    // 只取 YEAR 的最后两位数并拼接 WEEK
+                    let year_last_two = &y[y.len() - 2..]; // 提取最后两位
+                    let pch = format!("{}{}", year_last_two, w);
+                    pch
+                }
+                _ => {
+                    let pch = format!("{}", "None");
+                    pch
+                }
+            };
+            println!("批次号截取: {}", pch);
+            let carton_data = CartonData {
+                pch: pch.clone(), // 使用已经验证的 pch
+                carton_no: carton.clone(),
+                yypn,
+                carton_worker,
+                carton_packtime: carton_time,
+            };
+            let pack_data = PackData {
+                box_no,
+                pack_worker,
+                pack_packtime: pack_time,
+            };
+            let sn_data = Data {
+                sn: sn.clone(),
+                ..Default::default()
+            };
+
+            let data = Datas {
+                carton_data,
+                pack_data,
+                sn_data,
+                ..Default::default()
+            };
+            all_datas.push(data);
+            seen_sns.insert(sn);
+        }
+    }
+
+    if all_datas.is_empty() {
+        return Err(MyError::NoResult(format!("箱号:{carton}")));
+    }
+    Ok(all_datas)
+}
+async fn get_data_for_pch_carton_with_zdy_no_jzband(
+    carton: String,
+    // verified_pchs_string: String,
+    pool: &bb8::Pool<ConnectionManager>,
+) -> anyhow::Result<Vec<Datas>, MyError> {
+    let mut client = pool.get().await.unwrap();
+    let mut all_datas = Vec::new();
+    let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
+    println!("get_data_for_pch_carton_with_zdy_no_jzband a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
+            from [mes_Factory].[dbo].[MaterialPackSn] a
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+            where b.CartonNo='{}' and b.PnOptionID = '-100'
+            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",carton);
+    let stream = client
+        .query(
+            "select d.sn,a.pkg_no,d.pn,d.creator,d.createtime,b.creator,b.createtime,c.parameter
+            from [mes_Factory].[dbo].[jz_carton_bind] a
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.box_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+            inner join [mes_Factory].[dbo].[MaterialPackSn] d on d.Pack_no=b.Packing_no
+            where b.CartonNo=@P1 and b.PnOptionID = '-100'
+            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
+            &[&carton],
+        )
+        .await?;
+
+    let rows = stream.into_results().await?;
+
+    for rowset in rows {
+        for row in rowset {
+            let sn = match row.get::<&str, _>(0) {
+                Some(s) => s.to_string(),
+                None => {
+                    return Err(MyError::NoResult(format!("箱号:{carton}")));
+                }
+            };
+            if seen_sns.contains(&sn) {
+                continue; // 跳过重复的 SN
+            }
+
+            let box_no = row.get::<&str, _>(1).unwrap().to_string();
+            let yypn = row.get::<&str, _>(2).unwrap().to_string();
+            let pack_worker = row.get::<&str, _>(3).unwrap().to_string();
+            let pack_time = row
+                .get::<NaiveDateTime, _>(4)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            let carton_worker = row.get::<&str, _>(5).unwrap().to_string();
+            let carton_time = row
+                .get::<NaiveDateTime, _>(6)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            let p = row.get::<&str, _>(7).unwrap().to_string();
+            println!("完整信息：{}", p);
+            let year = extract_value(&p, "YEAR");
+            let week = extract_value(&p, "WEEK");
+            let pch = match (year, week) {
+                (Some(y), Some(w)) => {
+                    // 只取 YEAR 的最后两位数并拼接 WEEK
+                    let year_last_two = &y[y.len() - 2..]; // 提取最后两位
+                    let pch = format!("{}{}", year_last_two, w);
+                    pch
+                }
+                _ => {
+                    let pch = format!("{}", "None");
+                    pch
+                }
+            };
+            println!("批次号截取: {}", pch);
+            let carton_data = CartonData {
+                pch: pch.clone(), // 使用已经验证的 pch
+                carton_no: carton.clone(),
+                yypn,
+                carton_worker,
+                carton_packtime: carton_time,
+            };
+            let pack_data = PackData {
+                box_no,
+                pack_worker,
+                pack_packtime: pack_time,
+            };
+            let sn_data = Data {
+                sn: sn.clone(),
+                ..Default::default()
+            };
+
+            let data = Datas {
+                carton_data,
+                pack_data,
+                sn_data,
+                ..Default::default()
+            };
+            all_datas.push(data);
+            seen_sns.insert(sn);
+        }
+    }
+
+    if all_datas.is_empty() {
+        return Err(MyError::NoResult(format!("箱号:{carton}")));
+    }
+    Ok(all_datas)
+}
+async fn get_data_for_pch_carton_with_zdy_with_jzband(
+    carton: String,
+    // verified_pchs_string: String,
+    pool: &bb8::Pool<ConnectionManager>,
+) -> anyhow::Result<Vec<Datas>, MyError> {
+    let mut client = pool.get().await.unwrap();
+    let mut all_datas = Vec::new();
+    let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
+    println!("get_data_for_pch_carton_with_zdy_with_jzband a.sn,a.Pack_no,a.pn,a.creator,a.createtime,b.creator,b.createtime,c.parameter
+            from [mes_Factory].[dbo].[MaterialPackSn] a
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+            where b.CartonNo='{}' and b.PnOptionID = '-100'
+            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",carton);
+    let stream = client
+        .query(
+            "select d.sn,a.pkg_no,d.pn,d.creator,d.createtime,b.creator,b.createtime,c.parameter
+            from [mes_Factory].[dbo].[jz_carton_bind] a
+            inner join [mes_Factory].[dbo].[packing_carton] b on a.box_no=b.Packing_no
+            inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+            inner join [mes_Factory].[dbo].[MaterialPackSn] d on d.Pack_no=b.Packing_no
+            where b.CartonNo=@P1 and b.PnOptionID = '-100'
+            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
+            &[&carton],
+        )
+        .await?;
+
+    let rows = stream.into_results().await?;
+
+    for rowset in rows {
+        for row in rowset {
+            let sn = match row.get::<&str, _>(0) {
+                Some(s) => s.to_string(),
+                None => {
+                    return Err(MyError::NoResult(format!("箱号:{carton}")));
+                }
+            };
+            if seen_sns.contains(&sn) {
+                continue; // 跳过重复的 SN
+            }
+
+            let box_no = row.get::<&str, _>(1).unwrap().to_string();
+            let yypn = row.get::<&str, _>(2).unwrap().to_string();
+            let pack_worker = row.get::<&str, _>(3).unwrap().to_string();
+            let pack_time = row
+                .get::<NaiveDateTime, _>(4)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            let carton_worker = row.get::<&str, _>(5).unwrap().to_string();
+            let carton_time = row
+                .get::<NaiveDateTime, _>(6)
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string();
+            let p = row.get::<&str, _>(7).unwrap().to_string();
+            println!("完整信息：{}", p);
+            let year = extract_value(&p, "YEAR");
+            let week = extract_value(&p, "WEEK");
+            let pch = match (year, week) {
+                (Some(y), Some(w)) => {
+                    // 只取 YEAR 的最后两位数并拼接 WEEK
+                    let year_last_two = &y[y.len() - 2..]; // 提取最后两位
+                    let pch = format!("{}{}", year_last_two, w);
+                    pch
+                }
+                _ => {
+                    let pch = format!("{}", "None");
+                    pch
+                }
+            };
+            println!("批次号截取: {}", pch);
+            let carton_data = CartonData {
+                pch: pch.clone(), // 使用已经验证的 pch
+                carton_no: carton.clone(),
+                yypn,
+                carton_worker,
+                carton_packtime: carton_time,
+            };
+            let pack_data = PackData {
+                box_no,
+                pack_worker,
+                pack_packtime: pack_time,
+            };
+            let sn_data = Data {
+                sn: sn.clone(),
+                ..Default::default()
+            };
+
+            let data = Datas {
+                carton_data,
+                pack_data,
+                sn_data,
+                ..Default::default()
+            };
+            all_datas.push(data);
+            seen_sns.insert(sn);
+        }
+    }
+
+    let mut band_datas = vec![];
+    for data in &mut all_datas {
+        // 获取 band_data
+        let band_data = get_band_data(data.sn_data.sn.clone(), pool).await?;
+        // if band_data == Default::default() {
+        //     break;
+        // }
+        // data.band_data = band_data;
+        band_datas.push(band_data);
+    }
+    let a_datas = all_datas
+        .iter_mut()
+        .filter_map(|d| {
+            // 尝试在 band_datas 中找到匹配的元素
+            let b_data = band_datas.iter().find(|b| d.sn_data.sn == b.w_sn);
+
+            // 使用 if let 来安全地处理 Option
+            if let Some(band_data) = b_data {
+                d.band_data = band_data.clone();
+                Some(d.clone())
+            } else {
+                // 如果没有找到匹配的 band_data，就返回 None，filter_map 会自动过滤掉这个元素
+                println!(
+                    "Warning: No matching band_data found for SN: {}",
+                    d.sn_data.sn
+                );
+                d.band_data.w_sn = d.sn_data.sn.clone();
+                Some(d.clone())
+            }
+        })
+        .collect::<Vec<Datas>>();
+    Ok(a_datas)
+}
 async fn get_all_data_for_box_with_pch_with_jzband(
     carton: String,
     // verified_pchs_string: String,
@@ -276,20 +1005,38 @@ async fn get_all_data_for_box_with_pch_with_jzband(
         }
     }
 
+    let mut band_datas = vec![];
     for data in &mut all_datas {
+        // 获取 band_data
         let band_data = get_band_data(data.sn_data.sn.clone(), pool).await?;
-        if band_data == Default::default() {
-            // 如果 band_data 为默认值，表示未找到绑定数据，可以根据业务需求选择跳过或报错
-            // 这里选择跳过，确保只处理有完整绑定数据的 SN
-            continue;
-        }
-        data.band_data = band_data;
+        // if band_data == Default::default() {
+        //     break;
+        // }
+        // data.band_data = band_data;
+        band_datas.push(band_data);
     }
+    let a_datas = all_datas
+        .iter_mut()
+        .filter_map(|d| {
+            // 尝试在 band_datas 中找到匹配的元素
+            let b_data = band_datas.iter().find(|b| d.sn_data.sn == b.w_sn);
 
-    if all_datas.is_empty() {
-        return Err(MyError::NoResult(format!("箱号:{carton}")));
-    }
-    Ok(all_datas)
+            // 使用 if let 来安全地处理 Option
+            if let Some(band_data) = b_data {
+                d.band_data = band_data.clone();
+                Some(d.clone())
+            } else {
+                // 如果没有找到匹配的 band_data，就返回 None，filter_map 会自动过滤掉这个元素
+                println!(
+                    "Warning: No matching band_data found for SN: {}",
+                    d.sn_data.sn
+                );
+                d.band_data.w_sn = d.sn_data.sn.clone();
+                Some(d.clone())
+            }
+        })
+        .collect::<Vec<Datas>>();
+    Ok(a_datas)
 }
 async fn get_all_data_for_box_with_pch(
     carton: String,
@@ -495,21 +1242,38 @@ async fn get_all_data_for_carton_with_pch_with_jzband(
             seen_sns.insert(sn);
         }
     }
-
+    let mut band_datas = vec![];
     for data in &mut all_datas {
+        // 获取 band_data
         let band_data = get_band_data(data.sn_data.sn.clone(), pool).await?;
-        if band_data == Default::default() {
-            // 如果 band_data 为默认值，表示未找到绑定数据，可以根据业务需求选择跳过或报错
-            // 这里选择跳过，确保只处理有完整绑定数据的 SN
-            continue;
-        }
-        data.band_data = band_data;
+        // if band_data == Default::default() {
+        //     break;
+        // }
+        // data.band_data = band_data;
+        band_datas.push(band_data);
     }
+    let a_datas = all_datas
+        .iter_mut()
+        .filter_map(|d| {
+            // 尝试在 band_datas 中找到匹配的元素
+            let b_data = band_datas.iter().find(|b| d.sn_data.sn == b.w_sn);
 
-    if all_datas.is_empty() {
-        return Err(MyError::NoResult(format!("箱号:{carton}")));
-    }
-    Ok(all_datas)
+            // 使用 if let 来安全地处理 Option
+            if let Some(band_data) = b_data {
+                d.band_data = band_data.clone();
+                Some(d.clone())
+            } else {
+                // 如果没有找到匹配的 band_data，就返回 None，filter_map 会自动过滤掉这个元素
+                println!(
+                    "Warning: No matching band_data found for SN: {}",
+                    d.sn_data.sn
+                );
+                d.band_data.w_sn = d.sn_data.sn.clone();
+                Some(d.clone())
+            }
+        })
+        .collect::<Vec<Datas>>();
+    Ok(a_datas)
 }
 async fn get_all_data_for_carton_with_pch(
     carton: String,
@@ -791,21 +1555,39 @@ async fn get_data_no_pch_with_jzband(
         }
         Err(_) => return Err(MyError::NoResult(format!("箱号:{carton}"))),
     }
+    let mut band_datas = vec![];
     for data in &mut all_datas {
         // 获取 band_data
         let band_data = get_band_data(data.sn_data.sn.clone(), pool).await?;
-        if band_data == Default::default() {
-            break;
-        }
-        data.band_data = band_data;
+        // if band_data == Default::default() {
+        //     break;
+        // }
+        // data.band_data = band_data;
+        band_datas.push(band_data);
     }
-    if all_datas.is_empty() {
-        return Err(MyError::NoResult(format!("箱号:{carton}")));
-    }
-    Ok(all_datas)
+    let a_datas = all_datas
+        .iter_mut()
+        .filter_map(|d| {
+            // 尝试在 band_datas 中找到匹配的元素
+            let b_data = band_datas.iter().find(|b| d.sn_data.sn == b.w_sn);
+
+            // 使用 if let 来安全地处理 Option
+            if let Some(band_data) = b_data {
+                d.band_data = band_data.clone();
+                Some(d.clone())
+            } else {
+                // 如果没有找到匹配的 band_data，就返回 None，filter_map 会自动过滤掉这个元素
+                println!(
+                    "Warning: No matching band_data found for SN: {}",
+                    d.sn_data.sn
+                );
+                d.band_data.w_sn = d.sn_data.sn.clone();
+                Some(d.clone())
+            }
+        })
+        .collect::<Vec<Datas>>();
+    Ok(a_datas)
 }
-// 移除 get_pch_in_box 和 get_pch_in_carton 函数，它们现在被新的逻辑取代。
-// 如果您的其他部分代码还在直接调用它们，您需要将这些调用改为 carton_query_datas。
 
 async fn get_band_data(
     sn: String,
