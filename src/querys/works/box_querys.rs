@@ -1,8 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
-use bb8_tiberius::ConnectionManager;
 use chrono::NaiveDateTime;
-use crate::structs::{Data, Datas, PackData};
+use crate::{structs::{Data, Datas, PackData}, utils::{error::MyError, sql::client}};
 
 fn format_data(all_datas: Vec<Datas>) -> Vec<HashMap<String, String>> {
     let all = all_datas
@@ -29,14 +28,13 @@ pub async fn get_box_datas(
     date_time_start: String,
     date_time_end: String,
     pn: String,
-    pool: &bb8::Pool<ConnectionManager>
-) -> anyhow::Result<Vec<HashMap<String,String>>,String> {
-    // let mut client = client().await?;
+) -> anyhow::Result<Vec<HashMap<String,String>>,MyError> {
+    let pool = client().await?;
     let mut client = pool.get().await.unwrap();
     let mut all_datas = Vec::new();
     let mut seen_sns = HashSet::new(); // 用于存储已见的 sn
     if box_no.is_empty() && pn.is_empty() && date_time_start.is_empty() && date_time_end.is_empty() && !use_time {
-        return Err("所有条件不能为空".to_string());
+        return Err(MyError::Zdyknown("所有条件不能为空".to_string()));
     }
     let sql_text = if !box_no.is_empty() && pn.is_empty() && !use_time {
         format!(
@@ -109,20 +107,19 @@ pub async fn get_box_datas(
         .simple_query(
             sql_text
         )
-        .await
-        .map_err(|e| format!("查询盒号 '{}' 的 MaterialPackSn 失败: {}", box_no, e))?;
+        .await?;
 
-    let rows = stream.into_results().await.map_err(|e| format!("获取 MaterialPackSn 行失败: {}", e))?;
+    let rows = stream.into_results().await?;
 
     for rowset in rows {
         for row in rowset {
             let sn = match row.get::<&str, _>(0) {
                 Some(s) => s.to_string(),
                 None => {
-                    return Err(format!(
+                    return Err(MyError::Zdyknown(format!(
                         "盒号:{},没有找到sn信息，请注意箱号是否正确!!!",
                         box_no
-                    ))
+                    )));
                 }
             };
             if seen_sns.contains(&sn) {
@@ -162,7 +159,7 @@ pub async fn get_box_datas(
     
 
     if all_datas.is_empty() {
-        return Err(format!("盒号 '{}' 没有找到数据", box_no));
+        return Err(MyError::Zdyknown(format!("盒号 '{}' 没有找到数据", box_no)));
     }
     let datas = format_data(all_datas.clone());
     Ok(datas)

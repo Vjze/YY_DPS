@@ -1,3 +1,5 @@
+// export2excel.rs
+
 use super::excel_utils::{before_im_num, before_ith_num, before_po, before_vf_num, calculate_tc};
 use crate::{
     configs::{
@@ -14,6 +16,7 @@ use umya_spreadsheet::{
     Border, Font, HorizontalAlignmentValues, Style, VerticalAlignmentValues, reader::xlsx::read,
     writer::xlsx::write,
 };
+use tracing::info; // 引入 info!
 
 // 单元格更新结构
 #[derive(Debug)]
@@ -27,9 +30,12 @@ pub async fn write_to_excel(
     type_name: String,
     datas: Vec<HashMap<String, String>>,
 ) -> Result<(), MyError> {
+    info!("开始执行 write_to_excel, 类型: {}, 数据量: {}", type_name, datas.len());
     let template_names: Vec<String> = get_type_infos(type_name.clone()).await?.0;
     let datas = Arc::new(datas.clone());
     let template_path = Arc::new(String::from(r"\\192.168.10.142\Excel_Templates\"));
+
+    info!("找到 {} 个关联模板: {:?}", template_names.len(), template_names);
 
     // 使用 tokio::spawn 创建异步任务，处理每个模板
     let tasks: Vec<_> = template_names
@@ -37,12 +43,17 @@ pub async fn write_to_excel(
         .map(|template_name| {
             let datas = datas.clone();
             let template_path = template_path.clone();
+            let tn_clone = template_name.clone(); // 用于日志记录
             tokio::spawn(async move {
                 let result: Result<(), MyError> = async {
+                    info!("开始处理模板: {}", tn_clone);
                     let decimal_config = get_decimal_config_value(template_name.clone()).await?;
                     let template_path = format!("{}{}.xlsx", template_path, template_name);
+                    info!("正在读取模板文件: {}", template_path);
+
                     let mut book = read(&template_path)
                         .map_err(|e| MyError::Zdyknown(format!("无法读取模板文件: {}", e)))?;
+                    info!("模板文件读取成功.");
                     let sheet = book
                         .get_sheet_by_name_mut("Sheet1")
                         .ok_or(MyError::Zdyknown("找不到 Sheet1".to_string()))?;
@@ -61,12 +72,10 @@ pub async fn write_to_excel(
                     } else {
                         "1".to_string() // 默认值
                     };
-                    println!("rows = {:?}", rows);
+                    info!("配置的表头行数: {}", rows);
                     let header_rows_to_scan = if rows == "1" {
-                        println!("进入了 'if' 分支，rows == '1'");
                         vec![highest_row]
                     } else {
-                        println!("进入了 'else' 分支，rows != '1'");
                         vec![highest_row - 1, highest_row]
                     };
                     let table_infos = decimal_config.tables.clone();
@@ -110,19 +119,20 @@ pub async fn write_to_excel(
                         // 将拼接后的表头添加到 headers 列表中
                         headers.push(combined_header_for_col);
                     }
-                    println!("获取到的列名: {:?}", headers);
+                    info!("提取到的原始列名: {:?}", headers);
                     let headers = headers
                         .iter()
                         .map(|h| re.replace_all(h, "").to_string())
                         .collect::<Vec<_>>();
-                    println!("格式化后的列名: {:?}", headers);
+                    info!("格式化后的列名: {:?}", headers);
 
                     let last_row = sheet.get_highest_row();
                     let decimal_config = Arc::new(decimal_config);
                     // 异步获取 column_name_mapping
                     let column_name_mapping =
                         Arc::new(get_template_map_config(template_name.clone()).await?);
-
+                    
+                    info!("开始并行生成单元格更新...");
                     // 并行生成单元格更新（保留 rayon）
                     let cell_updates: Vec<CellUpdate> = datas
                         .par_iter()
@@ -169,12 +179,14 @@ pub async fn write_to_excel(
                                 .collect::<Vec<_>>()
                         })
                         .collect();
-
+                    info!("单元格更新列表生成完毕，共 {} 个更新。", cell_updates.len());
+                    
                     // 构造样式一次性复用
                     let mut style = Style::default();
                     apply_cell_style(&mut style);
                     let style = Arc::new(style);
 
+                    info!("开始将数据写入工作表...");
                     // 主线程写入
                     for update in cell_updates {
                         let cell = sheet.get_cell_mut((update.col, update.row));
@@ -184,13 +196,15 @@ pub async fn write_to_excel(
                             .get_style_mut((update.col, update.row))
                             .clone_from(&style);
                     }
-
+                    info!("数据写入完毕.");
+                    
                     // 保存
                     let date = Local::now().format("%Y-%m-%d").to_string();
                     let output_path = format!("{}-{}.xlsx", template_name, date);
+                    info!("准备保存文件到: {}", output_path);
                     write(&book, &output_path)
                         .map_err(|e| MyError::Zdyknown(format!("无法写入文件: {}", e)))?;
-
+                    info!("模板 '{}' 处理并保存成功.", tn_clone);
                     Ok::<(), MyError>(())
                 }
                 .await;
@@ -216,12 +230,15 @@ pub async fn write_to_excel(
 
     // 如果有错误，返回 Err 包含所有错误信息
     if errors.is_empty() {
+        info!("所有模板处理完毕，无错误。");
         Ok(())
     } else {
         let error = errors.join(";");
+        info!("处理过程中发现 {} 个错误: {}", errors.len(), error);
         Err(MyError::Zdyknown(error))
     }
 }
+
 
 fn format_with_decimals(
     val: &str,

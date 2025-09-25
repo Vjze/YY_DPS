@@ -79,8 +79,8 @@ impl Widget for DecimalRow {
             if let Some(mut list) = item.as_portal_list().borrow_mut() {
                 // 使用固定的keys数组
                 let keys = vec![
-                    "ith", "vf", "im", "po", "rs", "se", "iop", "kink", "imkink", "res", "sen",
-                    "icc", "i_xtalk", "mdpid", "idark",
+                    "ith", "vf", "im", "po", "rs", "se", "icc", "kink", "imkink", "res", "sen",
+                    "vbr", "i_xtalk", "mdpid", "idark","deltaP（dB）","mdpid"
                 ];
                 let keys_len = keys.len();
                 let props = scope.props.get::<DecimalRowProps>().unwrap();

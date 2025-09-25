@@ -3,7 +3,7 @@ use tiberius::{AuthMethod, Config};
 
 use crate::utils::error::MyError;
 
-pub async fn client() -> anyhow::Result<bb8::Pool<ConnectionManager>> {
+pub async fn client() -> anyhow::Result<bb8::Pool<ConnectionManager>,MyError> {
     let mut config = Config::new();
     config.host("192.168.3.250");
     config.port(1433);

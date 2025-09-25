@@ -3,6 +3,7 @@ use tokio::runtime::Runtime;
 
 use crate::{
     configs::type_config::{Infos, add_new_type, delete_type, get_type_infos, update_type},
+    settings::type_add_template_modal::TemplateNameModalAction,
     store::Store,
     utils::error::MyError,
 };
@@ -14,6 +15,7 @@ live_design! {
 
     use crate::shared::widgets::*;
     use crate::shared::styles::*;
+    use crate::settings::type_add_template_modal::AddTemplateNameModal;
     EXCEL_ICON = dep("crate://self/resources/images/excel.png");
 
     TemplateItems = <RoundedView> {
@@ -87,7 +89,7 @@ live_design! {
                 shadow_radius: 8.0,
                 shadow_offset: vec2(0.0,-1.5)
             }
-
+            flow: Overlay
             content = <View> {
                 flow: Down, spacing: 20
 
@@ -332,10 +334,12 @@ live_design! {
                         }
                     }
                 }
-
-
             }
-
+        type_add_template_modal = <Modal> {
+            content : {
+                <AddTemplateNameModal> {}
+            }
+        }
     }
 }
 
@@ -387,6 +391,7 @@ impl WidgetMatchEvent for TypeView {
         let jz_band_check = self.view.check_box(id!(jz_band_check));
         let save_type_btn = self.view.button(id!(update_type_btn));
         let del_type_btn = self.view.button(id!(del_type_btn));
+        let add_template_btn = self.view.button(id!(add_template_btn));
         if let Some(s) = select.changed_label(actions) {
             input.set_text(cx, &s);
             let type_name = input.text().clone();
@@ -486,11 +491,19 @@ impl WidgetMatchEvent for TypeView {
                 });
             }
         }
+        if add_template_btn.clicked(actions) {
+            let type_name = input.text().clone();
+            if type_name.is_empty() {
+                Cx::post_action(MyError::Zdyknown("型号名称不能为空".to_string()));
+                return;
+            }
+            self.view.modal(id!(type_add_template_modal)).open(cx);
+        }
         if save_type_btn.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
                 let type_name = input.text().clone();
                 if type_name.is_empty() {
-                    Cx::post_action(MyError::NoResult("型号名称不能为空".to_string()));
+                    Cx::post_action(MyError::Zdyknown("型号名称不能为空".to_string()));
                     return;
                 }
                 let rt = self.rt.handle().clone();
@@ -515,7 +528,7 @@ impl WidgetMatchEvent for TypeView {
         if del_type_btn.clicked(actions) {
             let type_name = input.text().clone();
             if type_name.is_empty() {
-                Cx::post_action(MyError::NoResult("型号名称不能为空".to_string()));
+                Cx::post_action(MyError::Zdyknown("型号名称不能为空".to_string()));
                 return;
             }
             let rt = self.rt.handle().clone();
@@ -530,6 +543,17 @@ impl WidgetMatchEvent for TypeView {
                     Err(e) => Cx::post_action(e),
                 }
             });
+        }
+        for action in actions {
+            if let Some(TemplateNameModalAction::Close) = action.downcast_ref() {
+                self.view.modal(id!(type_add_template_modal)).close(cx);
+            }
+            if let Some(TemplateNameModalAction::Action(template_name)) = action.downcast_ref() {
+                if let Some(store) = scope.data.get_mut::<Store>() {
+                    store.type_infos.0.push(template_name.clone());
+                }
+                self.view.modal(id!(type_add_template_modal)).close(cx);
+            }
         }
         let list_widget = self.view.portal_list(id!(list));
         for (item_id, item_widget) in list_widget.items_with_actions(actions) {

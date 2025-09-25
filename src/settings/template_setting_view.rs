@@ -76,7 +76,6 @@ live_design! {
                             uniform color: #FF7F50
                             uniform color_hover: #FFB6C1
                             uniform color_disabled: #A9A9A9
-
                          }
                     }
                     <Labelbold> {
@@ -147,7 +146,7 @@ live_design! {
                         }
                     }
                 }
-                <View> {
+                <ScrollYView> {
                     width: Fill,
                     height: Fit,
                     spacing: 25,

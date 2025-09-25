@@ -17,12 +17,12 @@ live_design! {
         draw_bg: {
             border_radius: 5
         }
-        padding: {left: 20}
-        align: {x: 0.5, y: 0.5}
+        padding: {left: 30}
+        align: {x: 0.0, y: 0.5}
 
         main_view = <View> {
             cursor: Hand
-            padding: 8
+            padding: 12
             align: {x: 0.0, y: 0.5}
             spacing: 20
             flow: Right

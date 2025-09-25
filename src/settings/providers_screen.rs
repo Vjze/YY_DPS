@@ -47,15 +47,12 @@ live_design! {
     pub ProvidersScreen = {{ProvidersScreen}} {
         width: Fill, height: Fill
         spacing: 20
-        flow: Overlay
+        // flow: Overlay
         <View> {
-            width: Fill, height: Fill
+            width: Fit, height: Fill
             flow: Down
-            header = <View> {
-            height: Fit
-            spacing: 20
-            flow: Down
-            padding: {left: 30, top: 40}
+            
+            padding: {left: 30, top: 20}
             <Label> {
                 draw_text:{
                     text_style: <BOLD_FONT>{font_size: 25}
@@ -63,30 +60,26 @@ live_design! {
                 }
                 text: "软件设置"
             }
-
-            <Label> {
-                draw_text:{
-                    text_style: <BOLD_FONT>{font_size: 12}
-                    color: #000
-                }
-                text: "非专业人员请勿乱动，否则可能造成不可逆的后果!!!"
+            <View> {
+                height:Fill
             }
+            providers = <Providers> {}
+            // <Label> {
+            //     draw_text:{
+            //         text_style: <BOLD_FONT>{font_size: 12}
+            //         color: #000
+            //     }
+            //     text: "非专业人员请勿乱动，否则可能造成不可逆的后果!!!"
+            // }
         }
 
         adaptive_view = <View> {
                 spacing: 10
                 padding: {top: 10}
-                providers = <Providers> {}
+                // providers = <Providers> {}
                 setting_view = <SettingPages> {}
                 
         }
-        }
-        
-        // login_view = <Modal> {
-        //     content : {
-        //         <LoginView> {}
-        //     } 
-        // }
     }
     
 }

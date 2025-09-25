@@ -8,6 +8,10 @@ pub enum MyError {
     IoError(#[from] std::io::Error),
     #[error("并发查询错误: {0}")]
     TokioError(#[from] tokio::task::JoinError),
+    #[error("表格写入异常: {0}")]
+    Write2ExcelErr(#[from] rust_xlsxwriter::XlsxError),
+    #[error("表格写入异常: {0}")]
+    SqlError(#[from] bb8_tiberius::Error),
     #[error("没有找到任何型号!!!")]
     UnLoadedTypes,
     #[error("没有找到任何模板!!!")]

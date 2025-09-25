@@ -453,7 +453,6 @@ impl WidgetMatchEvent for QueryScreen {
                     let query_worker = worker_input.text();
                     let query_devices = devices.selected_label();
                     let query_result = res.selected_label();
-                    let pool = store.sql_pool.clone().unwrap();
                     println!("{}", query_type);
                     if query_type == "Sn" {
                         let sns = if query_input.is_empty() {
@@ -471,7 +470,6 @@ impl WidgetMatchEvent for QueryScreen {
                                 query_result,
                                 query_devices,
                                 query_worker,
-                                &pool,
                             )
                             .await
                         });
@@ -492,7 +490,6 @@ impl WidgetMatchEvent for QueryScreen {
                                 query_start_time,
                                 query_end_time,
                                 query_pn,
-                                &pool,
                             )
                             .await
                         });
@@ -513,7 +510,6 @@ impl WidgetMatchEvent for QueryScreen {
                                 query_start_time,
                                 query_end_time,
                                 query_pn,
-                                &pool,
                             )
                             .await
                         });

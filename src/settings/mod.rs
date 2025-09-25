@@ -10,11 +10,11 @@ pub mod providers_screen;
 pub mod tabel_grid;
 pub mod template_setting_view;
 pub mod type_setting_view;
+pub mod type_add_template_modal;
 use makepad_widgets::Cx;
 
 pub fn live_design(cx: &mut Cx) {
     providers_screen::live_design(cx);
-    // moly_server_screen::live_design(cx);
     delete_modal::live_design(cx);
     type_setting_view::live_design(cx);
     providers::live_design(cx);
@@ -25,5 +25,5 @@ pub fn live_design(cx: &mut Cx) {
     map_setting_view::live_design(cx);
     map_grid::live_design(cx);
     add_template_modal::live_design(cx);
-    // sync_modal::live_design(cx);
+    type_add_template_modal::live_design(cx);
 }

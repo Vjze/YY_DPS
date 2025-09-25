@@ -94,7 +94,6 @@ live_design! {
                 uniform color: #FF7F50
                 uniform color_hover: #FFB6C1
                 uniform color_disabled: #A9A9A9
-
              }
         }
         export_btn = <Button> {
@@ -114,7 +113,6 @@ live_design! {
                 uniform color: #AFEEEE
                 uniform color_hover: #9370DB
                 uniform color_disabled: #DCDCDC
-
              }
         }
 
@@ -192,9 +190,8 @@ impl WidgetMatchEvent for ExportScreen {
             let carton = input.text().clone();
             let is_multi = query_btn.text() == "批量查询";
             if let Some(store) = scope.data.get_mut::<Store>() {
-                let pool = store.sql_pool.clone().unwrap();
                 let res = rt.block_on(async move {
-                    do_carton_query(carton, &pool, type_name.selected_label(), is_multi).await
+                    do_carton_query(carton, type_name.selected_label(), is_multi).await
                 });
                 match res {
                     Ok(r) => {
