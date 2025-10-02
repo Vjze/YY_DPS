@@ -17,12 +17,11 @@ live_design! {
         draw_bg: {
             border_radius: 5
         }
-        padding: {left: 30}
+        padding: {left: 50}
         align: {x: 0.0, y: 0.5}
 
         main_view = <View> {
             cursor: Hand
-            padding: 12
             align: {x: 0.0, y: 0.5}
             spacing: 20
             flow: Right
@@ -82,7 +81,7 @@ live_design! {
     pub Providers = {{Providers}} {
                 width: 200, height: Fill
                 flow: Down, spacing: 10
-                padding: {left: 10, right: 10, top:5}
+                padding: {left: 10, right: 10}
                 providers_list = <PortalList> {
                     width: Fill, height: Fill
                     provider_item = <ProviderItem> {}

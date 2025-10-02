@@ -2,11 +2,11 @@ use std::collections::HashMap;
 use makepad_widgets::*;
 
 use crate::{
-    configs::{
-        decimal_config::{DecimalConfig, get_templates},
+    box_band::work::query_work::BoxBandData, configs::{
+        decimal_config::{get_templates, DecimalConfig},
         get_all_column_name::load_all_column_names,
-        type_config::{Infos, get_type_names},
-    },
+        type_config::{get_type_names, Infos},
+    }
 };
 #[derive(Debug, Default, Clone)]
 pub struct Store {
@@ -19,7 +19,8 @@ pub struct Store {
     pub map_infos: HashMap<String, String>,
     pub grid_area: Area, // 存储 DecimalGrid 的 Area
     pub logined: bool,
-    pub free_login: bool
+    pub free_login: bool,
+    pub box_data: Vec<BoxBandData>
 }
 
 impl Store {

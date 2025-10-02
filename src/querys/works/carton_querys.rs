@@ -2,7 +2,10 @@ use std::collections::{HashMap, HashSet};
 
 use chrono::NaiveDateTime;
 
-use crate::{structs::{CartonData, Data, Datas, PackData}, utils::{error::MyError, sql::client}};
+use crate::{
+    structs::{CartonData, Data, Datas, PackData},
+    utils::{error::MyError, sql::client},
+};
 
 fn format_data(all_datas: Vec<Datas>) -> Vec<HashMap<String, String>> {
     let all = all_datas
@@ -121,15 +124,11 @@ pub async fn get_carton_datas(
         )
     };
     println!("执行 SQL 查询: {}", sql_text);
-        let mut pool = pool.get().await.unwrap();
+    let mut pool = pool.get().await.unwrap();
 
-    let stream = pool
-        .simple_query(sql_text)
-        .await?;
+    let stream = pool.simple_query(sql_text).await?;
 
-    let rows = stream
-        .into_results()
-        .await?;
+    let rows = stream.into_results().await?;
 
     for rowset in rows {
         for row in rowset {

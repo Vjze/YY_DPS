@@ -21,9 +21,11 @@ live_design! {
     use crate::settings::providers_screen::ProvidersScreen;
     use crate::widgets::dialog::*;
     use crate::login_view::LoginScreen;
+    use crate::box_band::box_band_view::BoxBandView;
 
     ICON_CHAT = dep("crate://self/resources/icons/chat.svg")
     ICON_LOCAL = dep("crate://self/resources/icons/local.svg")
+    ICON_BAND_VIEW = dep("crate://self/resources/icons/cloud.svg")
     ICON_CLOUD = dep("crate://self/resources/icons/cloud.svg")
     ICON_MOLYSERVER = dep("crate://self/resources/images/logo.png")
 
@@ -44,6 +46,7 @@ live_design! {
 
         export_frame = <ExportScreen> {visible: true}
         querys_frame = <QueryScreen> {visible: false}
+        box_band_frame = <BoxBandView> {visible: false}
         providers_frame = <ProvidersScreen> {visible: false}
     }
 
@@ -91,6 +94,12 @@ live_design! {
                 svg_file: (ICON_LOCAL),
             }
         }
+        box_band_tab = <SidebarMenuButton> {
+            text: "盒号绑定",
+            draw_icon: {
+                svg_file: (ICON_BAND_VIEW),
+            }
+        }
         <HorizontalFiller> {}
         set_btn = <View> {
             align: {y: 1.0}
@@ -102,7 +111,7 @@ live_design! {
                 }
             }
         }
-        
+
     }
 
     App = {{App}} {
@@ -142,7 +151,7 @@ live_design! {
 
                     root_adaptive_view = <View> {
                         visible: false
-                      
+
                             sidebar_menu = <SidebarMenu> {}
                             application_pages = <ApplicationPages> {}
                     }
@@ -188,6 +197,7 @@ impl LiveRegister for App {
         crate::widgets::live_design(cx);
         crate::querys::live_design(cx);
         crate::login_view::live_design(cx);
+        crate::box_band::live_design(cx);
     }
 }
 
@@ -216,6 +226,7 @@ impl MatchEvent for App {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
         let mut navigate_to_export = false;
         let mut navigate_to_sn = false;
+        let mut navigate_to_box_band = false;
         let mut navigate_to_providers = false;
 
         // TODO: Replace this with a proper navigation widget.
@@ -224,6 +235,7 @@ impl MatchEvent for App {
             .radio_button_set(ids!(
                 sidebar_menu.export_tab,
                 sidebar_menu.sn_tab,
+                sidebar_menu.box_band_tab,
                 sidebar_menu.providers_tab,
             ))
             .selected(cx, actions)
@@ -231,7 +243,8 @@ impl MatchEvent for App {
             match selected_tab {
                 0 => navigate_to_export = true,
                 1 => navigate_to_sn = true,
-                2 => navigate_to_providers = true,
+                2 => navigate_to_box_band = true,
+                3 => navigate_to_providers = true,
                 _ => {}
             }
         }
@@ -240,6 +253,8 @@ impl MatchEvent for App {
             self.navigate_to(cx, id!(application_pages.providers_frame));
         } else if navigate_to_export {
             self.navigate_to(cx, id!(application_pages.export_frame));
+        } else if navigate_to_box_band {
+            self.navigate_to(cx, id!(application_pages.box_band_frame));
         } else if navigate_to_sn {
             self.navigate_to(cx, id!(application_pages.querys_frame));
         }
@@ -278,7 +293,6 @@ impl MatchEvent for App {
                 }
             }
             if let Some(LoginResult::FreeLogin) = action.downcast_ref() {
-               
                 if let Some(store) = &self.store {
                     // store.logined = true;
                     // store.free_login = true;
@@ -300,6 +314,7 @@ impl App {
     fn navigate_to(&mut self, cx: &mut Cx, id: &[LiveId]) {
         let providers_id = id!(application_pages.providers_frame);
         let export_id = id!(application_pages.export_frame);
+        let box_band_id = id!(application_pages.box_band_frame);
         let sn_id = id!(application_pages.querys_frame);
 
         if id != providers_id {
@@ -314,6 +329,9 @@ impl App {
             self.ui.widget(sn_id).set_visible(cx, false);
         }
 
+        if id != box_band_id {
+            self.ui.widget(box_band_id).set_visible(cx, false);
+        }
         self.ui.widget(id).set_visible(cx, true);
     }
 }
