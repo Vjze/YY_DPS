@@ -21,7 +21,7 @@ live_design! {
     }
     Col = <View> {
         width: Fit
-        align: {x: 0.0, y: 0.5}
+        align: {x: 0.5, y: 0.5}
         label = <Label> {
             draw_text: {
                 text_style: {font_size: 12},

@@ -10,9 +10,9 @@ live_design! {
     use crate::shared::widgets::*;
     use crate::widgets::row::*;
     RowHeaderLabel = <View> {
-        width: 100,
+        // width: 100,
         height: Fit
-        align: {x: 0.0, y: 0.5  }
+        align: {x: 0.5, y: 0.5  }
         label = <Label> {
             width: Fit
             draw_text: {
@@ -35,14 +35,30 @@ live_design! {
             }
         }
 
-        <RowHeaderLabel> {width: 180, label = {text: "箱号"} }
-        <RowHeaderLabel> {width: 180, label = {text: "盒号"} }      
-        <RowHeaderLabel> {width: 180, label = {text: "Sn"} }
-        <RowHeaderLabel> {width: 70, label = {text: "Ith"} }
-        <RowHeaderLabel> {width: 70, label = {text: "Po"} }
-        <RowHeaderLabel> {width: 70, label = {text: "Se"} }
-        <RowHeaderLabel> {width: 70, label = {text: "Sen"} }
-        <RowHeaderLabel> {width: 300, label = {text: "测试时间"} }
+        <RowHeaderLabel> {width: Fill {
+                                weight: 2.0
+                            }, label = {text: "箱号"} }
+        <RowHeaderLabel> {width: Fill {
+                                weight: 2.0
+                            }, label = {text: "盒号"} }      
+        <RowHeaderLabel> {width: Fill {
+                                weight: 2.0
+                            }, label = {text: "Sn"} }
+        <RowHeaderLabel> {width: Fill {
+                                weight: 0.8
+                            }, label = {text: "Ith"} }
+        <RowHeaderLabel> {width: Fill {
+                                weight: 0.8
+                            }, label = {text: "Po"} }
+        <RowHeaderLabel> {width: Fill {
+                                weight: 0.8
+                            }, label = {text: "Se"} }
+        <RowHeaderLabel> {width: Fill {
+                                weight: 0.8
+                            }, label = {text: "Sen"} }
+        <RowHeaderLabel> {width: Fill {
+                                weight: 2.0
+                            }, label = {text: "测试时间"} }
     }
     pub InfosTable = {{InfosTable}} <RoundedShadowView> {
             width: Fill,

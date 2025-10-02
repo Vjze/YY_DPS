@@ -8,6 +8,7 @@ pub struct BoxBandData {
     pub box_no: String,
     pub pn: String,
     pub carton_no: String,
+    pub new_box_no: String,
     pub create_time: String,
 }
 pub async fn query_carton_info(carton_no: String) -> Result<Vec<BoxBandData>, MyError> {
@@ -41,6 +42,7 @@ pub async fn query_carton_info(carton_no: String) -> Result<Vec<BoxBandData>, My
                 pn,
                 carton_no,
                 create_time,
+                ..Default::default()
             };
             results.push(data);
         }
@@ -50,3 +52,4 @@ pub async fn query_carton_info(carton_no: String) -> Result<Vec<BoxBandData>, My
     }
     Ok(results)
 }
+
