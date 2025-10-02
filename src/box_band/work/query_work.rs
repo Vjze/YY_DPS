@@ -27,9 +27,13 @@ pub async fn query_carton_info(carton_no: String) -> Result<Vec<BoxBandData>, My
 
     let rows = stream.into_results().await?;
     let mut results = Vec::new();
+    let mut boxs = vec![];
     for rowset in rows {
         for row in rowset {
             let box_no = row.get::<&str, _>(0).unwrap_or("").to_string();
+            if boxs.contains(&box_no) {
+                continue;
+            }
             let pn = row.get::<&str, _>(1).unwrap_or("").to_string();
             let carton_no = row.get::<&str, _>(2).unwrap_or("").to_string();
             let create_time = row
@@ -38,12 +42,14 @@ pub async fn query_carton_info(carton_no: String) -> Result<Vec<BoxBandData>, My
                 .format("%Y-%m-%d %H:%M:%S")
                 .to_string();
             let data = BoxBandData {
-                box_no,
+                box_no: box_no.clone(),
                 pn,
                 carton_no,
                 create_time,
                 ..Default::default()
             };
+            boxs.push(box_no.clone());
+            
             results.push(data);
         }
     }

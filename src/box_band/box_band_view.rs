@@ -1,7 +1,7 @@
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
 
-use crate::{box_band::work::query_work::query_carton_info, store::Store, utils::error::MyError};
+use crate::{box_band::work::{band_work::band_work, query_work::query_carton_info}, store::Store, utils::error::{MyError, MyTip}};
 
 live_design! {
     use link::theme::*;
@@ -250,6 +250,27 @@ impl WidgetMatchEvent for BoxBandView {
                                 let num = format!("一共: {} 盒", data.len());
                                 boxs_num.set_text(cx, &num);
                                 store.box_data = data;
+                            }
+                            Err(e) => {
+                                Cx::post_action(e);
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        if band_btn.clicked(actions) {
+            if let Some(store) = scope.data.get::<Store>() {
+                if store.box_data.is_empty() {
+                    Cx::post_action(MyError::Zdyknown("没有数据，无法绑定!!!".to_string()));
+                }else{
+                    let _guard = rt.enter();
+                    let datas = store.box_data.clone();
+                    rt.block_on(async move {
+                        let res = band_work(datas).await;
+                        match res {
+                            Ok(_) => {
+                               Cx::post_action(MyTip::Zdyknown(format!("绑定成功!!!")));
                             }
                             Err(e) => {
                                 Cx::post_action(e);
