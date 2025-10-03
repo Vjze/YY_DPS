@@ -12,6 +12,13 @@ pub struct BoxBandData {
     pub create_time: String,
 }
 pub async fn query_carton_info(carton_no: String) -> Result<Vec<BoxBandData>, MyError> {
+    match check_binded(carton_no.clone()).await {
+        Ok(_) => get_carton_infos(carton_no).await,
+        Err(e) => Err(e),
+    }
+}
+
+async fn get_carton_infos(carton_no: String) -> Result<Vec<BoxBandData>, MyError> {
     let client = client().await?;
     let pool = &client;
     let sql_text = format!(
@@ -49,7 +56,7 @@ pub async fn query_carton_info(carton_no: String) -> Result<Vec<BoxBandData>, My
                 ..Default::default()
             };
             boxs.push(box_no.clone());
-            
+
             results.push(data);
         }
     }
@@ -58,4 +65,25 @@ pub async fn query_carton_info(carton_no: String) -> Result<Vec<BoxBandData>, My
     }
     Ok(results)
 }
+async fn check_binded(carton_no: String) -> Result<(), MyError> {
+    let client = client().await?;
+    let pool = &client;
+    let sql_text = format!(
+        "select *
+            from [mes_Factory].[dbo].[jz_carton_bind] 
+            where carton_No = '{}' and status = '0'",
+        carton_no
+    );
+    let mut pool = pool.get().await.unwrap();
+    let stream = pool.simple_query(sql_text).await?;
 
+    let rows = stream.into_row().await?;
+    if let Some(_e) = rows {
+        return Err(MyError::Zdyknown(format!(
+            "箱号: {} 已经绑定过。",
+            carton_no
+        )));
+    } else {
+        return Ok(());
+    }
+}
