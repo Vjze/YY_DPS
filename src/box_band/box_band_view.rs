@@ -1,7 +1,12 @@
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
 
-use crate::{box_band::work::{band_work::band_work, query_work::query_carton_info}, store::Store, utils::error::{MyError, MyTip}};
+use crate::{
+    box_band::work::{band_work::band_work, query_work::query_carton_info},
+    store::Store,
+    utils::error::MyError,
+    widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
+};
 
 live_design! {
     use link::theme::*;
@@ -153,14 +158,14 @@ live_design! {
                 return #F2F4F7;
             }
         }
-        <BandRowHeaderLabel> { 
+        <BandRowHeaderLabel> {
             width: Fill {
                 weight: 1.0
             }, label = {text: "箱号"} }
         <BandRowHeaderLabel> {
              width: Fill {
                                 weight: 1.0
-                            }, label = {text: "旧盒号"} }      
+                            }, label = {text: "旧盒号"} }
         <BandRowHeaderLabel> { width: Fill {
                                 weight: 1.0
                             }, label = {text: "新盒号"} }
@@ -193,7 +198,6 @@ struct BoxBandView {
 }
 impl Widget for BoxBandView {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-      
         self.widget_match_event(cx, event, scope);
         self.view.handle_event(cx, event, scope);
     }
@@ -214,7 +218,7 @@ impl WidgetMatchEvent for BoxBandView {
                 let datas = props.box_data.clone();
                 let len = datas.len();
                 let mut new_box_nos = vec![];
-                for i in 1..len + 1{
+                for i in 1..len + 1 {
                     let mut new_data = datas.get(i - 1).unwrap().clone();
                     let padded_number = format!("{:03}", i);
                     let new_box = format!("{}-{}", input, padded_number);
@@ -242,9 +246,11 @@ impl WidgetMatchEvent for BoxBandView {
                 Cx::post_action(MyError::Zdyknown("请输入箱号!!!".to_string()));
             } else {
                 let _guard = rt.enter();
+                let carton = carton_input.clone().text();
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     rt.block_on(async move {
-                        let res = query_carton_info(carton_input.text().clone()).await;
+                        let carton_input = carton;
+                        let res = query_carton_info(carton_input).await;
                         match res {
                             Ok(data) => {
                                 let num = format!("一共: {} 盒", data.len());
@@ -263,14 +269,20 @@ impl WidgetMatchEvent for BoxBandView {
             if let Some(store) = scope.data.get::<Store>() {
                 if store.box_data.is_empty() {
                     Cx::post_action(MyError::Zdyknown("没有数据，无法绑定!!!".to_string()));
-                }else{
+                } else {
                     let _guard = rt.enter();
                     let datas = store.box_data.clone();
+                    let carton = carton_input.text();
                     rt.block_on(async move {
                         let res = band_work(datas).await;
                         match res {
                             Ok(_) => {
-                               Cx::post_action(MyTip::Zdyknown(format!("绑定成功!!!")));
+                                let carton = carton.clone();
+                                enqueue_popup_notification(PopupItem {
+                                    kind: PopupKind::Success,
+                                    auto_dismissal_duration: Some(2.5),
+                                    message: format!("箱号: {} 绑定成功.", carton),
+                                });
                             }
                             Err(e) => {
                                 Cx::post_action(e);

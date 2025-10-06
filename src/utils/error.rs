@@ -42,6 +42,8 @@ pub enum MyError {
     TaskJoinError(String), 
     #[error("{0}")]
     LoginError(String),
+    #[error("选择文件对话框被关闭")]
+    DialogClosed,
     #[error("未知错误")]
     Unknown,
 }

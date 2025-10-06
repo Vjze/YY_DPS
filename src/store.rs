@@ -1,13 +1,17 @@
-use std::collections::HashMap;
 use makepad_widgets::*;
+use std::{collections::HashMap, path::PathBuf};
 
 use crate::{
-    box_band::work::query_work::BoxBandData, configs::{
+    box_band::work::query_work::BoxBandData,
+    configs::{
         decimal_config::{get_templates, DecimalConfig},
         get_all_column_name::load_all_column_names,
         type_config::{get_type_names, Infos},
-    }
+    }, data_import::data_import_db::DbData,
 };
+
+
+
 #[derive(Debug, Default, Clone)]
 pub struct Store {
     pub types: Vec<String>,
@@ -20,7 +24,8 @@ pub struct Store {
     pub grid_area: Area, // 存储 DecimalGrid 的 Area
     pub logined: bool,
     pub free_login: bool,
-    pub box_data: Vec<BoxBandData>
+    pub box_data: Vec<BoxBandData>,
+    pub import_datas: DbData
 }
 
 impl Store {
@@ -46,7 +51,7 @@ impl Store {
                 Vec::default()
             }
         };
-        
+
         Self {
             types,
             templates,

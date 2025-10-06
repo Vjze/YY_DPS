@@ -4,7 +4,10 @@ use tokio::runtime::Runtime;
 use crate::{
     store::Store,
     utils::error::{LoginResult, MyError, MyTip},
-    widgets::dialog::ErrprModalAction,
+    widgets::{
+        dialog::ErrprModalAction,
+        popup_list::{PopupItem, PopupKind, enqueue_popup_notification, set_global_popup_list},
+    },
 };
 
 live_design! {
@@ -15,13 +18,15 @@ live_design! {
     use crate::shared::styles::*;
     use crate::shared::widgets::*;
     use crate::shared::widgets::SidebarMenuButton;
-    use crate::shared::desktop_buttons::MolyDesktopButton;
     use crate::querys::querys_view::QueryScreen;
     use crate::export::export_view::ExportScreen;
     use crate::settings::providers_screen::ProvidersScreen;
     use crate::widgets::dialog::*;
     use crate::login_view::LoginScreen;
     use crate::box_band::box_band_view::BoxBandView;
+    use crate::data_import::data_import_db::DataImportDb;
+    use crate::widgets::popup_list::*;
+
 
     ICON_CHAT = dep("crate://self/resources/icons/chat.svg")
     ICON_LOCAL = dep("crate://self/resources/icons/local.svg")
@@ -47,6 +52,7 @@ live_design! {
         export_frame = <ExportScreen> {visible: true}
         querys_frame = <QueryScreen> {visible: false}
         box_band_frame = <BoxBandView> {visible: false}
+        data_import_db_frame = <DataImportDb> {visible: false}
         providers_frame = <ProvidersScreen> {visible: false}
     }
 
@@ -96,6 +102,12 @@ live_design! {
         }
         box_band_tab = <SidebarMenuButton> {
             text: "盒号绑定",
+            draw_icon: {
+                svg_file: (ICON_BAND_VIEW),
+            }
+        }
+        data_import_db_tab = <SidebarMenuButton> {
+            text: "外协数据导入",
             draw_icon: {
                 svg_file: (ICON_BAND_VIEW),
             }
@@ -161,6 +173,7 @@ live_design! {
 
                     }
                 }
+                <PopupList> {}
                 dialog_ui = <Modal> {
                     content : {
                         dialog_ui_inner = <ErrorDialog> {
@@ -198,6 +211,7 @@ impl LiveRegister for App {
         crate::querys::live_design(cx);
         crate::login_view::live_design(cx);
         crate::box_band::live_design(cx);
+        crate::data_import::live_design(cx);
     }
 }
 
@@ -211,6 +225,7 @@ impl AppMain for App {
             let _guard = rt.enter();
             let store = rt.block_on(async move { Store::init().await });
             self.store = Some(store);
+            set_global_popup_list(cx, &self.ui);
         }
         let Some(store) = self.store.as_mut() else {
             self.ui.handle_event(cx, event, &mut Scope::empty());
@@ -227,6 +242,7 @@ impl MatchEvent for App {
         let mut navigate_to_export = false;
         let mut navigate_to_sn = false;
         let mut navigate_to_box_band = false;
+        let mut navigate_to_data_import_db = false;
         let mut navigate_to_providers = false;
 
         // TODO: Replace this with a proper navigation widget.
@@ -236,6 +252,7 @@ impl MatchEvent for App {
                 sidebar_menu.export_tab,
                 sidebar_menu.sn_tab,
                 sidebar_menu.box_band_tab,
+                sidebar_menu.data_import_db_tab,
                 sidebar_menu.providers_tab,
             ))
             .selected(cx, actions)
@@ -244,7 +261,9 @@ impl MatchEvent for App {
                 0 => navigate_to_export = true,
                 1 => navigate_to_sn = true,
                 2 => navigate_to_box_band = true,
-                3 => navigate_to_providers = true,
+
+                3 => navigate_to_data_import_db = true,
+                4 => navigate_to_providers = true,
                 _ => {}
             }
         }
@@ -255,6 +274,8 @@ impl MatchEvent for App {
             self.navigate_to(cx, id!(application_pages.export_frame));
         } else if navigate_to_box_band {
             self.navigate_to(cx, id!(application_pages.box_band_frame));
+        } else if navigate_to_data_import_db {
+            self.navigate_to(cx, id!(application_pages.data_import_db_frame));
         } else if navigate_to_sn {
             self.navigate_to(cx, id!(application_pages.querys_frame));
         }
@@ -291,6 +312,11 @@ impl MatchEvent for App {
                         .set_visible(cx, !show_login);
                     self.ui.view(id!(set_btn)).set_visible(cx, true);
                 }
+                enqueue_popup_notification(PopupItem {
+                    kind: PopupKind::Success,
+                    auto_dismissal_duration: Some(2.5),
+                    message: "登录成功，解锁设置页面.".to_string(),
+                });
             }
             if let Some(LoginResult::FreeLogin) = action.downcast_ref() {
                 if let Some(store) = &self.store {
@@ -304,6 +330,11 @@ impl MatchEvent for App {
                     self.ui.button(id!(providers_tab)).set_visible(cx, false);
                     self.ui.view(id!(set_btn)).set_visible(cx, false);
                 }
+                enqueue_popup_notification(PopupItem {
+                    kind: PopupKind::Warning,
+                    auto_dismissal_duration: Some(2.5),
+                    message: "未使用账号密码登录，隐藏设置页面.".to_string(),
+                });
             }
         }
         cx.redraw_all();
@@ -316,6 +347,7 @@ impl App {
         let export_id = id!(application_pages.export_frame);
         let box_band_id = id!(application_pages.box_band_frame);
         let sn_id = id!(application_pages.querys_frame);
+        let data_import_db_id = id!(application_pages.data_import_db_frame);
 
         if id != providers_id {
             self.ui.widget(providers_id).set_visible(cx, false);
@@ -331,6 +363,10 @@ impl App {
 
         if id != box_band_id {
             self.ui.widget(box_band_id).set_visible(cx, false);
+        }
+        
+        if id != data_import_db_id {
+            self.ui.widget(data_import_db_id).set_visible(cx, false);
         }
         self.ui.widget(id).set_visible(cx, true);
     }
