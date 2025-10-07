@@ -11,85 +11,27 @@ use crate::{
         write_data::write_data_to_db,
     },
     store::Store,
-    utils::error::MyError,
-    widgets::{
-        dialog::ErrprModalAction,
-        popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
-    },
+    widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
 
 live_design! {
     use link::theme::*;
     use link::shaders::*;
     use link::widgets::*;
-    use crate::widgets::table::*;
+    use crate::data_import::import_table::*;
     use crate::widgets::popup_list::*;
     ICON_LOGO = dep("crate://self/resources/images/logo.png")
 
     pub DataImportDb = {{DataImportDb}} {
-                    <RoundedShadowView> {
+                    <View> {
                         width: Fill, height: Fill
-                        show_bg: true
-                        draw_bg: {
-                            color: #DCDCDC,
-                            border_radius: 8.5,
-                            uniform shadow_color: #0003
-                            shadow_radius: 18.0,
-                            shadow_offset: vec2(0.0,-1.5)
-                        }
                         spacing: 15.0,
                         padding: 10,
                         flow: Overlay,
                         <View> {
                             flow: Down,
                             spacing: 10,
-                            <View> {
-                                height:60,
-                                align:{y:0.5},
-                                logo = <Image> {
-                                    width: 50, height: 50,
-                                    source: (ICON_LOGO),
-                                }
-                                <H1> {
-                                    width: Fit,
-                                    height: Fit,
-                                    margin: {left:10},
-                                    text: "数据写入工具",
-                                    draw_text: {
-                                        color: #000000,
-                                        text_style: {
-                                            font_size: 24
-                                        }
-                                    }
-                                }
-                                <View> {
-                                    width: Fill,
-                                    height:Fit
-                                    }
-
-                                <Label> {
-                                    width: Fit,
-                                    height: Fit,
-                                    text: "当前版本:",
-                                    draw_text: {
-                                        color: #000000,
-                                        text_style: {
-                                            font_size: 16
-                                        }
-                                    }
-                                }
-                                version = <Label> {
-                                    width: Fit,
-                                    height: Fit,
-                                    text: "v0.0.1",
-                                    draw_text: {
-                                        color: #000000,
-                                        text_style: {
-                                            font_size: 16
-                                        }
-                                    }
-                                }
-                            }
+                            
                             <View> {
                                 width: Fill,
                                 height:Fit
@@ -193,7 +135,7 @@ live_design! {
                                     }
                                 }
                             }
-                            <InfosTable> {}
+                            <ImportTable> {}
                         }
                         <PopupList> {}
                     }
@@ -207,8 +149,6 @@ pub struct DataImportDb {
     pub view: View,
     #[rust(Runtime::new().unwrap())]
     pub rt: Runtime,
-    #[rust]
-    pub datas: DbData,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -219,8 +159,6 @@ pub struct DbData {
 }
 impl Widget for DataImportDb {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        self.ui_runner()
-            .handle(cx, event, &mut Scope::empty(), self);
         self.widget_match_event(cx, event, scope);
         self.view.handle_event(cx, event, scope);
     }
@@ -229,92 +167,96 @@ impl Widget for DataImportDb {
         self.view.draw_walk(cx, scope, walk)
     }
 }
-
 impl WidgetMatchEvent for DataImportDb {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let select_btn = self.view.button(id!(select_btn));
-        let action_btn = self.view.button(id!(action_btn));
-        if self.datas.data.is_empty() {
-            action_btn.set_enabled(cx, false);
-        }
+        let select_btn = self.button(id!(select_btn));
+        let action_btn = self.button(id!(action_btn));
+
         let rt = self.rt.handle().clone();
-        let ui = self.ui_runner().clone();
+
         if select_btn.clicked(actions) {
             info!("开始选择文件");
             let _guard = rt.enter();
 
-            rt.spawn(async move {
-                let result = select_file().await;
+            // 1. 启动文件选择和数据提取的异步任务
+            let path = rt.block_on(async move {
+                let result = select_file().await; // 异步文件选择
                 info!("选择文件结果: {:?}", result);
-                ui.defer(move |app, cx, _| match result {
-                    Ok(p) => {
-                        app.datas.file_path = p.clone();
-                        info!("开始提取数据 from file: {}", p.display());
-                        if let Some(file_name) = p.file_name().and_then(|s| s.to_str()) {
-                            let pn = file_name[..8].to_string();
-                            app.datas.pn = pn.clone();
-                            app.view.text_input(id!(pn)).set_text(cx, &app.datas.pn);
-                            let rt = app.rt.handle().clone();
-                            rt.spawn(async move {
-                                let data_result = extract_data(p.to_str().unwrap()).await;
-                                ui.defer(move |app, cx, scope| match data_result {
-                                    Ok(data_vec) => {
-                                        if let Some(store) = scope.data.get_mut::<Store>() {
-                                            let qty = data_vec.len();
-                                            let pn = pn;
-                                            app.datas.data = data_vec.clone();
-                                            let file_path = p;
-                                            app.view.label(id!(qty)).set_text(cx, &qty.to_string());
-                                            enqueue_popup_notification(PopupItem {
-                                                kind: PopupKind::Success,
-                                                auto_dismissal_duration: Some(2.5),
-                                                message: "数据提取完成".to_string(),
-                                            });
-                                            let datas = DbData{
-                                                data: data_vec,
-                                                pn,
-                                                file_path: file_path,
-                                            };
-                                            store.import_datas = datas;
-                                        }
-                                    }
-                                    Err(e) => {
-                                        Cx::post_action(e);
-                                    }
+                result
+            });
+            match path {
+                Ok(p) => {
+                    let file_name = p.to_str().unwrap();
+                    let res = rt.block_on(async move {
+                        let path = file_name;
+                        extract_data(&path).await
+                    });
+                    match res {
+                        Ok(r) => {
+                            let f = p.file_name().unwrap().display().to_string();
+                            let pn = f[..8].to_string();
+                            let file_path = p;
+                            let data = DbData {
+                                data: r.clone(),
+                                pn,
+                                file_path,
+                            };
+                            if let Some(store) = scope.data.get_mut::<Store>() {
+                                let qty = r.len();
+
+                                store.import_datas = data;
+                                info!(
+                                    "Store 更新完成，导入数据量: {}",
+                                    store.import_datas.data.len()
+                                );
+
+                                // UI 刷新
+                                self.view
+                                    .text_input(id!(pn))
+                                    .set_text(cx, &store.import_datas.pn);
+                                self.view.label(id!(qty)).set_text(cx, &qty.to_string());
+
+                                enqueue_popup_notification(PopupItem {
+                                    kind: PopupKind::Success,
+                                    auto_dismissal_duration: Some(2.5),
+                                    message: "数据提取完成".to_string(),
                                 });
-                            });
-                        } else {
-                            let content = "文件名无效或不存在".to_string();
-                            Cx::post_action(MyError::Zdyknown(content));
+                            }
+                        }
+                        Err(e) => {
+                            Cx::post_action(e);
                         }
                     }
-                    Err(e) => {
-                        Cx::post_action(e);
-                    }
-                });
-            });
+                }
+                Err(e) => {
+                    Cx::post_action(e);
+                }
+            }
         }
+
         if action_btn.clicked(actions) {
             info!("开始写入数据");
-            let data = self.datas.clone();
-            let rt = self.rt.handle().clone();
-            let _guard = rt.enter();
-            rt.spawn(async move {
-                let res = write_data_to_db(data).await;
-                match res {
-                    Ok(_) => {
-                        enqueue_popup_notification(PopupItem {
-                            kind: PopupKind::Success,
-                            auto_dismissal_duration: Some(3.0),
-                            message: "数据写入成功".to_string(),
-                        });
-                        info!("数据写入成功");
-                    }
-                    Err(e) => {
-                        Cx::post_action(e);
-                    }
-                };
-            });
+            if let Some(store) = scope.data.get::<Store>() {
+                let data = store.import_datas.clone();
+                let rt = self.rt.handle().clone();
+                let _guard = rt.enter();
+                rt.spawn(async move {
+                    let res = write_data_to_db(data).await;
+                    match res {
+                        Ok(_) => {
+                            enqueue_popup_notification(PopupItem {
+                                kind: PopupKind::Success,
+                                auto_dismissal_duration: Some(3.0),
+                                message: "数据写入成功".to_string(),
+                            });
+                            info!("数据写入成功");
+                        }
+                        Err(e) => {
+                            Cx::post_action(e);
+                        }
+                    };
+                });
+            }
         }
         cx.redraw_all();
     }

@@ -1,6 +1,6 @@
 use makepad_widgets:: *;
 
-use crate::{data_import::work::extract_data::ImportDBDatas, store::Store};
+use crate::data_import::work::extract_data::ImportDBDatas;
 
 
 live_design! {
@@ -18,7 +18,7 @@ live_design! {
     }
     Col = <View> {
         width: Fit
-        align: {x: 0.0, y: 0.5}
+        align: {x: 0.5, y: 0.5}
         label = <Label> {
             draw_text: {
                 text_style: {font_size: 12},
@@ -26,7 +26,7 @@ live_design! {
             }
         }
     }
-    pub DataRow = {{DataRow}} {
+    pub ImportRow = {{ImportRow}} {
         flow: Overlay,
         width: Fill,
         height: Fit,
@@ -59,12 +59,12 @@ live_design! {
 }
 
 #[derive(Live, LiveHook, Widget)]
-pub struct DataRow {
+pub struct ImportRow {
     #[deref]
     view: View,
 }
 
-impl Widget for DataRow {
+impl Widget for ImportRow {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
     }
@@ -111,6 +111,6 @@ impl Widget for DataRow {
     }
 }
 
-impl WidgetMatchEvent for DataRow {
+impl WidgetMatchEvent for ImportRow {
     fn handle_actions(&mut self, _cx: &mut Cx, _actions: &Actions, _scope: &mut Scope) {}
 }
