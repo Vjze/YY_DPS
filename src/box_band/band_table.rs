@@ -12,13 +12,11 @@ live_design! {
     pub Line = <View> {
         width: Fill,
         height: 1,
-        // padding: {top: 0, bottom: 0, left: 20, right: 20},
-        // margin: {top: 0, bottom: 0, left: 20, right: 20},
-        show_bg: true,
         draw_bg: {
             color: #1C1C1C,
         }
     }
+
     Col = <View> {
         width: Fit
         align: {x: 0.5, y: 0.5}
@@ -29,6 +27,7 @@ live_design! {
             }
         }
     }
+
     BandDataRow = {{BandDataRow}} {
         <View> {
             height: 45,
@@ -40,48 +39,55 @@ live_design! {
                 flow: Right
                 spacing: 30
 
-                carton_no = <Col> {width: Fill {
-                weight: 1.0
-            }}
-                old_box_no =  <Col> {width: Fill {
-                weight: 1.0
-            }}
-                new_box_no =  <Col> {width: Fill {
-                weight: 1.0
-            }}
+                carton_no = <Col> {
+                    width: Fill {
+                        weight: 1.0
+                    }
+                }
+                old_box_no = <Col> {
+                    width: Fill {
+                        weight: 1.0
+                    }
+                }
+                new_box_no = <Col> {
+                    width: Fill {
+                        weight: 1.0
+                    }
+                }
 
-            pn =  <Col> {width: Fill {
-                weight: 1.0
-            }}
+                pn = <Col> {
+                    width: Fill {
+                        weight: 1.0
+                    }
+                }
 
-                bandtime = <Col> {width: Fill {
-                weight: 1.0
-            }}
+                bandtime = <Col> {
+                    width: Fill {
+                        weight: 1.0
+                    }
+                }
             }
             separator_line = <Line> {}
         }
-
     }
 
     pub BandTable = {{BandTable}} <RoundedShadowView> {
-            width: Fill,
-            height: Fill,
-            show_bg: true
-            draw_bg: {
-                color: (MAIN_BG_COLOR),
-                border_radius: 5
-                uniform shadow_color: #0001
-                shadow_radius: 12.0,
-                shadow_offset: vec2(0.0,-1.5)
+        width: Fill,
+        height: Fill,
+        show_bg: true
+        draw_bg: {
+            color: (MAIN_BG_COLOR),
+            border_radius: 5
+            uniform shadow_color: #0001
+            shadow_radius: 12.0,
+            shadow_offset: vec2(0.0, -1.5)
+        }
+        list = <PortalList> {
+            drag_scrolling: false
+            BandDataRow = <BandDataRow> {
+                cursor: Default
             }
-            list = <PortalList> {
-                drag_scrolling: false
-                BandDataRow = <BandDataRow> {
-                    cursor: Default
-                }
-            }
-
-
+        }
     }
 }
 

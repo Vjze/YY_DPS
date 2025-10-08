@@ -112,7 +112,7 @@ live_design!(
                         }
                         template_select = <DropDown> {
                             labels: []
-                            width: Fit, height: 40
+                            width: 300, height: 40
                             padding: {top:12,left:15}
                             draw_text: {
                                 uniform color: #000
@@ -197,7 +197,7 @@ live_design!(
                             uniform color_hover: #9370DB
                             uniform color_disabled: #DCDCDC
 
-                         }
+                        }
                     }
                     cancel_button = <Button> {
                         width: 100
@@ -217,12 +217,11 @@ live_design!(
                             uniform color: #AFEEEE
                             uniform color_hover: #9370DB
                             uniform color_disabled: #DCDCDC
-                         }
+                        }
                     }
                 }
             }
         }
-
     }
 );
 

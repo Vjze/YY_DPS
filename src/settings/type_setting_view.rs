@@ -130,7 +130,7 @@ live_design! {
                             uniform color_hover: #FFB6C1
                             uniform color_disabled: #A9A9A9
 
-                         }
+                        }
                     }
                     <Labelbold> {
                         padding:6,

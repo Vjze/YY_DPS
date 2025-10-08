@@ -38,29 +38,26 @@ live_design! {
         <RowHeaderLabel> {width: 100, label = {text: "icc"} }
     }
     pub ImportTable = {{ImportTable}} <RoundedShadowView> {
-            width: Fill,
-            height: Fill,
-            show_bg: true
-            draw_bg: {
-                color: #F3F3F3,
-                border_radius: 5
-                uniform shadow_color: #0001
-                shadow_radius: 12.0,
-                shadow_offset: vec2(0.0,-1.5)
-            }
-            flow: Down,
-            HeaderRow = <HeaderRow> {
+        width: Fill,
+        height: Fill,
+        show_bg: true
+        draw_bg: {
+            color: #F3F3F3,
+            border_radius: 5
+            uniform shadow_color: #0001
+            shadow_radius: 12.0,
+            shadow_offset: vec2(0.0,-1.5)
+        }
+        flow: Down,
+        HeaderRow = <HeaderRow> {
+            cursor: Default
+        }
+        list = <PortalList> {
+            drag_scrolling: false
+            ItemRow = <ImportRow> {
                 cursor: Default
             }
-            list = <PortalList> {
-                drag_scrolling: false
-
-                ItemRow = <ImportRow> {
-                    cursor: Default
-                }
-            }
-
-
+        }
     }
 }
 

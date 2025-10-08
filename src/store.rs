@@ -1,16 +1,15 @@
 use makepad_widgets::*;
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
 
 use crate::{
     box_band::work::query_work::BoxBandData,
     configs::{
-        decimal_config::{get_templates, DecimalConfig},
+        decimal_config::{DecimalConfig, get_templates},
         get_all_column_name::load_all_column_names,
-        type_config::{get_type_names, Infos},
-    }, data_import::data_import_db::DbData,
+        type_config::{Infos, get_type_names},
+    },
+    data_import::data_import_db::DbData,
 };
-
-
 
 #[derive(Debug, Default, Clone)]
 pub struct Store {
@@ -25,7 +24,7 @@ pub struct Store {
     pub logined: bool,
     pub free_login: bool,
     pub box_data: Vec<BoxBandData>,
-    pub import_datas: DbData
+    pub import_datas: DbData,
 }
 
 impl Store {

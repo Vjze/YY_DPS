@@ -23,124 +23,126 @@ live_design! {
     ICON_LOGO = dep("crate://self/resources/images/logo.png")
 
     pub DataImportDb = {{DataImportDb}} {
-                    <View> {
-                        width: Fill, height: Fill
-                        spacing: 15.0,
-                        padding: 10,
-                        flow: Overlay,
-                        <View> {
-                            flow: Down,
-                            spacing: 10,
-                            
-                            <View> {
-                                width: Fill,
-                                height:Fit
-                                spacing:20,
-                                align: {y:0.5}
-                                select_btn = <Button> {
-                                    width: 100, height: 40,
-                                    text: "选择文件",
-                                    draw_text: {
-                                        color: #000000,
-                                        color_hover: #000000,
-                                        text_style: <THEME_FONT_REGULAR> {
-                                            font_size: 14
-                                        }
-                                    }
-                                    draw_bg: {
-                                        color: #708090,
-                                        color_hover: #B0E0E6,
-                                        color_down: #A0A0A0,
-                                        uniform border_radius: 5.0,
-                                    }
-                                }
-                                <Label> {
-                                    width: Fit,
-                                    height: Fit,
-                                    text: "料号:",
-                                    draw_text: {
-                                        color: #000000,
-                                        text_style: <THEME_FONT_REGULAR> {
-                                            font_size: 16
-                                        }
-                                    }
-                                }
-                                pn = <TextInput> {
-                                    height: Fill,
-                                    is_read_only: true,
-                                    empty_text: "选择文件后自动获取",
-                                    draw_text: {
-                                        color: #000000,
-                                        color_hover: #000000,
-                                        color_focus: #000000,
-                                        color_empty_focus: #000000,
-                                        color_empty_hover: #000000,
-                                        color_empty: #808080,
-                                        color_disabled: #A9A9A9,
-                                        text_style: <THEME_FONT_REGULAR> {
-                                            font_size: 14
-                                        }
-                                    }
-                                    draw_bg: {
-                                        color: #A9A9A9,
-                                        color_hover: #A9A9A9,
-                                        color_focus: #A9A9A9,
-                                        color_empty: #A9A9A9,
-                                        color_down: #A9A9A9,
-                                        uniform border_radius: 5.0,
-                                        uniform border_size: 1.0,
-                                        uniform border_color: #A9A9A9,
-                                        uniform border_color_focus: #4169E1,
-                                    }
-                                    padding: {left: 10,top:8}
-                                }
-                                <Label> {
-                                    width: Fit,
-                                    height: Fit,
-                                    text: "总数量:",
-                                    draw_text: {
-                                        color: #000000,
-                                        text_style: <THEME_FONT_REGULAR> {
-                                            font_size: 16
-                                        }
-                                    }
-                                }
-                                qty = <Label> {
-                                    width: Fit,
-                                    height: Fit,
-                                    text: "0",
-                                    draw_text: {
-                                        color: #000000,
-                                        text_style: <THEME_FONT_REGULAR> {
-                                            font_size: 16
-                                        }
-                                    }
-                                }
-                                action_btn = <Button> {
-                                    width: 100, height: 40,
-                                    text: "写入数据",
-                                    draw_text: {
-                                        color: #000000,
-                                        color_hover: #000000,
-                                        text_style: <THEME_FONT_REGULAR> {
-                                            font_size: 14
-                                        }
-                                    }
-                                    draw_bg: {
-                                        color: #708090,
-                                        color_hover: #B0E0E6,
-                                        color_down: #A0A0A0,
-                                        color_disabled: #615c5cff,
-                                        uniform border_radius: 5.0,
-                                    }
-                                }
+        <View> {
+            width: Fill,
+            height: Fill
+            spacing: 15.0,
+            padding: 10,
+            flow: Overlay,
+            <View> {
+                flow: Down,
+                spacing: 10,
+
+                <View> {
+                    width: Fill,
+                    height: Fit
+                    spacing: 20,
+                    align: {y: 0.5}
+                    select_btn = <Button> {
+                        width: 100,
+                        height: 40,
+                        text: "选择文件",
+                        draw_text: {
+                            color: #000000,
+                            color_hover: #000000,
+                            text_style: <THEME_FONT_REGULAR> {
+                                font_size: 14
                             }
-                            <ImportTable> {}
                         }
-                        <PopupList> {}
+                        draw_bg: {
+                            color: #708090,
+                            color_hover: #B0E0E6,
+                            color_down: #A0A0A0,
+                            uniform border_radius: 5.0,
+                        }
+                    }
+                    <Label> {
+                        width: Fit,
+                        height: Fit,
+                        text: "料号:",
+                        draw_text: {
+                            color: #000000,
+                            text_style: <THEME_FONT_REGULAR> {
+                                font_size: 16
+                            }
+                        }
+                    }
+                    pn = <TextInput> {
+                        height: Fill,
+                        is_read_only: true,
+                        empty_text: "选择文件后自动获取",
+                        draw_text: {
+                            color: #000000,
+                            color_hover: #000000,
+                            color_focus: #000000,
+                            color_empty_focus: #000000,
+                            color_empty_hover: #000000,
+                            color_empty: #808080,
+                            color_disabled: #A9A9A9,
+                            text_style: <THEME_FONT_REGULAR> {
+                                font_size: 14
+                            }
+                        }
+                        draw_bg: {
+                            color: #A9A9A9,
+                            color_hover: #A9A9A9,
+                            color_focus: #A9A9A9,
+                            color_empty: #A9A9A9,
+                            color_down: #A9A9A9,
+                            uniform border_radius: 5.0,
+                            uniform border_size: 1.0,
+                            uniform border_color: #A9A9A9,
+                            uniform border_color_focus: #4169E1,
+                        }
+                        padding: {left: 10, top: 8}
+                    }
+                    <Label> {
+                        width: Fit,
+                        height: Fit,
+                        text: "总数量:",
+                        draw_text: {
+                            color: #000000,
+                            text_style: <THEME_FONT_REGULAR> {
+                                font_size: 16
+                            }
+                        }
+                    }
+                    qty = <Label> {
+                        width: Fit,
+                        height: Fit,
+                        text: "0",
+                        draw_text: {
+                            color: #000000,
+                            text_style: <THEME_FONT_REGULAR> {
+                                font_size: 16
+                            }
+                        }
+                    }
+                    action_btn = <Button> {
+                        width: 100,
+                        height: 40,
+                        text: "写入数据",
+                        draw_text: {
+                            color: #000000,
+                            color_hover: #000000,
+                            text_style: <THEME_FONT_REGULAR> {
+                                font_size: 14
+                            }
+                        }
+                        draw_bg: {
+                            color: #708090,
+                            color_hover: #B0E0E6,
+                            color_down: #A0A0A0,
+                            color_disabled: #615c5cff,
+                            uniform border_radius: 5.0,
+                        }
                     }
                 }
-
+                <ImportTable> {}
+            }
+            <PopupList> {}
+        }
+    }
 }
 
 #[derive(Live, LiveHook, Widget)]

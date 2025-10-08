@@ -35,13 +35,10 @@ live_design! {
             flow: Down
             width: Fill
             align: {x: 0.0, y: 0.5}
-
             h_wrapper = <View> {
                 flow: Right
                 width: Fill
-                // padding: {top: 10, bottom: 10, left: 20, right: 20}
                 spacing: 30
-
                 sn = <Col> {width: Fill}
                 condition_unit =  <Col> {width: 100}
                 ith =  <Col> {width: 100}
@@ -54,7 +51,6 @@ live_design! {
             }
             separator_line = <Line> {}
         }
-
     }
 }
 

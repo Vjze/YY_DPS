@@ -94,7 +94,7 @@ live_design! {
                 uniform color: #FF7F50
                 uniform color_hover: #FFB6C1
                 uniform color_disabled: #A9A9A9
-             }
+            }
         }
         export_btn = <Button> {
             width: Fit
@@ -113,7 +113,7 @@ live_design! {
                 uniform color: #AFEEEE
                 uniform color_hover: #9370DB
                 uniform color_disabled: #DCDCDC
-             }
+            }
         }
 
 

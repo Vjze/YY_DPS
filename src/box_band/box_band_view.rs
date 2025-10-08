@@ -21,22 +21,24 @@ live_design! {
     FirstRow = <View> {
         width: Fill,
         height: Fit,
-        spacing:20,
+        spacing: 20,
 
         <Label> {
             text: "箱号:"
-            width: Fit, height: 40
-            padding: {top:5}
+            width: Fit,
+            height: 40
+            padding: {top: 5}
             draw_text: {
                 color: #000000,
                 text_style: {
-                    font_size:16
+                    font_size: 16
                 }
             }
         }
         carton_input = <MolyTextInput> {
             empty_text: "请输入箱号...."
-            width: Fill, height: 40
+            width: Fill,
+            height: 40
             padding: 10,
             draw_text: {
                 text_style: <REGULAR_FONT>{
@@ -54,18 +56,20 @@ live_design! {
         }
         <Label> {
             text: "新盒号:"
-            width: Fit, height: 40
-            padding: {top:5}
+            width: Fit,
+            height: 40
+            padding: {top: 5}
             draw_text: {
                 color: #000000,
                 text_style: {
-                    font_size:16
+                    font_size: 16
                 }
             }
         }
         new_box_no_input = <MolyTextInput> {
             empty_text: "请输入新盒号...."
-            width: Fill, height: 40
+            width: Fill,
+            height: 40
             padding: 10,
             draw_text: {
                 text_style: <REGULAR_FONT>{
@@ -90,7 +94,7 @@ live_design! {
             draw_text: {
                 color: #000000,
                 text_style: {
-                    font_size:16
+                    font_size: 16
                 }
             }
             draw_bg: {
@@ -99,7 +103,7 @@ live_design! {
                 uniform color: #FF7F50
                 uniform color_hover: #FFB6C1
                 uniform color_disabled: #A9A9A9
-             }
+            }
         }
 
         band_btn = <Button> {
@@ -110,7 +114,7 @@ live_design! {
             draw_text: {
                 color: #000000,
                 text_style: {
-                    font_size:16
+                    font_size: 16
                 }
             }
             draw_bg: {
@@ -119,24 +123,24 @@ live_design! {
                 uniform color: #FF7F50
                 uniform color_hover: #FFB6C1
                 uniform color_disabled: #A9A9A9
-             }
+            }
         }
         boxs_num = <Label> {
             padding: {
-                top:5
+                top: 5
             }
             text: "一共: 0 盒"
             draw_text: {
                 color: #000,
                 text_style: {
-                    font_size:16
+                    font_size: 16
                 }
             }
         }
     }
     BandRowHeaderLabel = <View> {
         height: Fit
-        align: {x: 0.5, y: 0.5  }
+        align: {x: 0.5, y: 0.5}
         label = <Label> {
             width: Fit
             draw_text: {
@@ -161,20 +165,33 @@ live_design! {
         <BandRowHeaderLabel> {
             width: Fill {
                 weight: 1.0
-            }, label = {text: "箱号"} }
+            },
+            label = {text: "箱号"}
+        }
         <BandRowHeaderLabel> {
-             width: Fill {
-                                weight: 1.0
-                            }, label = {text: "旧盒号"} }
-        <BandRowHeaderLabel> { width: Fill {
-                                weight: 1.0
-                            }, label = {text: "新盒号"} }
-        <BandRowHeaderLabel> { width: Fill {
-                                weight: 1.0
-                            }, label = {text: "料号"} }
-        <BandRowHeaderLabel> { width: Fill {
-                                weight: 1.0
-                            }, label = {text: "装盒时间"} }
+            width: Fill {
+                weight: 1.0
+            },
+            label = {text: "旧盒号"}
+        }
+        <BandRowHeaderLabel> {
+            width: Fill {
+                weight: 1.0
+            },
+            label = {text: "新盒号"}
+        }
+        <BandRowHeaderLabel> {
+            width: Fill {
+                weight: 1.0
+            },
+            label = {text: "料号"}
+        }
+        <BandRowHeaderLabel> {
+            width: Fill {
+                weight: 1.0
+            },
+            label = {text: "装盒时间"}
+        }
     }
     pub BoxBandView = {{BoxBandView}} {
         width: Fill,
@@ -184,9 +201,9 @@ live_design! {
         flow: Down,
         <FirstRow> {}
         <BandHeaderRow> {
-                // cursor: Default
-            }
-            <BandTable> {}
+            cursor: Default
+        }
+        <BandTable> {}
     }
 }
 #[derive(Live, LiveHook, Widget)]
