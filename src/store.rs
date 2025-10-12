@@ -20,7 +20,6 @@ pub struct Store {
     pub type_infos: (Vec<String>, Infos),
     pub template_infos: DecimalConfig,
     pub map_infos: HashMap<String, String>,
-    pub grid_area: Area, // 存储 DecimalGrid 的 Area
     pub logined: bool,
     pub free_login: bool,
     pub box_data: Vec<BoxBandData>,

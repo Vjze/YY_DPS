@@ -149,7 +149,7 @@ live_design! {
                 <ScrollYView> {
                     width: Fill,
                     height: Fit,
-                    spacing: 25,
+                    spacing: 15,
                     flow: Down,
                     <View> {
                         height: 180,
@@ -169,7 +169,7 @@ live_design! {
                         <DecimalGrid> {}
                     }
                     <View> {
-                        height: 300,
+                        height: 280,
                         width: Fill,
                         flow: Down,
                         spacing: 10,
@@ -186,7 +186,7 @@ live_design! {
                         <FixedGrid> {}
                     }
                     <View> {
-                        height: 130,
+                        height: 150,
                         width: Fill,
                         flow: Down,
                         spacing: 10,
@@ -312,13 +312,6 @@ impl WidgetMatchEvent for TemplateView {
             });
             if let Some(store) = scope.data.get_mut::<Store>() {
                 store.template_infos = decimal_infos;
-                let grid_area = self.view.area(); // 或者通过其他方式获取目标 Area
-                store.grid_area = grid_area;
-                let trigger = Trigger {
-                    id: live_id!(update_decimal_inputs),
-                    from: Area::Empty, // 来源可以是 Empty，除非需要特定来源
-                };
-                cx.send_trigger(grid_area, trigger);
             }
         }
         if add_btn.clicked(actions) {
@@ -353,13 +346,6 @@ impl WidgetMatchEvent for TemplateView {
         if clear_btn.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
                 store.template_infos = DecimalConfig::default();
-                let grid_area = self.view.area(); // 或者通过其他方式获取目标 Area
-                store.grid_area = grid_area;
-                let trigger = Trigger {
-                    id: live_id!(update_decimal_inputs),
-                    from: Area::Empty, // 来源可以是 Empty，除非需要特定来源
-                };
-                cx.send_trigger(grid_area, trigger);
                 input.set_text(cx, "");
             }
         }

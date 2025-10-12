@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use makepad_widgets::{event::TriggerEvent, *};
+use makepad_widgets::*;
 
 use crate::store::Store;
 
@@ -75,88 +75,68 @@ pub struct DecimalRow {
 }
 impl Widget for DecimalRow {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
-        while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
-            if let Some(mut list) = item.as_portal_list().borrow_mut() {
-                // 使用固定的keys数组
-                let keys = vec![
-                    "ith", "vf", "im", "po", "rs", "se", "icc", "kink", "imkink", "res", "sen",
-                    "vbr", "i_xtalk", "mdpid", "idark","deltaP（dB）","mdpid"
-                ];
-                let keys_len = keys.len();
-                let props = scope.props.get::<DecimalRowProps>().unwrap();
-                let row_idx = props.props;
-                let first_idx = row_idx * 10;
+    while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
+        if let Some(mut list) = item.as_portal_list().borrow_mut() {
+             if let Some(state) = scope.data.get_mut::<Store>() {
+            let keys = vec![
+                "ith", "vf", "im", "po", "rs", "se", "icc", "kink",
+                "imkink", "res", "sen", "vbr", "i_xtalk", "mdpid",
+                "idark", "deltaP（dB）", "mdpid",
+            ];
+            let keys_len = keys.len();
 
-                // 始终渲染10个项，但要考虑到keys数组的实际长度
-                let num_to_render = 10.min(keys_len.saturating_sub(first_idx));
-                list.set_item_range(cx, 0, num_to_render);
+            let props = scope.props.get::<DecimalRowProps>().unwrap();
+            let row_idx = props.props;
+            let first_idx = row_idx * 10;
 
-                for i in 0..num_to_render {
-                    if i >= keys_len {
-                        break;
-                    }
-                    let global_idx = first_idx + i;
+            let num_to_render = 10.min(keys_len.saturating_sub(first_idx));
+            list.set_item_range(cx, 0, num_to_render);
 
-                    let key = keys[global_idx];
-                    let item = list.item(cx, i, live_id!(DecimalItem));
-                    let label_name = item.label(id!(decimal_name));
-                    let widget_id = item.text_input(id!(decimal_input)).widget_uid();
-                    let value = key.to_string();
-                    self.ids.insert(widget_id, value);
-                    // 设置标签文本
-                    label_name.set_text(cx, key);
-                    item.draw_all(cx, scope);
-                }
-            }
+            // --- THE FIX ---
+            // 1. 在循环外获取数据并克隆，立即释放对 `scope` 的不可变借用。
+            //    `values` 现在是一个拥有的 HashMap (如果 store 存在的话)。
+            let values = state.template_infos.numbers.clone();
+            // 循环开始时，对 `scope` 的不可变借用已经结束。
+
+            for i in 0..num_to_render {
+                if i >= keys_len { break; }
+                let global_idx = first_idx + i;
+
+                let key = keys[global_idx];
+                let item_widget = list.item(cx, i, live_id!(DecimalItem));
+                
+                let label_name = item_widget.label(id!(decimal_name));
+                let input_widget = item_widget.text_input(id!(decimal_input));
+                let widget_id = input_widget.widget_uid();
+                
+                self.ids.insert(widget_id, key.to_string());
+
+                // 2. 无条件设置标签
+                label_name.set_text(cx, key);
+                let v = values.get(key).unwrap_or(&0);
+                // 3. 使用克隆出来的数据来设置输入框
+                // if let Some(ref local_values) = values {
+                //     if let Some(num) = local_values.get(key) {
+                        input_widget.set_text(cx, &v.to_string());
+                //     } else {
+                //         input_widget.set_text(cx, "");
+                //     }
+                // } else {
+                //     // 如果 store 本身就不存在
+                //     input_widget.set_text(cx, "");
+                // }
+                
+                // 4. 现在可以安全地可变借用 `scope`，因为没有其他借用存在。
+                item_widget.draw_all(cx, scope);
+            }}
         }
-        DrawStep::done()
     }
+    DrawStep::done()
+}
 
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
-
-        if let Event::Trigger(trigger_event) = event {
-            if let Some(state) = scope.data.get_mut::<Store>() {
-                // 遍历所有 triggers
-                for (_area, triggers) in &trigger_event.triggers {
-                    for trigger in triggers {
-                        if trigger.id == live_id!(update_decimal_inputs) {
-                            let keys = vec![
-                                "ith", "vf", "im", "po", "rs", "se", "iop", "kink", "imkink",
-                                "res", "sen", "icc", "i_xtalk", "mdpid", "idark",
-                            ];
-                            let keys_len = keys.len();
-
-                            if let Some(props) = scope.props.get::<DecimalRowProps>() {
-                                let row_idx = props.props;
-                                let first_idx = row_idx * 10;
-                                let num_to_render = 10.min(keys_len.saturating_sub(first_idx));
-
-                                let list_widget = self.view.portal_list(id!(decimal_row));
-                                for i in 0..num_to_render {
-                                    if i >= keys_len {
-                                        break;
-                                    }
-                                    let global_idx = first_idx + i;
-                                    let key = keys[global_idx];
-
-                                    let item = list_widget.item(cx, i, live_id!(DecimalItem));
-                                    let decimal_input = item.text_input(id!(decimal_input));
-                                    let store_value = state
-                                        .template_infos
-                                        .numbers
-                                        .get(key)
-                                        .map(|v| v.to_string())
-                                        .unwrap_or_default();
-                                    decimal_input.set_text(cx, &store_value);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
         cx.redraw_all();
     }
 }
@@ -187,75 +167,47 @@ impl WidgetMatchEvent for DecimalRow {
 pub struct DecimalGrid {
     #[deref]
     view: View,
+    #[rust]
+    data: HashMap<String, i64>,
 }
 
 impl Widget for DecimalGrid {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
-        while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
-            if let Some(mut list) = item.as_portal_list().borrow_mut() {
-                // 使用一个固定的keys数组来决定渲染的结构
-                let keys = vec![
-                    "ith", "vf", "im", "po", "rs", "se", "iop", "kink", "imkink", "res", "sen",
-                    "icc", "i_xtalk", "mdpid", "idark",
-                ];
-                let keys_len = keys.len();
+    while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
+        if let Some(mut list) = item.as_portal_list().borrow_mut() {
+            // 移除对 store 的检查，因为网格结构不依赖于 store 中的数据
+            let keys = vec![
+                "ith", "vf", "im", "po", "rs", "se", "icc", "kink",
+                "imkink", "res", "sen", "vbr", "i_xtalk", "mdpid",
+                "idark", "deltaP（dB）", "mdpid",
+            ];
+            let keys_len = keys.len();
 
-                // 根据固定keys数组的长度来计算行数，而不是state中的数据长度
-                let len = keys_len.div_ceil(10);
-                list.set_item_range(cx, 0, len);
-
-                while let Some(row_idx) = list.next_visible_item(cx) {
-                    if row_idx >= len {
-                        continue;
-                    }
-
-                    let row = list.item(cx, row_idx, live_id!(DecimalRow));
-                    let props = DecimalRowProps { props: row_idx };
-                    let mut scope = Scope::with_props(&props);
-                    row.draw_all(cx, &mut scope);
+            // 根据固定 keys 数组的长度来计算行数
+            let len = keys_len.div_ceil(10);
+            list.set_item_range(cx, 0, len);
+            let data = scope.data.get_mut::<Store>().unwrap();
+            while let Some(row_idx) = list.next_visible_item(cx) {
+                if row_idx >= len {
+                    continue;
                 }
+
+                let row = list.item(cx, row_idx, live_id!(DecimalRow));
+                let props = DecimalRowProps { props: row_idx };
+                let mut scope = Scope::with_data_props(data, &props);
+                row.draw_all(cx, &mut scope);
             }
         }
-        DrawStep::done()
     }
+    DrawStep::done()
+}
 
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        self.view.handle_event(cx, event, scope);
-        if let Event::Trigger(trigger_event) = event {
-            if let Some(store) = scope.data.get_mut::<Store>() {
-                let grid_area = store.grid_area;
-                if let Some(triggers) = trigger_event.triggers.get(&grid_area) {
-                    for trigger in triggers {
-                        if trigger.id == live_id!(update_decimal_inputs) {
-                            let keys = vec![
-                                "ith", "vf", "im", "po", "rs", "se", "iop", "kink", "imkink",
-                                "res", "sen", "icc", "i_xtalk", "mdpid", "idark",
-                            ];
-                            let keys_len = keys.len();
-                            let len = keys_len.div_ceil(10);
-
-                            for row_idx in 0..len {
-                                let row = self.view.portal_list(id!(decimal_grid)).item(
-                                    cx,
-                                    row_idx,
-                                    live_id!(DecimalRow),
-                                );
-                                let props = DecimalRowProps { props: row_idx };
-                                let mut scope = Scope::with_data_props(store, &props);
-                                row.handle_event(
-                                    cx,
-                                    &Event::Trigger(TriggerEvent {
-                                        triggers: [(row.area(), triggers.clone())]
-                                            .into_iter()
-                                            .collect(),
-                                    }),
-                                    &mut scope,
-                                );
-                            }
-                        }
-                    }
-                }
+        if let Some(store) = scope.data.get::<Store>() {
+            if !store.template_infos.numbers.is_empty() {
+                self.data = store.template_infos.numbers.clone()
             }
         }
+        self.view.handle_event(cx, event, scope);
     }
 }

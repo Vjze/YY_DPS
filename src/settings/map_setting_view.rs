@@ -221,13 +221,6 @@ impl WidgetMatchEvent for MapView {
             });
             if let Some(store) = scope.data.get_mut::<Store>() {
                 store.map_infos = map_infos;
-                let grid_area = self.view.area(); // 或者通过其他方式获取目标 Area
-                store.grid_area = grid_area;
-                let trigger = Trigger {
-                    id: live_id!(update_map_grid),
-                    from: Area::Empty, // 来源可以是 Empty，除非需要特定来源
-                };
-                cx.send_trigger(grid_area, trigger);
             }
         }
 
@@ -256,13 +249,6 @@ impl WidgetMatchEvent for MapView {
         if clear_btn.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
                 store.map_infos = HashMap::default();
-                let grid_area = self.view.area(); // 或者通过其他方式获取目标 Area
-                store.grid_area = grid_area;
-                let trigger = Trigger {
-                    id: live_id!(map_infos),
-                    from: Area::Empty, // 来源可以是 Empty，除非需要特定来源
-                };
-                cx.send_trigger(grid_area, trigger);
             }
         }
         for action in actions {

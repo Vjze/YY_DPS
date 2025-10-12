@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use makepad_widgets::{event::TriggerEvent, *};
+use makepad_widgets::*;
 
 use crate::store::Store;
 
@@ -112,7 +112,7 @@ impl Widget for MapRow {
                     let row_idx = props.props;
                     let first_idx = row_idx * 3;
                     let num_to_render = 3.min(keys_len.saturating_sub(first_idx));
-
+                    let all_column_name = state.all_column_name.clone();
                     list.set_item_range(cx, 0, num_to_render);
                     // 迭代 numbers 的键值对
                     let mut keys = state
@@ -124,6 +124,8 @@ impl Widget for MapRow {
                         })
                         .collect::<Vec<_>>();
                     keys.sort(); // 可选：按键排序以确保一致的显示顺序
+                    let values = state
+                        .map_infos.clone();
                     for i in 0..num_to_render {
                         let global_idx = first_idx + i;
                         if global_idx >= keys_len {
@@ -134,10 +136,15 @@ impl Widget for MapRow {
                         let item = list.item(cx, i, live_id!(MapItem));
                         let widget_id = item.drop_down(id!(map_selector)).widget_uid();
                         let map_name = item.label(id!(map_name));
+                        let map_selector = item.drop_down(id!(map_selector));
+                        let store_value = values.get(key).clone().unwrap();
                         self.ids.insert(widget_id, key.clone());
                         map_name.set_text(cx, &key);
+                        map_selector.set_labels(cx, all_column_name.clone());
+                        map_selector.set_selected_by_label(&store_value, cx);
                         item.draw_all(cx, scope);
                     }
+                    
                 }
             }
         }
@@ -147,57 +154,6 @@ impl Widget for MapRow {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
-        if let Event::Trigger(trigger_event) = event {
-            // 遍历所有 triggers
-            for (_area, triggers) in &trigger_event.triggers {
-                for trigger in triggers {
-                    if trigger.id == live_id!(update_map_grid) {
-                        if let Some(state) = scope.data.get_mut::<Store>() {
-                            let mut keys = state
-                                .map_infos
-                                .iter()
-                                .map(|(key, _)| {
-                                    let k = key.clone();
-                                    k
-                                })
-                                .collect::<Vec<_>>();
-                            keys.sort(); // 可选：按键排序以确保一致的显示顺序
-                            let keys_len = keys.len();
-
-                            if let Some(props) = scope.props.get::<MapRowProps>() {
-                                let row_idx = props.props;
-                                let first_idx = row_idx * 3;
-                                let num_to_render = 3.min(keys_len.saturating_sub(first_idx));
-
-                                let list_widget = self.view.portal_list(id!(map_row));
-                                for i in 0..num_to_render {
-                                    if i >= keys_len {
-                                        break;
-                                    }
-                                    let global_idx = first_idx + i;
-                                    let key = &keys[global_idx];
-                                    let all_column_name = state.all_column_name.clone();
-                                    let item = list_widget.item(cx, i, live_id!(MapItem));
-                                    let map_selector = item.drop_down(id!(map_selector));
-                                    let store_value = state
-                                        .map_infos
-                                        .get(&key.clone())
-                                        .map(|v| v.to_string())
-                                        .unwrap_or_default();
-                                    map_selector.set_labels(cx, all_column_name.clone());
-
-                                    if all_column_name.contains(&store_value) {
-                                        map_selector.set_selected_by_label(&store_value, cx);
-                                    } else {
-                                        map_selector.set_text(cx, "");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
         cx.redraw_all();
     }
 }
@@ -230,18 +186,20 @@ impl Widget for MapGrid {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(mut list) = item.as_portal_list().borrow_mut() {
-                let state = scope.data.get_mut::<Store>().unwrap();
-                let len = state.map_infos.len().div_ceil(3);
-                list.set_item_range(cx, 0, len);
-                while let Some(row_idx) = list.next_visible_item(cx) {
-                    if row_idx >= len {
-                        continue;
-                    }
+                if let Some(state) = scope.data.get_mut::<Store>() {
+                    // info!("Drawing MapGrid with map_infos: {:?}", state.map_infos);
+                    let len = state.map_infos.len().div_ceil(3);
+                    list.set_item_range(cx, 0, len);
+                    while let Some(row_idx) = list.next_visible_item(cx) {
+                        if row_idx >= len {
+                            continue;
+                        }
 
-                    let row = list.item(cx, row_idx, live_id!(MapRow));
-                    let props = MapRowProps { props: row_idx };
-                    let mut scope = Scope::with_data_props(state, &props);
-                    row.draw_all(cx, &mut scope);
+                        let row = list.item(cx, row_idx, live_id!(MapRow));
+                        let props = MapRowProps { props: row_idx };
+                        let mut scope = Scope::with_data_props(state, &props);
+                        row.draw_all(cx, &mut scope);
+                    }
                 }
             }
         }
@@ -250,38 +208,5 @@ impl Widget for MapGrid {
 
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
-        if let Event::Trigger(trigger_event) = event {
-            if let Some(store) = scope.data.get::<Store>() {
-                let grid_area = store.grid_area;
-                if let Some(triggers) = trigger_event.triggers.get(&grid_area) {
-                    for trigger in triggers {
-                        if trigger.id == live_id!(update_map_grid) {
-                            let state = scope.data.get_mut::<Store>().unwrap();
-
-                            let len = state.map_infos.len().div_ceil(3);
-
-                            for row_idx in 0..len {
-                                let row = self.view.portal_list(id!(map_grid)).item(
-                                    cx,
-                                    row_idx,
-                                    live_id!(MapRow),
-                                );
-                                let props = MapRowProps { props: row_idx };
-                                let mut scope = Scope::with_data_props(state, &props);
-                                row.handle_event(
-                                    cx,
-                                    &Event::Trigger(TriggerEvent {
-                                        triggers: [(row.area(), triggers.clone())]
-                                            .into_iter()
-                                            .collect(),
-                                    }),
-                                    &mut scope,
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }

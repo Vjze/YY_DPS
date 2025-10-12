@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use makepad_widgets::{event::TriggerEvent, *};
+use makepad_widgets::*;
 
 use crate::store::Store;
 
@@ -102,6 +102,7 @@ impl Widget for FixedRow {
                         })
                         .collect::<Vec<_>>();
                     keys.sort(); // 可选：按键排序以确保一致的显示顺序
+                    let values = state.template_infos.strings.clone();
                     for i in 0..num_to_render {
                         let global_idx = first_idx + i;
                         if global_idx >= keys_len {
@@ -114,6 +115,11 @@ impl Widget for FixedRow {
                         let fixed_name = item.label(id!(fixed_name));
                         self.ids.insert(widget_id, key.clone());
                         fixed_name.set_text(cx, &key);
+                        let fixed_input = item.text_input(id!(fixed_input));
+                        let store_value = values.get(&key.clone())
+                            .map(|v| v.to_string())
+                            .unwrap_or_default();
+                        fixed_input.set_text(cx, &store_value);
                         item.draw_all(cx, scope);
                     }
                 }
@@ -125,53 +131,6 @@ impl Widget for FixedRow {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
-        if let Event::Trigger(trigger_event) = event {
-            // 遍历所有 triggers
-            for (_area, triggers) in &trigger_event.triggers {
-                for trigger in triggers {
-                    if trigger.id == live_id!(update_decimal_inputs) {
-                        if let Some(state) = scope.data.get_mut::<Store>() {
-                            let mut keys = state
-                                .template_infos
-                                .strings
-                                .iter()
-                                .map(|(key, _)| {
-                                    let k = key.clone();
-                                    k
-                                })
-                                .collect::<Vec<_>>();
-                            keys.sort(); // 可选：按键排序以确保一致的显示顺序
-                            let keys_len = keys.len();
-
-                            if let Some(props) = scope.props.get::<FixedRowProps>() {
-                                let row_idx = props.props;
-                                let first_idx = row_idx * 3;
-                                let num_to_render = 3.min(keys_len.saturating_sub(first_idx));
-
-                                let list_widget = self.view.portal_list(id!(fixed_row));
-                                for i in 0..num_to_render {
-                                    if i >= keys_len {
-                                        break;
-                                    }
-                                    let global_idx = first_idx + i;
-                                    let key = &keys[global_idx];
-
-                                    let item = list_widget.item(cx, i, live_id!(FixedItem));
-                                    let fixed_input = item.text_input(id!(fixed_input));
-                                    let store_value = state
-                                        .template_infos
-                                        .strings
-                                        .get(&key.clone())
-                                        .map(|v| v.to_string())
-                                        .unwrap_or_default();
-                                    fixed_input.set_text(cx, &store_value);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
         cx.redraw_all();
     }
 }
@@ -223,38 +182,5 @@ impl Widget for FixedGrid {
 
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
-        if let Event::Trigger(trigger_event) = event {
-            if let Some(store) = scope.data.get::<Store>() {
-                let grid_area = store.grid_area;
-                if let Some(triggers) = trigger_event.triggers.get(&grid_area) {
-                    for trigger in triggers {
-                        if trigger.id == live_id!(update_decimal_inputs) {
-                            let state = scope.data.get_mut::<Store>().unwrap();
-
-                            let len = state.template_infos.strings.len().div_ceil(3);
-
-                            for row_idx in 0..len {
-                                let row = self.view.portal_list(id!(fixed_grid)).item(
-                                    cx,
-                                    row_idx,
-                                    live_id!(FixedRow),
-                                );
-                                let props = FixedRowProps { props: row_idx };
-                                let mut scope = Scope::with_data_props(state, &props);
-                                row.handle_event(
-                                    cx,
-                                    &Event::Trigger(TriggerEvent {
-                                        triggers: [(row.area(), triggers.clone())]
-                                            .into_iter()
-                                            .collect(),
-                                    }),
-                                    &mut scope,
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
