@@ -364,7 +364,7 @@ impl App {
         if id != box_band_id {
             self.ui.widget(box_band_id).set_visible(cx, false);
         }
-        
+
         if id != data_import_db_id {
             self.ui.widget(data_import_db_id).set_visible(cx, false);
         }

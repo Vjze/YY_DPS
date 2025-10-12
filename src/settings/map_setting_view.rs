@@ -112,16 +112,13 @@ live_design! {
                 }
 
 
-                    <View> {
-                        align: {x: 0.5, y:0.5}
+                <View> {
                         height: Fill,
                         width: Fill,
-                        flow: Down,
                         spacing: 10,
-                        align: {x: 0.5}
-
+                        padding: {top: 150}
                         <MapGrid> {}
-                    }
+                }
                 <View> {
                     spacing: 10,
                     align: {x: 0.5, y: 1.0}
