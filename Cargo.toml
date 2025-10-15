@@ -86,4 +86,8 @@ appdata_paths = [
     "$LOCALAPPDATA/$PRODUCTNAME",
 ]
 [profile.release]
-codegen-units = 16
+opt-level = "s" 
+lto = true
+panic = "abort" 
+strip = true
+codegen-units = 1
