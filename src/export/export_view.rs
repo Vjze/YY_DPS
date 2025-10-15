@@ -1,7 +1,9 @@
+use std::sync::Arc;
+
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
 
-use crate::{export::works::carton_query::do_carton_query, store::Store};
+use crate::{export::Exportable, store::Store};
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -143,14 +145,20 @@ live_design! {
         }
     }
 }
-#[derive(Live, LiveHook, Widget)]
+#[derive(Live, Widget)]
 pub struct ExportScreen {
     #[deref]
     view: View,
     #[rust(Runtime::new().unwrap())]
     pub rt: Runtime,
+    #[rust(None)] // 默认初始化为 None
+    pub export_processor: Option<Arc<dyn Exportable>>,
 }
-
+impl LiveHook for ExportScreen {
+    fn after_new_from_doc(&mut self, _cx: &mut Cx) {
+        self.export_processor = Some(crate::export::new_export_processor());
+    }
+}
 impl Widget for ExportScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
@@ -176,9 +184,10 @@ impl WidgetMatchEvent for ExportScreen {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
         let input = self.view.text_input(id!(carton_input));
         let query_btn = self.view.button(id!(query_btn));
-        let _export_btn = self.view.button(id!(export_btn));
+        let export_btn = self.view.button(id!(export_btn));
         let type_name = self.view.drop_down(id!(type_selector));
         let rt = self.rt.handle().clone();
+
         if input.text().is_empty() {
             query_btn.set_text(cx, "批量查询");
         } else {
@@ -186,12 +195,14 @@ impl WidgetMatchEvent for ExportScreen {
         }
 
         if query_btn.clicked(actions) {
+            let processor = self.export_processor.as_ref().unwrap().clone();
             let _guard = rt.enter();
             let carton = input.text().clone();
             let is_multi = query_btn.text() == "批量查询";
+            let type_name = type_name.selected_label().clone();
             if let Some(store) = scope.data.get_mut::<Store>() {
                 let res = rt.block_on(async move {
-                    do_carton_query(carton, type_name.selected_label(), is_multi).await
+                    processor.carton_query(carton, type_name, is_multi).await
                 });
                 match res {
                     Ok(r) => {
@@ -200,6 +211,24 @@ impl WidgetMatchEvent for ExportScreen {
                     Err(e) => {
                         Cx::post_action(e);
                         store.datas = None;
+                    }
+                }
+            }
+        }
+        if export_btn.clicked(actions) {
+            let processor = self.export_processor.as_ref().unwrap().clone();
+            let _guard = rt.enter();
+            if let Some(store) = scope.data.get_mut::<Store>() {
+                if let Some(datas) = store.datas.clone() {
+                    let type_name = type_name.clone().selected_label();
+                    let res = rt.block_on(async move { processor.export(type_name, datas).await });
+                    match res {
+                        Ok(_) => {
+                            Cx::post_action("导出成功");
+                        }
+                        Err(e) => {
+                            Cx::post_action(e);
+                        }
                     }
                 }
             }

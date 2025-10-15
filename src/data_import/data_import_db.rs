@@ -1,14 +1,13 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
 use tracing::info;
 
 use crate::{
-    data_import::work::{
-        extract_data::{ImportDBDatas, extract_data},
-        select_file::select_file,
-        write_data::write_data_to_db,
+    data_import::{
+        DataImport,
+        work::extract_data::ImportDBDatas,
     },
     store::Store,
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
@@ -145,12 +144,14 @@ live_design! {
     }
 }
 
-#[derive(Live, LiveHook, Widget)]
+#[derive(Live, Widget)]
 pub struct DataImportDb {
     #[deref]
     pub view: View,
     #[rust(Runtime::new().unwrap())]
     pub rt: Runtime,
+    #[rust(None)] // 默认初始化为 None
+    pub import_processor: Option<Arc<dyn DataImport>>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -158,6 +159,11 @@ pub struct DbData {
     pub data: Vec<ImportDBDatas>,
     pub pn: String,
     pub file_path: PathBuf,
+}
+impl LiveHook for DataImportDb {
+    fn after_new_from_doc(&mut self, _cx: &mut Cx) {
+        self.import_processor = Some(crate::data_import::new_import_processor());
+    }
 }
 impl Widget for DataImportDb {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
@@ -178,20 +184,22 @@ impl WidgetMatchEvent for DataImportDb {
 
         if select_btn.clicked(actions) {
             info!("开始选择文件");
+            let procrssor = self.import_processor.as_ref().unwrap().clone();
             let _guard = rt.enter();
 
             // 1. 启动文件选择和数据提取的异步任务
             let path = rt.block_on(async move {
-                let result = select_file().await; // 异步文件选择
+                let result = procrssor.select_file().await; // 异步文件选择
                 info!("选择文件结果: {:?}", result);
                 result
             });
             match path {
                 Ok(p) => {
                     let file_name = p.to_str().unwrap();
+                    let procrssor = self.import_processor.as_ref().unwrap().clone();
                     let res = rt.block_on(async move {
                         let path = file_name;
-                        extract_data(&path).await
+                        procrssor.extract(&path).await
                     });
                     match res {
                         Ok(r) => {
@@ -238,12 +246,13 @@ impl WidgetMatchEvent for DataImportDb {
 
         if action_btn.clicked(actions) {
             info!("开始写入数据");
+            let processor = self.import_processor.as_ref().unwrap().clone();
             if let Some(store) = scope.data.get::<Store>() {
                 let data = store.import_datas.clone();
                 let rt = self.rt.handle().clone();
                 let _guard = rt.enter();
                 rt.spawn(async move {
-                    let res = write_data_to_db(data).await;
+                    let res = processor.write(data).await;
                     match res {
                         Ok(_) => {
                             enqueue_popup_notification(PopupItem {

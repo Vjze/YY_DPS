@@ -1,6 +1,7 @@
-use crate::querys::works::box_querys::get_box_datas;
-use crate::querys::works::carton_querys::get_carton_datas;
-use crate::querys::works::sn_query::sn_query_datas;
+use std::sync::Arc;
+
+use crate::querys::DatasQuery;
+use crate::widgets::popup_list::{enqueue_popup_notification, PopupItem, PopupKind};
 use crate::{store::Store, utils::error::MyError};
 use chrono::Local;
 use makepad_widgets::*;
@@ -392,14 +393,20 @@ live_design! {
         }
     }
 }
-#[derive(Live, LiveHook, Widget)]
+#[derive(Live, Widget)]
 pub struct QueryScreen {
     #[deref]
     view: View,
     #[rust(Runtime::new().unwrap())]
     pub rt: Runtime,
+    #[rust(None)] // 默认初始化为 None
+    pub datas_query_processor: Option<Arc<dyn DatasQuery>>,
 }
-
+impl LiveHook for QueryScreen {
+    fn after_new_from_doc(&mut self, _cx: &mut Cx) {
+        self.datas_query_processor = Some(crate::querys::new_query_processor());
+    }
+}
 impl Widget for QueryScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
@@ -422,7 +429,7 @@ impl WidgetMatchEvent for QueryScreen {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
         let input = self.view.text_input(id!(query_input));
         let query_btn = self.view.button(id!(query_btn));
-        let _export_btn = self.view.button(id!(export_btn));
+        let export_btn = self.view.button(id!(export_btn));
         let type_select = self.view.drop_down(id!(type_selector));
         let use_date = self.view.check_box(id!(date));
         let start_time_input = self.view.text_input(id!(start_time_input));
@@ -432,7 +439,7 @@ impl WidgetMatchEvent for QueryScreen {
         let devices = self.view.drop_down(id!(devices_selector));
         let res = self.view.drop_down(id!(result_selector));
         let rt = self.rt.handle().clone();
-
+        let processor = self.datas_query_processor.as_ref().unwrap().clone();   
         if query_btn.clicked(actions) {
             if input.text().is_empty()
                 && start_time_input.text().is_empty()
@@ -461,7 +468,7 @@ impl WidgetMatchEvent for QueryScreen {
                             vec![query_input.clone()]
                         };
                         let res = rt.block_on(async move {
-                            sn_query_datas(
+                            processor.sn_query_datas(
                                 sns,
                                 query_pn,
                                 use_date,
@@ -484,7 +491,7 @@ impl WidgetMatchEvent for QueryScreen {
                         }
                     } else if query_type == "箱号" {
                         let res = rt.block_on(async move {
-                            get_box_datas(
+                            processor.box_query(
                                 query_input,
                                 use_date,
                                 query_start_time,
@@ -504,7 +511,7 @@ impl WidgetMatchEvent for QueryScreen {
                         }
                     } else {
                         let res = rt.block_on(async move {
-                            get_carton_datas(
+                            processor.get_carton_datas(
                                 query_input,
                                 use_date,
                                 query_start_time,
@@ -526,7 +533,27 @@ impl WidgetMatchEvent for QueryScreen {
                 }
             }
         }
- 
+        if export_btn.clicked(actions) {
+            let processor = self.datas_query_processor.as_ref().unwrap().clone();
+            let _guard = rt.enter();
+            if let Some(store) = scope.data.get::<Store>() {
+                if let Some(datas) = store.datas.clone() {
+                    let res = rt.block_on(async move { processor.data_export(datas).await });
+                    match res {
+                        Ok(_path) => {
+                            enqueue_popup_notification(PopupItem {
+                                    kind: PopupKind::Success,
+                                    auto_dismissal_duration: Some(2.5),
+                                    message: "数据导出完成".to_string(),
+                                });
+                        }
+                        Err(e) => {
+                            Cx::post_action(e);
+                        }
+                    }
+                }
+            }
+        }
         if use_date.active(cx) {
             self.view.widget(id!(date_view)).set_visible(cx, true);
             let date = Local::now().date_naive();
