@@ -39,15 +39,15 @@ live_design! {
                 flow: Right
                 width: Fill
                 spacing: 30
-                sn = <Col> {width: Fill}
-                condition_unit =  <Col> {width: 100}
-                ith =  <Col> {width: 100}
-                se =  <Col> {width: 100}
-                po =  <Col> {width: 100}
-                vf =  <Col> {width: 100}
-                im =  <Col> {width: 100}
-                sen =  <Col> {width: 100}
-                icc = <Col> {width: 100}
+                sn = <Col> {width: Fill {weight: 1.0}}
+                condition_unit =  <Col> {width: Fill {weight: 0.5}}
+                ith =  <Col> {width: Fill {weight: 0.5}}
+                se =  <Col> {width: Fill {weight: 0.5}}
+                po =  <Col> {width: Fill {weight: 0.5}}
+                vf =  <Col> {width: Fill {weight: 0.5}}
+                im =  <Col> {width: Fill {weight: 0.5}}
+                sen =  <Col> {width: Fill {weight: 0.5}}
+                icc = <Col> {width: Fill {weight: 0.5}}
             }
             separator_line = <Line> {}
         }

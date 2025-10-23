@@ -27,15 +27,15 @@ live_design! {
         width: Fill
         height: Fit,
         spacing: 30,
-        <RowHeaderLabel> {width: Fill, label = {text: "Sn"} }
-        <RowHeaderLabel> {width: 100, label = {text: "温度"} }
-        <RowHeaderLabel> {width: 100, label = {text: "Ith"} }
-        <RowHeaderLabel> {width: 100, label = {text: "Se"} }
-        <RowHeaderLabel> {width: 100, label = {text: "Po"} }
-        <RowHeaderLabel> {width: 100, label = {text: "Vf"} }
-        <RowHeaderLabel> {width: 100, label = {text: "im"} }
-        <RowHeaderLabel> {width: 100, label = {text: "Sen"} }
-        <RowHeaderLabel> {width: 100, label = {text: "icc"} }
+        <RowHeaderLabel> {width: Fill { weight: 1.0 }, label = {text: "Sn"} }
+        <RowHeaderLabel> {width: Fill { weight: 0.5 }, label = {text: "温度"} }
+        <RowHeaderLabel> {width: Fill { weight: 0.5 }, label = {text: "Ith"} }
+        <RowHeaderLabel> {width: Fill { weight: 0.5 }, label = {text: "Se"} }
+        <RowHeaderLabel> {width: Fill { weight: 0.5 }, label = {text: "Po"} }
+        <RowHeaderLabel> {width: Fill { weight: 0.5 }, label = {text: "Vf"} }
+        <RowHeaderLabel> {width: Fill { weight: 0.5 }, label = {text: "im"} }
+        <RowHeaderLabel> {width: Fill { weight: 0.5 }, label = {text: "Sen"} }
+        <RowHeaderLabel> {width: Fill { weight: 0.5 }, label = {text: "icc"} }
     }
     pub ImportTable = {{ImportTable}} <RoundedShadowView> {
         width: Fill,
