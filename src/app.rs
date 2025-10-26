@@ -1,3 +1,4 @@
+
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
 
@@ -196,7 +197,7 @@ pub struct App {
     #[live]
     pub ui: WidgetRef,
     #[rust]
-    pub store: Option<Store>,
+    pub store: Store,
     #[rust(Runtime::new().unwrap())]
     pub rt: Runtime,
 }
@@ -219,18 +220,9 @@ impl AppMain for App {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event) {
         self.ui_runner()
             .handle(cx, event, &mut Scope::empty(), self);
-        let rt = self.rt.handle().clone();
-        if let Event::Startup = event {
-            self.ui.view(id!(body)).set_visible(cx, false);
-            let _guard = rt.enter();
-            let store = rt.block_on(async move { Store::init().await });
-            self.store = Some(store);
-            set_global_popup_list(cx, &self.ui);
-        }
-        let Some(store) = self.store.as_mut() else {
-            self.ui.handle_event(cx, event, &mut Scope::empty());
-            return;
-        };
+
+        set_global_popup_list(cx, &self.ui);
+        let store = &mut self.store;
         let scope = &mut Scope::with_data(store);
         self.ui.handle_event(cx, event, scope);
         self.match_event(cx, event);
@@ -238,6 +230,13 @@ impl AppMain for App {
 }
 
 impl MatchEvent for App {
+    fn handle_startup(&mut self, cx: &mut Cx) {
+        let rt = self.rt.handle().clone();
+        self.ui.view(id!(body)).set_visible(cx, false);
+        let _guard = rt.enter();
+        let store = rt.block_on(async move { Store::init().await });
+        self.store = store;
+    }
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
         let mut navigate_to_export = false;
         let mut navigate_to_sn = false;
@@ -302,16 +301,16 @@ impl MatchEvent for App {
                 self.ui.modal(id!(dialog_ui)).close(cx);
             }
             if let Some(LoginResult::Logined) = action.downcast_ref() {
-                if let Some(store) = &self.store {
-                    // store.logined = true;
-                    // store.free_login = false;
-                    let show_login = !store.logined;
-                    self.ui.view(id!(login_view)).set_visible(cx, show_login);
-                    self.ui
-                        .view(id!(root_adaptive_view))
-                        .set_visible(cx, !show_login);
-                    self.ui.view(id!(set_btn)).set_visible(cx, true);
-                }
+                let store = self.store.clone();
+                // store.logined = true;
+                // store.free_login = false;
+                let show_login = !store.logined;
+                self.ui.view(id!(login_view)).set_visible(cx, show_login);
+                self.ui
+                    .view(id!(root_adaptive_view))
+                    .set_visible(cx, !show_login);
+                self.ui.view(id!(set_btn)).set_visible(cx, true);
+
                 enqueue_popup_notification(PopupItem {
                     kind: PopupKind::Success,
                     auto_dismissal_duration: Some(2.5),
@@ -319,17 +318,17 @@ impl MatchEvent for App {
                 });
             }
             if let Some(LoginResult::FreeLogin) = action.downcast_ref() {
-                if let Some(store) = &self.store {
-                    // store.logined = true;
-                    // store.free_login = true;
-                    let show_login = !store.logined;
-                    self.ui.view(id!(login_view)).set_visible(cx, show_login);
-                    self.ui
-                        .view(id!(root_adaptive_view))
-                        .set_visible(cx, !show_login);
-                    self.ui.button(id!(providers_tab)).set_visible(cx, false);
-                    self.ui.view(id!(set_btn)).set_visible(cx, false);
-                }
+                let store = self.store.clone();
+                // store.logined = true;
+                // store.free_login = true;
+                let show_login = !store.logined;
+                self.ui.view(id!(login_view)).set_visible(cx, show_login);
+                self.ui
+                    .view(id!(root_adaptive_view))
+                    .set_visible(cx, !show_login);
+                self.ui.button(id!(providers_tab)).set_visible(cx, false);
+                self.ui.view(id!(set_btn)).set_visible(cx, false);
+
                 enqueue_popup_notification(PopupItem {
                     kind: PopupKind::Warning,
                     auto_dismissal_duration: Some(2.5),
