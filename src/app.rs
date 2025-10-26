@@ -61,7 +61,6 @@ live_design! {
         padding: { top: 40, bottom: 10, left: 10, right: 10 },
 
         align: {x: 0.5, y: 0.0},
-
         show_bg: true,
         draw_bg: {
             color: (SIDEBAR_BG_COLOR),
