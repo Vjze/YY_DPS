@@ -40,7 +40,6 @@ live_design! {
         margin: {top: 12, right: 12, bottom: 12}
         padding: 3
         flow: Overlay
-
         show_bg: true
         draw_bg: {
             color: (MAIN_BG_COLOR),
