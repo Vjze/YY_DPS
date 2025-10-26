@@ -48,7 +48,6 @@ live_design! {
             shadow_radius: 18.0,
             shadow_offset: vec2(0.0,-1.5)
         }
-
         export_frame = <ExportScreen> {visible: true}
         querys_frame = <QueryScreen> {visible: false}
         box_band_frame = <BoxBandView> {visible: false}
