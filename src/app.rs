@@ -66,7 +66,6 @@ live_design! {
             color: (SIDEBAR_BG_COLOR),
             instance border_radius: 0.0,
         }
-
         logo = <View> {
             width: Fit, height: Fit
             padding: {bottom:20}
