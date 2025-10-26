@@ -74,7 +74,6 @@ live_design! {
                 source: (ICON_MOLYSERVER),
             }
         }
-
         seprator = <View> {
             width: Fill, height: 1.6,
             margin: {left: 15, right: 15, bottom: 10}
