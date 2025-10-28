@@ -1,10 +1,9 @@
 // sn_query.rs
 use sqlx_oldapi::{MssqlPool, query_as};
-use futures::TryStreamExt;
 use std::collections::HashMap;
 use chrono::NaiveDateTime;
 use tracing::info; // 引入 info!
-
+use futures::stream::TryStreamExt;
 use super::query_utils::*;
 use crate::{structs::Data, utils::{error::MyError, sql::client}};
 

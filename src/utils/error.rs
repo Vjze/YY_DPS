@@ -6,8 +6,8 @@ pub enum MyError {
     DbConnectionError(#[from] sqlx_oldapi::error::Error),
     #[error("IO 错误: {0}")]
     IoError(#[from] std::io::Error),
-    #[error("并发查询错误: {0}")]
-    TokioError(#[from] tokio::task::JoinError),
+    // #[error("并发查询错误: {0}")]
+    // TokioError(#[from] smol::task::JoinError),
     #[error("表格写入异常: {0}")]
     Write2ExcelErr(#[from] rust_xlsxwriter::XlsxError),
     #[error("没有找到任何型号!!!")]

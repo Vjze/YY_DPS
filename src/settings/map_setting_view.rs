@@ -1,7 +1,7 @@
 use std::collections::HashMap;
-
-use makepad_widgets::*;
 use tokio::runtime::Runtime;
+use makepad_widgets::*;
+// use tokio::runtime::Runtime;
 
 use crate::{
     configs::column_map_config::{
@@ -203,9 +203,8 @@ impl WidgetMatchEvent for MapView {
         let update_btn = self.view.button(id!(update_template_btn));
         let delete_btn = self.view.button(id!(delete_template_btn));
         let clear_btn = self.view.button(id!(clear_template_btn));
+        let rt = self.rt.handle().clone();
         if let Some(value) = select.changed_label(actions) {
-            let rt = self.rt.handle().clone();
-            let _guard = rt.enter();
             let map_infos = rt.block_on(async move {
                 let res = get_template_map_config(value).await;
                 match res {
@@ -223,10 +222,8 @@ impl WidgetMatchEvent for MapView {
 
         if update_btn.clicked(actions) {
             let template_name = select.text().clone();
-            let rt = self.rt.handle().clone();
             if let Some(store) = scope.data.get_mut::<Store>() {
                 let map_infos = store.setting_store.map_infos.clone();
-                let _guard = rt.enter();
                 rt.block_on(async move {
                     match update_template_map(template_name, map_infos).await {
                         Ok(res) => {
@@ -254,8 +251,6 @@ impl WidgetMatchEvent for MapView {
             }
             if let Some(DeleteModalAction::Action) = action.downcast_ref() {
                 let template_name = select.text().clone();
-                let rt = self.rt.handle().clone();
-                let _guard = rt.enter();
                 rt.block_on(async move {
                     match delete_template_map(template_name).await {
                         Ok(res) => {

@@ -15,7 +15,6 @@ use tokio::{
     task,
 };
 use tracing::info;
-
 async fn get_info() -> anyhow::Result<Vec<String>, MyError> {
     info!("开始执行文件选择...");
     let pick = rfd::AsyncFileDialog::new()
@@ -125,18 +124,17 @@ pub async fn carton_query_datas(
         // 创建拥有的 String，避免临时值
         let v1 = sn_placeholders[..1000].join(", ");
         let v2 = sn_placeholders[1000..].join(", ");
-        let pool = pool.clone();
-        let pool1 = pool.clone();
         info!("SN数量超过1000，将执行并行查询");
-        // 使用 tokio::try_join! 并行执行
-        let (data1, data2) = tokio::try_join!(
+        let pool1 = pool.clone();
+        let pool2 = pool.clone();
+        let (data1, data2) = futures::try_join!(
             task::spawn(async move {
-                let sql_text_s_1 = build_query_sql(&v1, &pool).await?;
-                execute_query(&sql_text_s_1, &pool).await
+                let sql_text_s_1 = build_query_sql(&v1, &pool1).await?;
+                execute_query(&sql_text_s_1, &pool1).await
             }),
             task::spawn(async move {
-                let sql_text_s_2 = build_query_sql(&v2, &pool1).await?;
-                execute_query(&sql_text_s_2, &pool1).await
+                let sql_text_s_2 = build_query_sql(&v2, &pool2).await?;
+                execute_query(&sql_text_s_2, &pool2).await
             })
         )
         .unwrap();
@@ -1400,9 +1398,8 @@ pub async fn execute_query(sql_text_s: &str, pool: &MssqlPool) -> Result<Vec<Dat
 }
 // 导入 MssqlPool，MyError 和 anyhow::Result
 pub async fn build_query_sql(sn_list: &str, pool: &MssqlPool) -> anyhow::Result<String, MyError> {
-    
     let aliased_cols_10g = "SN AS sn, Ith AS ith, Pf AS po, Vop AS vf, Im AS im, Rs AS rs, Se AS se, Sen AS sen, Res AS res, ICC AS icc, Vbr AS vbr, Kink AS kink, imkink AS imkink, TestDate AS testtime, Idark AS idark, Result AS result, ProductBill AS tester, iop AS iop, ixtalk AS i_xtalk, MDPId AS mdpid, testtype AS yypn";
-    
+
     let aliased_cols_others = "SN AS sn, Ith AS ith, Po AS po, Vf AS vf, Im AS im, Rs AS rs, Pslop AS se, Sen AS sen, Res AS res, ICC AS icc, Vbr AS vbr, Kink_I AS kink, kinkim_i AS imkink, TestDate AS testtime, Idark AS idark, Result AS result, ProductBill AS tester, io AS iop, xtalk AS i_xtalk, Te AS mdpid, testtype AS yypn";
 
     let sql_10 = format!(
@@ -1410,10 +1407,10 @@ pub async fn build_query_sql(sn_list: &str, pool: &MssqlPool) -> anyhow::Result<
         aliased_cols_10g
     );
     let mut sql_text = String::from(&sql_10);
-    
-    let tables = get_tables(pool).await?; 
+
+    let tables = get_tables(pool).await?;
     for i in tables {
-        let s = format!("UNION ALL SELECT {} FROM {} ", aliased_cols_others, i); 
+        let s = format!("UNION ALL SELECT {} FROM {} ", aliased_cols_others, i);
         sql_text.push_str(&s);
     }
     let query_ty = if sn_list.is_empty() {

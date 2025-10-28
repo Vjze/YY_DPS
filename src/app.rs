@@ -1,7 +1,5 @@
-
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
-
 use crate::{
     store::Store,
     utils::error::{LoginResult, MyError, MyTip},
@@ -194,7 +192,7 @@ pub struct App {
     #[rust]
     pub store: Store,
     #[rust(Runtime::new().unwrap())]
-    pub rt: Runtime,
+        pub rt: Runtime,
 }
 
 impl LiveRegister for App {
@@ -228,7 +226,6 @@ impl MatchEvent for App {
     fn handle_startup(&mut self, cx: &mut Cx) {
         let rt = self.rt.handle().clone();
         self.ui.view(id!(body)).set_visible(cx, false);
-        let _guard = rt.enter();
         let store = rt.block_on(async move { Store::init().await });
         self.store = store;
     }

@@ -1,7 +1,6 @@
-use std::sync::Arc;
-
-use makepad_widgets::*;
+use std::{collections::HashMap, sync::Arc};
 use tokio::runtime::Runtime;
+use makepad_widgets::*;
 
 use crate::{export::Exportable, store::Store};
 live_design! {
@@ -149,10 +148,14 @@ live_design! {
 pub struct ExportScreen {
     #[deref]
     view: View,
-    #[rust(Runtime::new().unwrap())]
-    pub rt: Runtime,
     #[rust(None)] // 默认初始化为 None
     pub export_processor: Option<Arc<dyn Exportable>>,
+    #[rust(Runtime::new().unwrap())]
+        pub rt: Runtime,
+}
+#[derive(Clone, Debug, Default)]
+pub struct ExportAction {
+    data: Vec<HashMap<String,String>>,
 }
 impl LiveHook for ExportScreen {
     fn after_new_from_doc(&mut self, _cx: &mut Cx) {
@@ -187,7 +190,13 @@ impl WidgetMatchEvent for ExportScreen {
         let export_btn = self.view.button(id!(export_btn));
         let type_name = self.view.drop_down(id!(type_selector));
         let rt = self.rt.handle().clone();
-
+        for action in actions {
+          if let Some(data_action) = action.downcast_ref::<ExportAction>() {
+              if let Some(store) = scope.data.get_mut::<Store>() {
+                store.datas_store.datas = data_action.data.clone();
+              }
+          }
+        }
         if input.text().is_empty() {
             query_btn.set_text(cx, "批量查询");
         } else {
@@ -196,44 +205,39 @@ impl WidgetMatchEvent for ExportScreen {
 
         if query_btn.clicked(actions) {
             let processor = self.export_processor.as_ref().unwrap().clone();
-            let _guard = rt.enter();
             let carton = input.text().clone();
             let is_multi = query_btn.text() == "批量查询";
             let type_name = type_name.selected_label().clone();
-            if let Some(store) = scope.data.get_mut::<Store>() {
-                let res = rt.block_on(async move {
-                    processor.carton_query(carton, type_name, is_multi).await
-                });
+                rt.spawn(async move {
+                    let res = processor.carton_query(carton, type_name, is_multi).await;
+                
                 match res {
-                    Ok(r) => {
-                        store.datas_store.datas = r;
+                    Ok(data) => {
+                      Cx::post_action(ExportAction {data});
                     }
                     Err(e) => {
                         Cx::post_action(e);
-                        store.datas_store.datas = Default::default();
                     }
                 }
-            }
+            });
         }
         if export_btn.clicked(actions) {
             let processor = self.export_processor.as_ref().unwrap().clone();
-            let _guard = rt.enter();
             if let Some(store) = scope.data.get_mut::<Store>() {
                 if !store.datas_store.datas.is_empty() {
                     let type_name = type_name.clone().selected_label();
-                    let res = rt.block_on(async move {
-                        processor
-                            .export(type_name, store.datas_store.datas.clone())
-                            .await
+                    let data = store.datas_store.datas.clone();
+                    rt.spawn(async move {
+                        let res = processor.export(type_name, data).await;
+                        match res {
+                            Ok(_) => {
+                                Cx::post_action("导出成功");
+                            }
+                            Err(e) => {
+                                Cx::post_action(e);
+                            }
+                        }
                     });
-                    match res {
-                        Ok(_) => {
-                            Cx::post_action("导出成功");
-                        }
-                        Err(e) => {
-                            Cx::post_action(e);
-                        }
-                    }
                 }
             }
         }

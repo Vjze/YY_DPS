@@ -1,6 +1,5 @@
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
-
 use crate::{
     configs::decimal_config::{
         DecimalConfig, add_new_template, delete_template, get_decimal_config_value, update_template,
@@ -266,7 +265,7 @@ struct TemplateView {
     #[deref]
     view: View,
     #[rust(Runtime::new().unwrap())]
-    rt: Runtime,
+        pub rt: Runtime,
 }
 
 impl Widget for TemplateView {
@@ -295,11 +294,10 @@ impl WidgetMatchEvent for TemplateView {
         let update_btn = self.view.button(id!(update_template_btn));
         let delete_btn = self.view.button(id!(delete_template_btn));
         let clear_btn = self.view.button(id!(clear_template_btn));
+        let rt = self.rt.handle().clone();
         if let Some(value) = select.changed_label(actions) {
             input.set_text(cx, &value);
             let type_name = input.text().clone();
-            let rt = self.rt.handle().clone();
-            let _guard = rt.enter();
             let decimal_infos = rt.block_on(async move {
                 let res = get_decimal_config_value(type_name).await;
                 match res {
@@ -319,10 +317,8 @@ impl WidgetMatchEvent for TemplateView {
         }
         if update_btn.clicked(actions) {
             let template_name = input.text().clone();
-            let rt = self.rt.handle().clone();
             if let Some(store) = scope.data.get_mut::<Store>() {
                 let template_infos = store.setting_store.template_infos.clone();
-                let _guard = rt.enter();
                 rt.block_on(async move {
                     match update_template(template_name, template_infos).await {
                         Ok(res) => {
@@ -355,10 +351,8 @@ impl WidgetMatchEvent for TemplateView {
             }
             if let Some(TemplateModalAction::Action(rows)) = action.downcast_ref() {
                 let template_name = input.text().clone();
-                let rt = self.rt.handle().clone();
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     let template_infos = store.setting_store.template_infos.clone();
-                    let _guard = rt.enter();
                     rt.block_on(async move {
                         match add_new_template(template_name, template_infos, rows.clone()).await {
                             Ok(res) => {
@@ -377,8 +371,6 @@ impl WidgetMatchEvent for TemplateView {
             }
             if let Some(DeleteModalAction::Action) = action.downcast_ref() {
                 let template_name = select.text().clone();
-                let rt = self.rt.handle().clone();
-                let _guard = rt.enter();
                 rt.block_on(async move {
                     match delete_template(template_name).await {
                         Ok(res) => {

@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-use futures::TryStreamExt;
+use futures::stream::TryStreamExt;
 use sqlx_oldapi::mssql::MssqlArguments;
 use sqlx_oldapi::mssql::MssqlRow;
 use sqlx_oldapi::{Error as SqlxError, Row, query::QueryAs, query_as};

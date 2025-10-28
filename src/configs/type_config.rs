@@ -5,7 +5,6 @@ use std::{
 
 use chrono::Local;
 use serde::{Deserialize, Serialize};
-use tokio::fs;
 
 use crate::utils::error::{MyError, MyTip};
 
@@ -183,7 +182,7 @@ pub async fn save_data(data: &[ConfigType]) -> Result<(), MyError> {
         types: data.to_vec(),
     };
     let toml_string = toml::to_string_pretty(&config_root)?;
-    fs::write(&path, toml_string).await?;
+    tokio::fs::write(&path, toml_string).await?;
     Ok(())
 }
 
@@ -192,11 +191,11 @@ pub async fn load_data() -> Result<Vec<ConfigType>, MyError> {
     let path = get_file_path();
     if !path.exists() {
         // 如果文件不存在，则创建空文件并返回空向量
-        fs::write(&path, "[]").await?;
+        tokio::fs::write(&path, "[]").await?;
         return Ok(Vec::new());
     }
 
-    let contents = fs::read_to_string(&path).await?;
+    let contents = tokio::fs::read_to_string(&path).await?;
     let config_root: TypeConfigRoot = toml::from_str(&contents)?;
     Ok(config_root.types)
 }

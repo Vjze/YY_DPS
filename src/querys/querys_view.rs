@@ -1,10 +1,10 @@
-use std::sync::Arc;
-
 use crate::querys::DatasQuery;
-use crate::widgets::popup_list::{enqueue_popup_notification, PopupItem, PopupKind};
+use crate::widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification};
 use crate::{store::Store, utils::error::MyError};
 use chrono::Local;
 use makepad_widgets::*;
+use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::runtime::Runtime;
 live_design! {
     use link::theme::*;
@@ -346,26 +346,6 @@ live_design! {
 
             }
         }
-        // test_btn = <Button> {
-        //     width: Fit
-        //     height: 40
-        //     padding: {left: 20, right: 20, top: 0, bottom: 0}
-        //     text: "测试"
-        //     draw_text: {
-        //         color: #000000,
-        //         text_style: {
-        //             font_size:16
-        //         }
-        //     }
-        //     draw_bg: {
-        //         uniform border_size: 1.0
-        //         uniform border_radius: 5.0
-        //         uniform color: #AFEEEE
-        //         uniform color_hover: #9370DB
-        //         uniform color_disabled: #DCDCDC
-
-        //      }
-        // }
 
         qty_label = <Label> {
             padding: {
@@ -397,10 +377,14 @@ live_design! {
 pub struct QueryScreen {
     #[deref]
     view: View,
-    #[rust(Runtime::new().unwrap())]
-    pub rt: Runtime,
     #[rust(None)] // 默认初始化为 None
     pub datas_query_processor: Option<Arc<dyn DatasQuery>>,
+    #[rust(Runtime::new().unwrap())]
+        pub rt: Runtime,
+}
+#[derive(Clone, Debug, Default)]
+pub struct QueryAction {
+    data: Vec<HashMap<String, String>>,
 }
 impl LiveHook for QueryScreen {
     fn after_new_from_doc(&mut self, _cx: &mut Cx) {
@@ -438,8 +422,15 @@ impl WidgetMatchEvent for QueryScreen {
         let worker_input = self.view.text_input(id!(worker_input));
         let devices = self.view.drop_down(id!(devices_selector));
         let res = self.view.drop_down(id!(result_selector));
+        let processor = self.datas_query_processor.as_ref().unwrap().clone();
         let rt = self.rt.handle().clone();
-        let processor = self.datas_query_processor.as_ref().unwrap().clone();   
+        for action in actions {
+            if let Some(data_action) = action.downcast_ref::<QueryAction>() {
+                if let Some(store) = scope.data.get_mut::<Store>() {
+                    store.datas_store.datas = data_action.data.clone();
+                }
+            }
+        }
         if query_btn.clicked(actions) {
             if input.text().is_empty()
                 && start_time_input.text().is_empty()
@@ -449,26 +440,25 @@ impl WidgetMatchEvent for QueryScreen {
             {
                 Cx::post_action(MyError::AllNone);
             } else {
-                let _guard = rt.enter();
-                if let Some(store) = scope.data.get_mut::<Store>() {
-                    let query_input = input.text();
-                    let query_type = type_select.selected_label();
-                    let use_date = use_date.active(cx);
-                    let query_start_time = start_time_input.text();
-                    let query_end_time = end_time_input.text();
-                    let query_pn = pn_input.text();
-                    let query_worker = worker_input.text();
-                    let query_devices = devices.selected_label();
-                    let query_result = res.selected_label();
-                    println!("{}", query_type);
-                    if query_type == "Sn" {
-                        let sns = if query_input.is_empty() {
-                            vec![]
-                        } else {
-                            vec![query_input.clone()]
-                        };
-                        let res = rt.block_on(async move {
-                            processor.sn_query_datas(
+                let query_input = input.text();
+                let query_type = type_select.selected_label();
+                let use_date = use_date.active(cx);
+                let query_start_time = start_time_input.text();
+                let query_end_time = end_time_input.text();
+                let query_pn = pn_input.text();
+                let query_worker = worker_input.text();
+                let query_devices = devices.selected_label();
+                let query_result = res.selected_label();
+                println!("{}", query_type);
+                if query_type == "Sn" {
+                    let sns = if query_input.is_empty() {
+                        vec![]
+                    } else {
+                        vec![query_input.clone()]
+                    };
+                    rt.spawn(async move {
+                        let res = processor
+                            .sn_query_datas(
                                 sns,
                                 query_pn,
                                 use_date,
@@ -478,79 +468,79 @@ impl WidgetMatchEvent for QueryScreen {
                                 query_devices,
                                 query_worker,
                             )
-                            .await
-                        });
+                            .await;
                         match res {
                             Ok(data) => {
-                                store.datas_store.datas = data;
+                                Cx::post_action(QueryAction { data });
                             }
                             Err(err) => {
                                 Cx::post_action(err);
-                                store.datas_store.datas = Default::default();
                             }
                         }
-                    } else if query_type == "箱号" {
-                        let res = rt.block_on(async move {
-                            processor.box_query(
+                    });
+                } else if query_type == "箱号" {
+                    rt.spawn(async move {
+                        let res = processor
+                            .box_query(
                                 query_input,
                                 use_date,
                                 query_start_time,
                                 query_end_time,
                                 query_pn,
                             )
-                            .await
-                        });
+                            .await;
                         match res {
                             Ok(data) => {
-                                store.datas_store.datas = data;
+                                Cx::post_action(QueryAction { data });
                             }
                             Err(err) => {
                                 Cx::post_action(err);
-                                store.datas_store.datas = Default::default();
                             }
                         }
-                    } else {
-                        let res = rt.block_on(async move {
-                            processor.get_carton_datas(
+                    });
+                } else {
+                    rt.spawn(async move {
+                        let res = processor
+                            .get_carton_datas(
                                 query_input,
                                 use_date,
                                 query_start_time,
                                 query_end_time,
                                 query_pn,
                             )
-                            .await
-                        });
+                            .await;
                         match res {
                             Ok(data) => {
-                                store.datas_store.datas = data;
+                                Cx::post_action(QueryAction { data });
                             }
                             Err(err) => {
                                 Cx::post_action(err);
-                                store.datas_store.datas = Default::default();
                             }
                         }
-                    }
+                    });
                 }
             }
         }
         if export_btn.clicked(actions) {
             let processor = self.datas_query_processor.as_ref().unwrap().clone();
-            let _guard = rt.enter();
             if let Some(store) = scope.data.get::<Store>() {
                 if !store.datas_store.datas.is_empty() {
-                    let res = rt.block_on(async move { processor.data_export(store.datas_store.datas.clone()).await });
-                    match res {
-                        Ok(_path) => {
-                            enqueue_popup_notification(PopupItem {
+                    let data = store.datas_store.datas.clone();
+                    rt.spawn(async move {
+                        let res = processor.data_export(data).await;
+                        match res {
+                            Ok(_path) => {
+                                enqueue_popup_notification(PopupItem {
                                     kind: PopupKind::Success,
                                     auto_dismissal_duration: Some(2.5),
                                     message: "数据导出完成".to_string(),
                                 });
+                            }
+                            Err(e) => {
+                                Cx::post_action(e);
+                            }
                         }
-                        Err(e) => {
-                            Cx::post_action(e);
-                        }
-                    }
+                    });
                 }
             }
         }

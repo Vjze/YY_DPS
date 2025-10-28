@@ -1,13 +1,14 @@
-use makepad_widgets::*;
-use tokio::runtime::Runtime;
-
 use crate::{
-    box_band::work::{band_work::band_work, query_work::query_carton_info},
+    box_band::work::{
+        band_work::band_work,
+        query_work::{BoxBandData, query_carton_info},
+    },
     store::Store,
     utils::error::MyError,
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
-
+use makepad_widgets::*;
+use tokio::runtime::Runtime;
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -213,6 +214,10 @@ struct BoxBandView {
     #[rust(Runtime::new().unwrap())]
     pub rt: Runtime,
 }
+#[derive(Clone, Debug, Default)]
+pub struct BoxBandAction {
+    data: Vec<BoxBandData>,
+}
 impl Widget for BoxBandView {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.widget_match_event(cx, event, scope);
@@ -230,6 +235,16 @@ impl WidgetMatchEvent for BoxBandView {
         let carton_input = self.view.text_input(id!(carton_input));
         let boxs_num = self.view.label(id!(boxs_num));
         let new_box_input = self.view.text_input(id!(new_box_no_input));
+        let rt = self.rt.handle().clone();
+        for action in actions {
+            if let Some(data_action) = action.downcast_ref::<BoxBandAction>() {
+                if let Some(store) = scope.data.get_mut::<Store>() {
+                    let num = format!("一共: {} 盒", data_action.data.len());
+                    boxs_num.set_text(cx, &num.to_string());
+                    store.box_band_store.box_data = data_action.data.clone();
+                }
+            }
+        }
         if let Some(input) = new_box_input.changed(actions) {
             if let Some(props) = scope.data.get_mut::<Store>() {
                 let datas = props.box_band_store.box_data.clone();
@@ -246,7 +261,6 @@ impl WidgetMatchEvent for BoxBandView {
                 // info!("props.box_data: {:?}", props.box_data);
             }
         }
-        let rt = self.rt.handle().clone();
         if carton_input.text().is_empty() {
             query_btn.set_enabled(cx, false);
             query_btn.set_disabled(cx, true);
@@ -262,24 +276,19 @@ impl WidgetMatchEvent for BoxBandView {
             if carton_input.text().is_empty() {
                 Cx::post_action(MyError::Zdyknown("请输入箱号!!!".to_string()));
             } else {
-                let _guard = rt.enter();
                 let carton = carton_input.clone().text();
-                if let Some(store) = scope.data.get_mut::<Store>() {
-                    rt.block_on(async move {
-                        let carton_input = carton;
-                        let res = query_carton_info(carton_input).await;
-                        match res {
-                            Ok(data) => {
-                                let num = format!("一共: {} 盒", data.len());
-                                boxs_num.set_text(cx, &num);
-                                store.box_band_store.box_data = data;
-                            }
-                            Err(e) => {
-                                Cx::post_action(e);
-                            }
+                rt.spawn(async move {
+                    let carton_input = carton;
+                    let res = query_carton_info(carton_input).await;
+                    match res {
+                        Ok(data) => {
+                            Cx::post_action(BoxBandAction { data });
                         }
-                    });
-                }
+                        Err(e) => {
+                            Cx::post_action(e);
+                        }
+                    }
+                });
             }
         }
         if band_btn.clicked(actions) {
@@ -287,10 +296,9 @@ impl WidgetMatchEvent for BoxBandView {
                 if store.box_band_store.box_data.is_empty() {
                     Cx::post_action(MyError::Zdyknown("没有数据，无法绑定!!!".to_string()));
                 } else {
-                    let _guard = rt.enter();
                     let datas = store.box_band_store.box_data.clone();
                     let carton = carton_input.text();
-                    rt.block_on(async move {
+                    rt.spawn(async move {
                         let res = band_work(datas).await;
                         match res {
                             Ok(_) => {

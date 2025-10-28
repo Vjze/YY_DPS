@@ -1,6 +1,5 @@
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
-
 use crate::{
     configs::type_config::{Infos, add_new_type, delete_type, get_type_infos, update_type},
     settings::type_add_template_modal::TemplateNameModalAction,
@@ -349,7 +348,7 @@ struct TypeView {
     #[deref]
     view: View,
     #[rust(Runtime::new().unwrap())]
-    rt: Runtime,
+        pub rt: Runtime,
 }
 
 impl Widget for TypeView {
@@ -392,11 +391,10 @@ impl WidgetMatchEvent for TypeView {
         let save_type_btn = self.view.button(id!(update_type_btn));
         let del_type_btn = self.view.button(id!(del_type_btn));
         let add_template_btn = self.view.button(id!(add_template_btn));
+        let rt = self.rt.handle().clone();
         if let Some(s) = select.changed_label(actions) {
             input.set_text(cx, &s);
             let type_name = input.text().clone();
-            let rt = self.rt.handle().clone();
-            let _guard = rt.enter();
             let type_infos = rt.block_on(async move {
                 let res = get_type_infos(type_name).await;
                 match res {
@@ -473,10 +471,8 @@ impl WidgetMatchEvent for TypeView {
                     Cx::post_action(MyError::NoResult("型号已存在".to_string()));
                     return;
                 }
-                let rt = self.rt.handle().clone();
-                let _guard = rt.enter();
                 let infos = store.setting_store.type_infos.clone();
-                rt.block_on(async move {
+                rt.spawn(async move {
                     let res = add_new_type(type_name, infos.0, infos.1).await;
                     match res {
                         Ok(res) => {
@@ -506,8 +502,6 @@ impl WidgetMatchEvent for TypeView {
                     Cx::post_action(MyError::Zdyknown("型号名称不能为空".to_string()));
                     return;
                 }
-                let rt = self.rt.handle().clone();
-                let _guard = rt.enter();
                 rt.block_on(async move {
                     let res = update_type(
                         type_name,
@@ -531,9 +525,7 @@ impl WidgetMatchEvent for TypeView {
                 Cx::post_action(MyError::Zdyknown("型号名称不能为空".to_string()));
                 return;
             }
-            let rt = self.rt.handle().clone();
-            let _guard = rt.enter();
-            rt.block_on(async move {
+            rt.spawn(async move {
                 let res = delete_type(type_name).await;
                 match res {
                     Ok(res) => {

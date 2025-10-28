@@ -1,7 +1,7 @@
   use std::collections::{HashMap, HashSet};
   use sqlx_oldapi::{MssqlPool, query_as, Error as SqlxError, Row, query::QueryAs};
   use sqlx_oldapi::mssql::{MssqlRow, MssqlArguments};
-  use futures::TryStreamExt;
+  use futures::stream::TryStreamExt;
   use chrono::NaiveDateTime;
   use crate::{structs::{Data, Datas, PackData}, utils::{error::MyError, sql::client}};
   
