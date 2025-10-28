@@ -1,7 +1,7 @@
 // sn_query.rs
-
+use sqlx_oldapi::{MssqlPool, query_as};
+use futures::TryStreamExt;
 use std::collections::HashMap;
-use bb8_tiberius::ConnectionManager;
 use chrono::NaiveDateTime;
 use tracing::info; // 引入 info!
 
@@ -54,8 +54,7 @@ pub async fn sn_query_datas(
         "开始SN查询: sns_count={}, pn={}, use_time={}, start='{}', end='{}', result='{}', device='{}', worker='{}'",
         sns.len(), pn, use_time, date_time_start, date_time_end, test_result, test_devices, worker
     );
-    let client = client().await?;
-    let pool = &client;
+    let pool = &client().await?;
     let sn_list = if sns.is_empty() {
         info!("sns 列表为空, 将查询所有 SN");
         "".to_string()
@@ -478,67 +477,89 @@ pub async fn sn_query_datas(
     info!("SN查询完成，共找到 {} 条记录", datas.len());
     Ok(datas)
 }
+#[derive(Debug, sqlx_oldapi::FromRow)]
+struct SnQueryRow {
+    sn: String,
+    ith: String,
+    po: String,
+    vf: String,
+    im: String,
+    rs: String,
+    se: String,
+    sen: String,
+    res: String,
+    icc: String,
+    vbr: String,
+    kink: String,
+    imkink: String,
+    testtime: NaiveDateTime,
+    idark: String,
+    result: String,
+    tester: String,
+    iop: String,
+    i_xtalk: String,
+    mdpid: String,
+    yypn: String,
+}
 
 pub async fn execute_query_sn(
     sql_text_s: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> Result<Vec<Data>, MyError> {
+    
     info!("开始执行 sn_query 查询: {}", sql_text_s);
-    let mut client = pool.get().await.unwrap();
-    let stream = client.query(sql_text_s, &[&1i32]).await?;
+
+    let mut rows = query_as::<sqlx_oldapi::Mssql, SnQueryRow>(sql_text_s)
+        .fetch(pool);
+
     info!("查询执行完毕，开始处理结果集...");
-    let rowsets = stream.into_results().await?;
 
     let mut sn_map: HashMap<String, Data> = HashMap::new();
     let mut row_count = 0;
-    for rows in rowsets {
-        for row in rows {
-            row_count += 1;
-            let sn = row.get::<&str, _>(0).unwrap().to_string();
-            let kink = row.get::<&str, _>(11).unwrap_or_default();
-            let imkink = row.get::<&str, _>(12).unwrap_or_default();
-            let mdpid = if row.get::<&str, _>(19).unwrap_or_default() == "0" {
-                "".to_string()
-            } else {
-                row.get::<&str, _>(19).unwrap_or_default().to_string()
-            };
-            let yypn = row.get::<&str, _>(20).unwrap_or_default().to_string();
-            let data = Data {
-                sn: sn.clone(),
-                ith: row.get::<&str, _>(1).unwrap_or_default().to_string(),
-                vf: row.get::<&str, _>(3).unwrap_or_default().to_string(),
-                im: row.get::<&str, _>(4).unwrap_or_default().to_string(),
-                po: row.get::<&str, _>(2).unwrap_or_default().to_string(),
-                rs: row.get::<&str, _>(5).unwrap_or_default().to_string(),
-                se: row.get::<&str, _>(6).unwrap_or_default().to_string(),
-                sen: row.get::<&str, _>(7).unwrap_or_default().to_string(),
-                res: row.get::<&str, _>(8).unwrap_or_default().to_string(),
-                icc: row.get::<&str, _>(9).unwrap_or_default().to_string(),
-                vbr: row.get::<&str, _>(10).unwrap_or("0.00").to_string(),
-                kink: kink.to_string(),
-                imkink: imkink.to_string(),
-                testtime: row
-                    .get::<NaiveDateTime, _>(13)
-                    .unwrap()
-                    .format("%Y-%m-%d %H:%M:%S")
-                    .to_string(),
-                tester: row.get::<&str, _>(16).unwrap_or_default().to_string(),
-                iop: row.get::<&str, _>(17).unwrap_or_default().to_string(),
-                idark: row.get::<&str, _>(14).unwrap_or_default().to_string(),
-                result: row.get::<&str, _>(15).unwrap_or_default().to_string(),
-                i_xtalk: row.get::<&str, _>(18).unwrap_or_default().to_string(),
-                mdpid,
-                yypn,
-            };
-            // 这里不过滤，直接插入，因为业务逻辑是查询所有测试记录
-            sn_map.insert(sn.clone(), data);
-        }
+
+    while let Some(row) = rows.try_next().await.map_err(MyError::from)? {
+        row_count += 1;
+        
+        let mdpid = if row.mdpid == "0" {
+            "".to_string()
+        } else {
+            row.mdpid.clone()
+        };
+        
+        let sn_data = Data {
+            sn: row.sn.clone(),
+            ith: row.ith,
+            vf: row.vf,
+            im: row.im,
+            po: row.po,
+            rs: row.rs,
+            se: row.se,
+            sen: row.sen,
+            res: row.res,
+            icc: row.icc,
+            vbr: row.vbr, 
+            kink: row.kink,
+            imkink: row.imkink,
+            testtime: row.testtime.format("%Y-%m-%d %H:%M:%S").to_string(),
+            tester: row.tester,
+            iop: row.iop,
+            idark: row.idark,
+            result: row.result,
+            i_xtalk: row.i_xtalk,
+            mdpid,
+            yypn: row.yypn,
+        };
+
+        sn_map.insert(row.sn.clone(), sn_data);
     }
 
     let datas: Vec<Data> = sn_map.into_iter().map(|(_, v)| v).collect();
+    
     info!("共处理 {} 行数据，得到 {} 条SN数据。", row_count, datas.len());
+    
     if datas.is_empty() {
-        return Err(MyError::NoResult("箱号".to_string()));
+        return Err(MyError::NoResult("sn_query".to_string()));
     }
+    
     Ok(datas)
 }

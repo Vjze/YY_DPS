@@ -164,8 +164,8 @@ impl Widget for ExportScreen {
         if let Some(store) = scope.data.get::<Store>() {
             self.view
                 .drop_down(id!(type_selector))
-                .set_labels(cx, store.types.clone());
-            if store.datas.is_none() {
+                .set_labels(cx, store.setting_store.types.clone());
+            if store.datas_store.datas.is_empty() {
                 self.view.button(id!(export_btn)).set_disabled(cx, true);
             } else {
                 self.view.button(id!(export_btn)).set_disabled(cx, false);
@@ -206,11 +206,11 @@ impl WidgetMatchEvent for ExportScreen {
                 });
                 match res {
                     Ok(r) => {
-                        store.datas = Some(r);
+                        store.datas_store.datas = r;
                     }
                     Err(e) => {
                         Cx::post_action(e);
-                        store.datas = None;
+                        store.datas_store.datas = Default::default();
                     }
                 }
             }
@@ -219,9 +219,13 @@ impl WidgetMatchEvent for ExportScreen {
             let processor = self.export_processor.as_ref().unwrap().clone();
             let _guard = rt.enter();
             if let Some(store) = scope.data.get_mut::<Store>() {
-                if let Some(datas) = store.datas.clone() {
+                if !store.datas_store.datas.is_empty() {
                     let type_name = type_name.clone().selected_label();
-                    let res = rt.block_on(async move { processor.export(type_name, datas).await });
+                    let res = rt.block_on(async move {
+                        processor
+                            .export(type_name, store.datas_store.datas.clone())
+                            .await
+                    });
                     match res {
                         Ok(_) => {
                             Cx::post_action("导出成功");

@@ -182,10 +182,10 @@ struct MapView {
 impl Widget for MapView {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get_mut::<Store>() {
-            if !store.templates.is_empty() {
+            if !store.setting_store.templates.is_empty() {
                 self.view
                     .drop_down(id!(template_selector))
-                    .set_labels(cx, store.templates.clone());
+                    .set_labels(cx, store.setting_store.templates.clone());
             };
         }
         self.view.handle_event(cx, event, scope);
@@ -217,7 +217,7 @@ impl WidgetMatchEvent for MapView {
                 }
             });
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.map_infos = map_infos;
+                store.setting_store.map_infos = map_infos;
             }
         }
 
@@ -225,7 +225,7 @@ impl WidgetMatchEvent for MapView {
             let template_name = select.text().clone();
             let rt = self.rt.handle().clone();
             if let Some(store) = scope.data.get_mut::<Store>() {
-                let map_infos = store.map_infos.clone();
+                let map_infos = store.setting_store.map_infos.clone();
                 let _guard = rt.enter();
                 rt.block_on(async move {
                     match update_template_map(template_name, map_infos).await {
@@ -245,7 +245,7 @@ impl WidgetMatchEvent for MapView {
         }
         if clear_btn.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.map_infos = HashMap::default();
+                store.setting_store.map_infos = HashMap::default();
             }
         }
         for action in actions {

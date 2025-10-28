@@ -410,7 +410,7 @@ impl LiveHook for QueryScreen {
 impl Widget for QueryScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
-            if store.datas.is_none() {
+            if store.datas_store.datas.is_empty() {
                 self.view.button(id!(export_btn)).set_disabled(cx, true);
             } else {
                 self.view.button(id!(export_btn)).set_disabled(cx, false);
@@ -482,11 +482,11 @@ impl WidgetMatchEvent for QueryScreen {
                         });
                         match res {
                             Ok(data) => {
-                                store.datas = Some(data);
+                                store.datas_store.datas = data;
                             }
                             Err(err) => {
                                 Cx::post_action(err);
-                                store.datas = None;
+                                store.datas_store.datas = Default::default();
                             }
                         }
                     } else if query_type == "箱号" {
@@ -502,11 +502,11 @@ impl WidgetMatchEvent for QueryScreen {
                         });
                         match res {
                             Ok(data) => {
-                                store.datas = Some(data);
+                                store.datas_store.datas = data;
                             }
                             Err(err) => {
                                 Cx::post_action(err);
-                                store.datas = None;
+                                store.datas_store.datas = Default::default();
                             }
                         }
                     } else {
@@ -522,11 +522,11 @@ impl WidgetMatchEvent for QueryScreen {
                         });
                         match res {
                             Ok(data) => {
-                                store.datas = Some(data);
+                                store.datas_store.datas = data;
                             }
                             Err(err) => {
                                 Cx::post_action(err);
-                                store.datas = None;
+                                store.datas_store.datas = Default::default();
                             }
                         }
                     }
@@ -537,8 +537,8 @@ impl WidgetMatchEvent for QueryScreen {
             let processor = self.datas_query_processor.as_ref().unwrap().clone();
             let _guard = rt.enter();
             if let Some(store) = scope.data.get::<Store>() {
-                if let Some(datas) = store.datas.clone() {
-                    let res = rt.block_on(async move { processor.data_export(datas).await });
+                if !store.datas_store.datas.is_empty() {
+                    let res = rt.block_on(async move { processor.data_export(store.datas_store.datas.clone()).await });
                     match res {
                         Ok(_path) => {
                             enqueue_popup_notification(PopupItem {

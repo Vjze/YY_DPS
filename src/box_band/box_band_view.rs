@@ -232,7 +232,7 @@ impl WidgetMatchEvent for BoxBandView {
         let new_box_input = self.view.text_input(id!(new_box_no_input));
         if let Some(input) = new_box_input.changed(actions) {
             if let Some(props) = scope.data.get_mut::<Store>() {
-                let datas = props.box_data.clone();
+                let datas = props.box_band_store.box_data.clone();
                 let len = datas.len();
                 let mut new_box_nos = vec![];
                 for i in 1..len + 1 {
@@ -242,7 +242,7 @@ impl WidgetMatchEvent for BoxBandView {
                     new_data.new_box_no = new_box.clone();
                     new_box_nos.push(new_data);
                 }
-                props.box_data = new_box_nos;
+                props.box_band_store.box_data = new_box_nos;
                 // info!("props.box_data: {:?}", props.box_data);
             }
         }
@@ -272,7 +272,7 @@ impl WidgetMatchEvent for BoxBandView {
                             Ok(data) => {
                                 let num = format!("一共: {} 盒", data.len());
                                 boxs_num.set_text(cx, &num);
-                                store.box_data = data;
+                                store.box_band_store.box_data = data;
                             }
                             Err(e) => {
                                 Cx::post_action(e);
@@ -284,11 +284,11 @@ impl WidgetMatchEvent for BoxBandView {
         }
         if band_btn.clicked(actions) {
             if let Some(store) = scope.data.get::<Store>() {
-                if store.box_data.is_empty() {
+                if store.box_band_store.box_data.is_empty() {
                     Cx::post_action(MyError::Zdyknown("没有数据，无法绑定!!!".to_string()));
                 } else {
                     let _guard = rt.enter();
-                    let datas = store.box_data.clone();
+                    let datas = store.box_band_store.box_data.clone();
                     let carton = carton_input.text();
                     rt.block_on(async move {
                         let res = band_work(datas).await;

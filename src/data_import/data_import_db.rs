@@ -214,16 +214,16 @@ impl WidgetMatchEvent for DataImportDb {
                             if let Some(store) = scope.data.get_mut::<Store>() {
                                 let qty = r.len();
 
-                                store.import_datas = data;
+                                store.import_store.import_datas = data;
                                 info!(
                                     "Store 更新完成，导入数据量: {}",
-                                    store.import_datas.data.len()
+                                    store.import_store.import_datas.data.len()
                                 );
 
                                 // UI 刷新
                                 self.view
                                     .text_input(id!(pn))
-                                    .set_text(cx, &store.import_datas.pn);
+                                    .set_text(cx, &store.import_store.import_datas.pn);
                                 self.view.label(id!(qty)).set_text(cx, &qty.to_string());
 
                                 enqueue_popup_notification(PopupItem {
@@ -248,7 +248,7 @@ impl WidgetMatchEvent for DataImportDb {
             info!("开始写入数据");
             let processor = self.import_processor.as_ref().unwrap().clone();
             if let Some(store) = scope.data.get::<Store>() {
-                let data = store.import_datas.clone();
+                let data = store.import_store.import_datas.clone();
                 let rt = self.rt.handle().clone();
                 let _guard = rt.enter();
                 rt.spawn(async move {

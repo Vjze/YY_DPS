@@ -1,10 +1,8 @@
-use bb8_tiberius::ConnectionManager;
-
 use crate::utils::{error::MyError, sql::get_tables};
-
+use sqlx_oldapi::MssqlPool;
 pub async fn build_query_sql(
     sn_list: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     // 定义字段
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
@@ -35,7 +33,7 @@ pub async fn build_query_sql(
 
 pub async fn build_query_sql_res_all(
     sn_list: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -62,7 +60,7 @@ pub async fn build_query_sql_res_all(
 
 pub async fn build_query_sql_res_ng(
     sn_list: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -95,7 +93,7 @@ pub async fn build_query_sql_with_time(
     sn_list: &str,
     start_time: &str,
     end_time: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -130,7 +128,7 @@ pub async fn build_query_sql_res_all_with_time(
     sn_list: &str,
     start_time: &str,
     end_time: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -165,7 +163,7 @@ pub async fn build_query_sql_res_ng_with_time(
     sn_list: &str,
     start_time: &str,
     end_time: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -200,7 +198,7 @@ pub async fn build_query_sql_res_ng_with_time(
 pub async fn build_query_sql_with_testtype(
     sn_list: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -234,7 +232,7 @@ pub async fn build_query_sql_with_testtype(
 pub async fn build_query_sql_res_all_with_testtype(
     sn_list: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -268,7 +266,7 @@ pub async fn build_query_sql_res_all_with_testtype(
 pub async fn build_query_sql_res_ng_with_testtype(
     sn_list: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -304,7 +302,7 @@ pub async fn build_query_sql_with_time_and_testtype(
     start_time: &str,
     end_time: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -340,7 +338,7 @@ pub async fn build_query_sql_res_all_with_time_and_testtype(
     start_time: &str,
     end_time: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -376,7 +374,7 @@ pub async fn build_query_sql_res_ng_with_time_and_testtype(
     start_time: &str,
     end_time: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -410,7 +408,7 @@ pub async fn build_query_sql_res_ng_with_time_and_testtype(
 pub async fn build_query_sql_with_worker(
     sn_list: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -444,7 +442,7 @@ pub async fn build_query_sql_with_worker(
 pub async fn build_query_sql_res_all_with_worker(
     sn_list: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -475,7 +473,7 @@ pub async fn build_query_sql_res_all_with_worker(
 pub async fn build_query_sql_res_ng_with_worker(
     sn_list: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -511,7 +509,7 @@ pub async fn build_query_sql_with_time_and_worker(
     start_time: &str,
     end_time: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -547,7 +545,7 @@ pub async fn build_query_sql_res_all_with_time_and_worker(
     start_time: &str,
     end_time: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -583,7 +581,7 @@ pub async fn build_query_sql_res_ng_with_time_and_worker(
     start_time: &str,
     end_time: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -618,7 +616,7 @@ pub async fn build_query_sql_with_testtype_and_worker(
     sn_list: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -654,7 +652,7 @@ pub async fn build_query_sql_res_all_with_testtype_and_worker(
     sn_list: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -689,7 +687,7 @@ pub async fn build_query_sql_res_ng_with_testtype_and_worker(
     sn_list: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -726,7 +724,7 @@ pub async fn build_query_sql_with_time_and_testtype_and_worker(
     end_time: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -763,7 +761,7 @@ pub async fn build_query_sql_res_all_with_time_and_testtype_and_worker(
     end_time: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -800,7 +798,7 @@ pub async fn build_query_sql_res_ng_with_time_and_testtype_and_worker(
     end_time: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
@@ -1388,7 +1386,7 @@ pub async fn build_query_sql_10g_res_ng_with_time_and_testtype_and_worker(
 
 pub async fn build_query_sql_2(
     sn_list: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1414,7 +1412,7 @@ pub async fn build_query_sql_2(
 
 pub async fn build_query_sql_2_res_all(
     sn_list: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1437,7 +1435,7 @@ pub async fn build_query_sql_2_res_all(
 
 pub async fn build_query_sql_2_res_ng(
     sn_list: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1465,7 +1463,7 @@ pub async fn build_query_sql_2_with_time(
     sn_list: &str,
     start_time: &str,
     end_time: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1496,7 +1494,7 @@ pub async fn build_query_sql_2_res_all_with_time(
     sn_list: &str,
     start_time: &str,
     end_time: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1527,7 +1525,7 @@ pub async fn build_query_sql_2_res_ng_with_time(
     sn_list: &str,
     start_time: &str,
     end_time: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1557,7 +1555,7 @@ pub async fn build_query_sql_2_res_ng_with_time(
 pub async fn build_query_sql_2_with_testtype(
     sn_list: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1587,7 +1585,7 @@ pub async fn build_query_sql_2_with_testtype(
 pub async fn build_query_sql_2_res_all_with_testtype(
     sn_list: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1617,7 +1615,7 @@ pub async fn build_query_sql_2_res_all_with_testtype(
 pub async fn build_query_sql_2_res_ng_with_testtype(
     sn_list: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1649,7 +1647,7 @@ pub async fn build_query_sql_2_with_time_and_testtype(
     start_time: &str,
     end_time: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1681,7 +1679,7 @@ pub async fn build_query_sql_2_res_all_with_time_and_testtype(
     start_time: &str,
     end_time: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1713,7 +1711,7 @@ pub async fn build_query_sql_2_res_ng_with_time_and_testtype(
     start_time: &str,
     end_time: &str,
     testtype_param: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1744,7 +1742,7 @@ pub async fn build_query_sql_2_res_ng_with_time_and_testtype(
 pub async fn build_query_sql_2_with_worker(
     sn_list: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1774,7 +1772,7 @@ pub async fn build_query_sql_2_with_worker(
 pub async fn build_query_sql_2_res_all_with_worker(
     sn_list: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1801,7 +1799,7 @@ pub async fn build_query_sql_2_res_all_with_worker(
 pub async fn build_query_sql_2_res_ng_with_worker(
     sn_list: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1833,7 +1831,7 @@ pub async fn build_query_sql_2_with_time_and_worker(
     start_time: &str,
     end_time: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1865,7 +1863,7 @@ pub async fn build_query_sql_2_res_all_with_time_and_worker(
     start_time: &str,
     end_time: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1897,7 +1895,7 @@ pub async fn build_query_sql_2_res_ng_with_time_and_worker(
     start_time: &str,
     end_time: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1928,7 +1926,7 @@ pub async fn build_query_sql_2_with_testtype_and_worker(
     sn_list: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1959,7 +1957,7 @@ pub async fn build_query_sql_2_res_all_with_testtype_and_worker(
     sn_list: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -1990,7 +1988,7 @@ pub async fn build_query_sql_2_res_ng_with_testtype_and_worker(
     sn_list: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -2023,7 +2021,7 @@ pub async fn build_query_sql_2_with_time_and_testtype_and_worker(
     end_time: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -2056,7 +2054,7 @@ pub async fn build_query_sql_2_res_all_with_time_and_testtype_and_worker(
     end_time: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();
@@ -2089,7 +2087,7 @@ pub async fn build_query_sql_2_res_ng_with_time_and_testtype_and_worker(
     end_time: &str,
     testtype_param: &str,
     worker: &str,
-    pool: &bb8::Pool<ConnectionManager>,
+    pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
     let testtype = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
     let mut sql_text = String::new();

@@ -175,8 +175,8 @@ impl WidgetMatchEvent for LoginScreen {
             } else {
                 if user_name.text() == "admin" && user_password.text() == "123456" {
                     if let Some(store) = scope.data.get_mut::<Store>() {
-                        store.logined = true;
-                        store.free_login = false;
+                        store.login_store.logined = true;
+                        store.login_store.free_login = false;
                     }
                     Cx::post_action(LoginResult::Logined);
                 } else {
@@ -186,8 +186,8 @@ impl WidgetMatchEvent for LoginScreen {
         }
         if free_btn.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.logined = true;
-                store.free_login = true;
+                store.login_store.logined = true;
+                store.login_store.free_login = true;
             }
             Cx::post_action(LoginResult::FreeLogin);
         }

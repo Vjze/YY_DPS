@@ -82,9 +82,9 @@ impl Widget for FixedRow {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(mut list) = item.as_portal_list().borrow_mut() {
-                if let Some(state) = scope.data.get::<Store>() {
+                if let Some(store) = scope.data.get::<Store>() {
                     // 动态设置项范围为 numbers 的长度
-                    let keys_len = state.template_infos.strings.len();
+                    let keys_len = store.setting_store.template_infos.strings.len();
                     let props = scope.props.get::<FixedRowProps>().unwrap();
                     let row_idx = props.props;
                     let first_idx = row_idx * 3;
@@ -92,7 +92,7 @@ impl Widget for FixedRow {
 
                     list.set_item_range(cx, 0, num_to_render);
                     // 迭代 numbers 的键值对
-                    let mut keys = state
+                    let mut keys = store.setting_store
                         .template_infos
                         .strings
                         .iter()
@@ -102,7 +102,7 @@ impl Widget for FixedRow {
                         })
                         .collect::<Vec<_>>();
                     keys.sort(); // 可选：按键排序以确保一致的显示顺序
-                    let values = state.template_infos.strings.clone();
+                    let values = store.setting_store.template_infos.strings.clone();
                     for i in 0..num_to_render {
                         let global_idx = first_idx + i;
                         if global_idx >= keys_len {
@@ -143,7 +143,7 @@ impl WidgetMatchEvent for FixedRow {
                 let id = text_input.widget_uid();
                 if let Some(i) = self.ids.get(&id) {
                     if let Some(store) = scope.data.get_mut::<Store>() {
-                        if let Some(value) = store.template_infos.strings.get_mut(i) {
+                        if let Some(value) = store.setting_store.template_infos.strings.get_mut(i) {
                             *value = input;
                         }
                     }
@@ -162,8 +162,8 @@ impl Widget for FixedGrid {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(mut list) = item.as_portal_list().borrow_mut() {
-                let state = scope.data.get_mut::<Store>().unwrap();
-                let len = state.template_infos.strings.len().div_ceil(3);
+                let store = scope.data.get_mut::<Store>().unwrap();
+                let len = store.setting_store.template_infos.strings.len().div_ceil(3);
                 list.set_item_range(cx, 0, len);
                 while let Some(row_idx) = list.next_visible_item(cx) {
                     if row_idx >= len {
@@ -172,7 +172,7 @@ impl Widget for FixedGrid {
 
                     let row = list.item(cx, row_idx, live_id!(FixedRow));
                     let props = FixedRowProps { props: row_idx };
-                    let mut scope = Scope::with_data_props(state, &props);
+                    let mut scope = Scope::with_data_props(store, &props);
                     row.draw_all(cx, &mut scope);
                 }
             }

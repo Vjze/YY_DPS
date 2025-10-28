@@ -12,18 +12,39 @@ use crate::{
 };
 
 #[derive(Debug, Default, Clone)]
-pub struct Store {
+pub struct DatasStore {
+    pub datas:Vec<HashMap<String, String>>,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct SettingStore {
     pub types: Vec<String>,
     pub templates: Vec<String>,
     pub all_column_name: Vec<String>,
-    pub datas: Option<Vec<HashMap<String, String>>>,
     pub type_infos: (Vec<String>, Infos),
     pub template_infos: DecimalConfig,
     pub map_infos: HashMap<String, String>,
+}
+#[derive(Debug, Default, Clone)]
+pub struct LoginStore {
     pub logined: bool,
     pub free_login: bool,
-    pub box_data: Vec<BoxBandData>,
+}
+#[derive(Debug, Default, Clone)]
+pub struct ImportStore {
     pub import_datas: DbData,
+}
+#[derive(Debug, Default, Clone)]
+pub struct BoxBandStore {
+    pub box_data: Vec<BoxBandData>,
+}
+#[derive(Debug, Default, Clone)]
+pub struct Store {
+    pub datas_store: DatasStore,
+    pub setting_store: SettingStore,
+    pub login_store: LoginStore,
+    pub import_store: ImportStore,
+    pub box_band_store: BoxBandStore,
 }
 
 impl Store {
@@ -49,11 +70,14 @@ impl Store {
                 Vec::default()
             }
         };
-
+        let setting_store = SettingStore {
+            types: types.clone(),
+            templates: templates.clone(),
+            all_column_name: all_column_name.clone(),
+            ..Default::default()
+        };
         Self {
-            types,
-            templates,
-            all_column_name,
+            setting_store,
             ..Default::default()
         }
     }

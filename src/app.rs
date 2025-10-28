@@ -299,7 +299,7 @@ impl MatchEvent for App {
                 let store = self.store.clone();
                 // store.logined = true;
                 // store.free_login = false;
-                let show_login = !store.logined;
+                let show_login = !store.login_store.logined;
                 self.ui.view(id!(login_view)).set_visible(cx, show_login);
                 self.ui
                     .view(id!(root_adaptive_view))
@@ -316,7 +316,7 @@ impl MatchEvent for App {
                 let store = self.store.clone();
                 // store.logined = true;
                 // store.free_login = true;
-                let show_login = !store.logined;
+                let show_login = !store.login_store.logined;
                 self.ui.view(id!(login_view)).set_visible(cx, show_login);
                 self.ui
                     .view(id!(root_adaptive_view))

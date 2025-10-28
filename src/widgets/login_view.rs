@@ -238,8 +238,8 @@ impl WidgetMatchEvent for LoginView {
         let cancel_button = self.button(id!(cancel_button));
         let user_name = self.text_input(id!(user_name)).text();
         let user_password = self.text_input(id!(user_password)).text();
-        if self.text_input(id!(user_name)).returned(actions).is_some(){
-             self.text_input(id!(user_password)).set_key_focus(cx);
+        if self.text_input(id!(user_name)).returned(actions).is_some() {
+            self.text_input(id!(user_password)).set_key_focus(cx);
         }
         if accept_button.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
@@ -247,12 +247,12 @@ impl WidgetMatchEvent for LoginView {
                     return;
                 }
 
-                store.logined = true;
+                store.login_store.logined = true;
             }
         }
         if cancel_button.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.logined = false;
+                store.login_store.logined = false;
             }
         }
     }

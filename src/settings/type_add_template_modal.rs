@@ -239,10 +239,10 @@ pub enum TemplateNameModalAction {
 impl Widget for AddTemplateNameModal {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
-            if store.templates.len() > 0 {
+            if store.setting_store.templates.len() > 0 {
                 let dropdown = self.view.drop_down(id!(template_select));
-                let templates_all = store.templates.clone();
-                let template_haved = store.type_infos.0.clone();
+                let templates_all = store.setting_store.templates.clone();
+                let template_haved = store.setting_store.type_infos.0.clone();
                 let templates_set: HashSet<_> = templates_all.iter().collect();
                 let part_set: HashSet<_> = template_haved.iter().collect();
                 let part_iter = template_haved.par_iter().map(|p| {

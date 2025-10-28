@@ -105,17 +105,18 @@ impl Widget for MapRow {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(mut list) = item.as_portal_list().borrow_mut() {
-                if let Some(state) = scope.data.get::<Store>() {
+                if let Some(store) = scope.data.get::<Store>() {
                     // 动态设置项范围为 numbers 的长度
-                    let keys_len = state.map_infos.len();
+                    let keys_len = store.setting_store.map_infos.len();
                     let props = scope.props.get::<MapRowProps>().unwrap();
                     let row_idx = props.props;
                     let first_idx = row_idx * 3;
                     let num_to_render = 3.min(keys_len.saturating_sub(first_idx));
-                    let all_column_name = state.all_column_name.clone();
+                    let all_column_name = store.setting_store.all_column_name.clone();
                     list.set_item_range(cx, 0, num_to_render);
                     // 迭代 numbers 的键值对
-                    let mut keys = state
+                    let mut keys = store
+                        .setting_store
                         .map_infos
                         .iter()
                         .map(|(key, _)| {
@@ -124,8 +125,7 @@ impl Widget for MapRow {
                         })
                         .collect::<Vec<_>>();
                     keys.sort(); // 可选：按键排序以确保一致的显示顺序
-                    let values = state
-                        .map_infos.clone();
+                    let values = store.setting_store.map_infos.clone();
                     for i in 0..num_to_render {
                         let global_idx = first_idx + i;
                         if global_idx >= keys_len {
@@ -144,7 +144,6 @@ impl Widget for MapRow {
                         map_selector.set_selected_by_label(&store_value, cx);
                         item.draw_all(cx, scope);
                     }
-                    
                 }
             }
         }
@@ -166,10 +165,10 @@ impl WidgetMatchEvent for MapRow {
                 let id = map_selector.widget_uid();
                 if let Some(i) = self.ids.get(&id) {
                     if let Some(store) = scope.data.get_mut::<Store>() {
-                        if let Some(value) = store.map_infos.get_mut(i) {
+                        if let Some(value) = store.setting_store.map_infos.get_mut(i) {
                             *value = selected.clone();
                         }
-                        println!("datas = {:?}", store.map_infos);
+                        println!("datas = {:?}", store.setting_store.map_infos);
                     }
                 }
             }
@@ -186,9 +185,9 @@ impl Widget for MapGrid {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(mut list) = item.as_portal_list().borrow_mut() {
-                if let Some(state) = scope.data.get_mut::<Store>() {
-                    // info!("Drawing MapGrid with map_infos: {:?}", state.map_infos);
-                    let len = state.map_infos.len().div_ceil(3);
+                if let Some(store) = scope.data.get_mut::<Store>() {
+                    // info!("Drawing MapGrid with map_infos: {:?}", store.setting_store.map_infos);
+                    let len = store.setting_store.map_infos.len().div_ceil(3);
                     list.set_item_range(cx, 0, len);
                     while let Some(row_idx) = list.next_visible_item(cx) {
                         if row_idx >= len {
@@ -197,7 +196,7 @@ impl Widget for MapGrid {
 
                         let row = list.item(cx, row_idx, live_id!(MapRow));
                         let props = MapRowProps { props: row_idx };
-                        let mut scope = Scope::with_data_props(state, &props);
+                        let mut scope = Scope::with_data_props(store, &props);
                         row.draw_all(cx, &mut scope);
                     }
                 }

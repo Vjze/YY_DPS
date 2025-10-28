@@ -103,7 +103,7 @@ impl Widget for BandTable {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(props) = scope.data.get::<Store>() {
             // info!("BandTable update data");
-            self.data = props.box_data.clone();
+            self.data = props.box_band_store.box_data.clone();
         }
         self.view.handle_event(cx, event, scope);
     }
