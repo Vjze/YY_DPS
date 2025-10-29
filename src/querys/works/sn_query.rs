@@ -1,16 +1,21 @@
 // sn_query.rs
-use sqlx_oldapi::{MssqlPool, query_as};
+use sqlx_oldapi::{
+    query::{QueryAs}, 
+    Mssql, MssqlPool, query_as, mssql::MssqlArguments
+};
 use std::collections::HashMap;
 use chrono::NaiveDateTime;
-use tracing::info; // 引入 info!
+use tracing::info;
 use futures::stream::TryStreamExt;
-use super::query_utils::*;
+// 导入新的、唯一的SQL构建函数
+use super::query_utils::build_base_union_query;
 use crate::{structs::Data, utils::{error::MyError, sql::client}};
 
 fn format_data(data: Vec<Data>) -> Vec<HashMap<String, String>> {
     data.into_iter()
         .map(|d| {
             let mut map = HashMap::new();
+            // ... (format_data 函数内容不变) ...
             map.insert("sn".to_string(), d.sn);
             map.insert("ith".to_string(), d.ith);
             map.insert("vf".to_string(), d.vf);
@@ -39,445 +44,9 @@ fn format_data(data: Vec<Data>) -> Vec<HashMap<String, String>> {
         .collect()
 }
 
-pub async fn sn_query_datas(
-    sns: Vec<String>,
-    pn: String,
-    use_time: bool,
-    date_time_start: String,
-    date_time_end: String,
-    test_result: String,
-    test_devices: String,
-    worker: String,
-) -> Result<Vec<HashMap<String, String>>, MyError> {
-    info!(
-        "开始SN查询: sns_count={}, pn={}, use_time={}, start='{}', end='{}', result='{}', device='{}', worker='{}'",
-        sns.len(), pn, use_time, date_time_start, date_time_end, test_result, test_devices, worker
-    );
-    let pool = &client().await?;
-    let sn_list = if sns.is_empty() {
-        info!("sns 列表为空, 将查询所有 SN");
-        "".to_string()
-    } else {
-        let v: Vec<String> = sns.iter().map(|sn| format!("'{}'", sn)).collect();
-        v.join(", ")
-    };
-
-    // 根据参数组合选择对应的 SQL 构建函数
-    let sql_text_s = match (
-        test_devices.as_str(),
-        test_result.as_str(),
-        use_time,
-        pn.is_empty(),
-        worker.is_empty(),
-    ) {
-        // ... (所有 match 分支，逻辑不变)
-        // 为了简洁，这里省略了所有分支，它们不包含新增的日志代码
-        ("全部", "Ok", false, true, true) => build_query_sql(&sn_list, pool).await?,
-        ("全部", "全部", false, true, true) => build_query_sql_res_all(&sn_list, pool).await?,
-        ("全部", "NG", false, true, true) => build_query_sql_res_ng(&sn_list, pool).await?,
-        ("全部", "Ok", true, true, true) => {
-            build_query_sql_with_time(&sn_list, &date_time_start, &date_time_end, pool).await?
-        }
-        ("全部", "全部", true, true, true) => {
-            build_query_sql_res_all_with_time(&sn_list, &date_time_start, &date_time_end, pool)
-                .await?
-        }
-        ("全部", "NG", true, true, true) => {
-            build_query_sql_res_ng_with_time(&sn_list, &date_time_start, &date_time_end, pool)
-                .await?
-        }
-        ("全部", "Ok", false, false, true) => {
-            build_query_sql_with_testtype(&sn_list, &pn, pool).await?
-        }
-        ("全部", "全部", false, false, true) => {
-            build_query_sql_res_all_with_testtype(&sn_list, &pn, pool).await?
-        }
-        ("全部", "NG", false, false, true) => {
-            build_query_sql_res_ng_with_testtype(&sn_list, &pn, pool).await?
-        }
-        ("全部", "Ok", true, false, true) => {
-            build_query_sql_with_time_and_testtype(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                pool,
-            )
-            .await?
-        }
-        ("全部", "全部", true, false, true) => {
-            build_query_sql_res_all_with_time_and_testtype(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                pool,
-            )
-            .await?
-        }
-        ("全部", "NG", true, false, true) => {
-            build_query_sql_res_ng_with_time_and_testtype(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                pool,
-            )
-            .await?
-        }
-        ("全部", "Ok", false, true, false) => {
-            build_query_sql_with_worker(&sn_list, &worker, pool).await?
-        }
-        ("全部", "全部", false, true, false) => {
-            build_query_sql_res_all_with_worker(&sn_list, &worker, pool).await?
-        }
-        ("全部", "NG", false, true, false) => {
-            build_query_sql_res_ng_with_worker(&sn_list, &worker, pool).await?
-        }
-        ("全部", "Ok", true, true, false) => {
-            build_query_sql_with_time_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        ("全部", "全部", true, true, false) => {
-            build_query_sql_res_all_with_time_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        ("全部", "NG", true, true, false) => {
-            build_query_sql_res_ng_with_time_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        ("全部", "Ok", false, false, false) => {
-            build_query_sql_with_testtype_and_worker(&sn_list, &pn, &worker, pool).await?
-        }
-        ("全部", "全部", false, false, false) => {
-            build_query_sql_res_all_with_testtype_and_worker(&sn_list, &pn, &worker, pool).await?
-        }
-        ("全部", "NG", false, false, false) => {
-            build_query_sql_res_ng_with_testtype_and_worker(&sn_list, &pn, &worker, pool).await?
-        }
-        ("全部", "Ok", true, false, false) => {
-            build_query_sql_with_time_and_testtype_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        ("全部", "全部", true, false, false) => {
-            build_query_sql_res_all_with_time_and_testtype_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        ("全部", "NG", true, false, false) => {
-            build_query_sql_res_ng_with_time_and_testtype_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-
-        // test_devices == "10G"
-        ("10G", "Ok", false, true, true) => build_query_sql_10g(&sn_list).await?,
-        ("10G", "全部", false, true, true) => build_query_sql_10g_res_all(&sn_list).await?,
-        ("10G", "NG", false, true, true) => build_query_sql_10g_res_ng(&sn_list).await?,
-        ("10G", "Ok", true, true, true) => {
-            build_query_sql_10g_with_time(&sn_list, &date_time_start, &date_time_end).await?
-        }
-        ("10G", "全部", true, true, true) => {
-            build_query_sql_10g_res_all_with_time(&sn_list, &date_time_start, &date_time_end)
-                .await?
-        }
-        ("10G", "NG", true, true, true) => {
-            build_query_sql_10g_res_ng_with_time(&sn_list, &date_time_start, &date_time_end).await?
-        }
-        ("10G", "Ok", false, false, true) => {
-            build_query_sql_10g_with_testtype(&sn_list, &pn).await?
-        }
-        ("10G", "全部", false, false, true) => {
-            build_query_sql_10g_res_all_with_testtype(&sn_list, &pn).await?
-        }
-        ("10G", "NG", false, false, true) => {
-            build_query_sql_10g_res_ng_with_testtype(&sn_list, &pn).await?
-        }
-        ("10G", "Ok", true, false, true) => {
-            build_query_sql_10g_with_time_and_testtype(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-            )
-            .await?
-        }
-        ("10G", "全部", true, false, true) => {
-            build_query_sql_10g_res_all_with_time_and_testtype(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-            )
-            .await?
-        }
-        ("10G", "NG", true, false, true) => {
-            build_query_sql_10g_res_ng_with_time_and_testtype(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-            )
-            .await?
-        }
-        ("10G", "Ok", false, true, false) => {
-            build_query_sql_10g_with_worker(&sn_list, &worker).await?
-        }
-        ("10G", "全部", false, true, false) => {
-            build_query_sql_10g_res_all_with_worker(&sn_list, &worker).await?
-        }
-        ("10G", "NG", false, true, false) => {
-            build_query_sql_10g_res_ng_with_worker(&sn_list, &worker).await?
-        }
-        ("10G", "Ok", true, true, false) => {
-            build_query_sql_10g_with_time_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &worker,
-            )
-            .await?
-        }
-        ("10G", "全部", true, true, false) => {
-            build_query_sql_10g_res_all_with_time_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &worker,
-            )
-            .await?
-        }
-        ("10G", "NG", true, true, false) => {
-            build_query_sql_10g_res_ng_with_time_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &worker,
-            )
-            .await?
-        }
-        ("10G", "Ok", false, false, false) => {
-            build_query_sql_10g_with_testtype_and_worker(&sn_list, &pn, &worker).await?
-        }
-        ("10G", "全部", false, false, false) => {
-            build_query_sql_10g_res_all_with_testtype_and_worker(&sn_list, &pn, &worker).await?
-        }
-        ("10G", "NG", false, false, false) => {
-            build_query_sql_10g_res_ng_with_testtype_and_worker(&sn_list, &pn, &worker).await?
-        }
-        ("10G", "Ok", true, false, false) => {
-            build_query_sql_10g_with_time_and_testtype_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                &worker,
-            )
-            .await?
-        }
-        ("10G", "全部", true, false, false) => {
-            build_query_sql_10g_res_all_with_time_and_testtype_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                &worker,
-            )
-            .await?
-        }
-        ("10G", "NG", true, false, false) => {
-            build_query_sql_10g_res_ng_with_time_and_testtype_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                &worker,
-            )
-            .await?
-        }
-
-        // test_devices == "2.5G"
-        ("2.5G", "Ok", false, true, true) => build_query_sql_2(&sn_list, pool).await?,
-        ("2.5G", "全部", false, true, true) => build_query_sql_2_res_all(&sn_list, pool).await?,
-        ("2.5G", "NG", false, true, true) => build_query_sql_2_res_ng(&sn_list, pool).await?,
-        ("2.5G", "Ok", true, true, true) => {
-            build_query_sql_2_with_time(&sn_list, &date_time_start, &date_time_end, pool).await?
-        }
-        ("2.5G", "全部", true, true, true) => {
-            build_query_sql_2_res_all_with_time(&sn_list, &date_time_start, &date_time_end, pool)
-                .await?
-        }
-        ("2.5G", "NG", true, true, true) => {
-            build_query_sql_2_res_ng_with_time(&sn_list, &date_time_start, &date_time_end, pool)
-                .await?
-        }
-        ("2.5G", "Ok", false, false, true) => {
-            build_query_sql_2_with_testtype(&sn_list, &pn, pool).await?
-        }
-        ("2.5G", "全部", false, false, true) => {
-            build_query_sql_2_res_all_with_testtype(&sn_list, &pn, pool).await?
-        }
-        ("2.5G", "NG", false, false, true) => {
-            build_query_sql_2_res_ng_with_testtype(&sn_list, &pn, pool).await?
-        }
-        ("2.5G", "Ok", true, false, true) => {
-            build_query_sql_2_with_time_and_testtype(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                pool,
-            )
-            .await?
-        }
-        ("2.5G", "全部", true, false, true) => {
-            build_query_sql_2_res_all_with_time_and_testtype(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                pool,
-            )
-            .await?
-        }
-        ("2.5G", "NG", true, false, true) => {
-            build_query_sql_2_res_ng_with_time_and_testtype(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                pool,
-            )
-            .await?
-        }
-        ("2.5G", "Ok", false, true, false) => {
-            build_query_sql_2_with_worker(&sn_list, &worker, pool).await?
-        }
-        ("2.5G", "全部", false, true, false) => {
-            build_query_sql_2_res_all_with_worker(&sn_list, &worker, pool).await?
-        }
-        ("2.5G", "NG", false, true, false) => {
-            build_query_sql_2_res_ng_with_worker(&sn_list, &worker, pool).await?
-        }
-        ("2.5G", "Ok", true, true, false) => {
-            build_query_sql_2_with_time_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        ("2.5G", "全部", true, true, false) => {
-            build_query_sql_2_res_all_with_time_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        ("2.5G", "NG", true, true, false) => {
-            build_query_sql_2_res_ng_with_time_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        ("2.5G", "Ok", false, false, false) => {
-            build_query_sql_2_with_testtype_and_worker(&sn_list, &pn, &worker, pool).await?
-        }
-        ("2.5G", "全部", false, false, false) => {
-            build_query_sql_2_res_all_with_testtype_and_worker(&sn_list, &pn, &worker, pool).await?
-        }
-        ("2.5G", "NG", false, false, false) => {
-            build_query_sql_2_res_ng_with_testtype_and_worker(&sn_list, &pn, &worker, pool).await?
-        }
-        ("2.5G", "Ok", true, false, false) => {
-            build_query_sql_2_with_time_and_testtype_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        ("2.5G", "全部", true, false, false) => {
-            build_query_sql_2_res_all_with_time_and_testtype_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        ("2.5G", "NG", true, false, false) => {
-            build_query_sql_2_res_ng_with_time_and_testtype_and_worker(
-                &sn_list,
-                &date_time_start,
-                &date_time_end,
-                &pn,
-                &worker,
-                pool,
-            )
-            .await?
-        }
-        _ => return Err(MyError::QueryErr),
-    };
-
-    let data = execute_query_sn(&sql_text_s, pool).await?;
-    let datas = format_data(data);
-    info!("SN查询完成，共找到 {} 条记录", datas.len());
-    Ok(datas)
-}
+// SnQueryRow 结构体保持不变，它正确地映射了 query_utils.rs 中定义的别名
 #[derive(Debug, sqlx_oldapi::FromRow)]
-struct SnQueryRow {
+pub struct SnQueryRow {
     sn: String,
     ith: String,
     po: String,
@@ -501,25 +70,138 @@ struct SnQueryRow {
     yypn: String,
 }
 
+pub async fn sn_query_datas(
+    sns: Vec<String>,
+    pn: String,
+    use_time: bool,
+    date_time_start: String,
+    date_time_end: String,
+    test_result: String,
+    test_devices: String,
+    worker: String,
+) -> Result<Vec<HashMap<String, String>>, MyError> {
+    info!(
+        "开始SN查询: sns_count={}, pn={}, use_time={}, start='{}', end='{}', result='{}', device='{}', worker='{}'",
+        sns.len(), pn, use_time, date_time_start, date_time_end, test_result, test_devices, worker
+    );
+    let pool = &client().await?;
+
+    // 1. 获取基础的 UNION ALL SQL
+    // 这个函数替换了 query_utils.rs 中所有 70+ 个函数
+    let base_sql = build_base_union_query(&test_devices, pool).await?;
+
+    // 2. 动态构建 WHERE 子句和绑定参数
+    let mut params = Vec::<String>::new();
+    let mut where_clauses = Vec::<String>::new();
+    let mut param_index = 1;
+
+    // 添加 SNs 条件
+    if !sns.is_empty() {
+        // 为IN子句动态生成占位符, e.g., "(@P1, @P2, @P3)"
+        let placeholders: Vec<String> = sns.iter().map(|sn| {
+            let p = format!("@P{}", param_index);
+            params.push(sn.clone()); // 将 SN 值添加到绑定列表
+            param_index += 1;
+            p
+        }).collect();
+        where_clauses.push(format!("SN IN ({})", placeholders.join(", ")));
+    }
+
+    // 添加 test_result 条件
+    if test_result != "全部" {
+        where_clauses.push(format!("Result = @P{}", param_index));
+        params.push(test_result); // "OK" or "NG"
+        param_index += 1;
+    }
+
+    // 添加 pn (yypn) 条件 (注意: 别名是 Yypn)
+    if !pn.is_empty() {
+        where_clauses.push(format!("Yypn = @P{}", param_index));
+        params.push(pn);
+        param_index += 1;
+    }
+
+    // 添加 worker (tester) 条件 (注意: 别名是 Tester)
+    if !worker.is_empty() {
+        where_clauses.push(format!("Tester = @P{}", param_index));
+        params.push(worker);
+        param_index += 1;
+    }
+
+    // 添加 time 条件
+    if use_time {
+        if date_time_start.is_empty() || date_time_end.is_empty() {
+            return Err(MyError::Zdyknown("启用时间查询时，开始和结束时间不能为空".to_string()));
+        }
+        where_clauses.push(format!("TestDate BETWEEN @P{} AND @P{}", param_index, param_index + 1));
+        params.push(date_time_start);
+        params.push(date_time_end);
+        // param_index += 2; // (不需要，因为我们已经使用了param_index和param_index + 1)
+    }
+
+    // 3. 组装最终的 WHERE SQL
+    let where_sql = if where_clauses.is_empty() {
+        String::new()
+    } else {
+        format!("WHERE {}", where_clauses.join(" AND "))
+    };
+
+    // 4. 组装包含去重逻辑的最终SQL
+    // 使用 ROW_NUMBER() 在数据库端进行去重 (PARTITION BY SN)
+    // 只选择 rn = 1 (即 TestDate 最新的记录)
+    let final_sql = format!(
+        "WITH RankedData AS (
+            SELECT 
+                *,
+                ROW_NUMBER() OVER(PARTITION BY SN ORDER BY TestDate DESC) as rn
+            FROM (
+                {}
+            ) AS BaseData
+            {}
+        )
+        SELECT 
+            sn, ith, po, vf, im, rs, se, sen, res, icc, vbr, kink, imkink, 
+            testtime, idark, result, tester, iop, i_xtalk, mdpid, yypn
+        FROM RankedData 
+        WHERE rn = 1 
+        ORDER BY TestDate DESC",
+        base_sql,
+        where_sql
+    );
+
+    // 5. 创建参数化查询
+    let mut query = query_as::<_, SnQueryRow>(&final_sql);
+    for param in params {
+        query = query.bind(param);
+    }
+
+    // 6. 执行查询
+    let data = execute_query_sn(query, pool).await?;
+    let datas = format_data(data);
+    info!("SN查询完成，共找到 {} 条记录", datas.len());
+    Ok(datas)
+}
+
 pub async fn execute_query_sn(
-    sql_text_s: &str,
+    query: QueryAs<'_, Mssql, SnQueryRow, MssqlArguments>,
     pool: &MssqlPool,
 ) -> Result<Vec<Data>, MyError> {
     
-    info!("开始执行 sn_query 查询: {}", sql_text_s);
+    // 不再打印 SQL 字符串，以避免日志中泄露敏感数据（如SN列表）
+    info!("开始执行 sn_query 参数化查询...");
 
-    let mut rows = query_as::<sqlx_oldapi::Mssql, SnQueryRow>(sql_text_s)
-        .fetch(pool);
+    let mut rows = query.fetch(pool);
 
     info!("查询执行完毕，开始处理结果集...");
 
-    let mut sn_map: HashMap<String, Data> = HashMap::new();
+    // 移除了 HashMap 去重逻辑，因为 SQL 查询已经完成了去重
+    let mut datas: Vec<Data> = Vec::new();
     let mut row_count = 0;
 
     while let Some(row) = rows.try_next().await.map_err(MyError::from)? {
         row_count += 1;
         
-        let mdpid = if row.mdpid == "0" {
+        let mdpid = if row.mdpid == "0" || row.mdpid.trim().is_empty() {
             "".to_string()
         } else {
             row.mdpid.clone()
@@ -549,11 +231,10 @@ pub async fn execute_query_sn(
             yypn: row.yypn,
         };
 
-        sn_map.insert(row.sn.clone(), sn_data);
+        datas.push(sn_data);
     }
 
-    let datas: Vec<Data> = sn_map.into_iter().map(|(_, v)| v).collect();
-    
+    // 日志现在显示的是去重后的最终SN数量
     info!("共处理 {} 行数据，得到 {} 条SN数据。", row_count, datas.len());
     
     if datas.is_empty() {
