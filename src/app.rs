@@ -1,5 +1,3 @@
-use makepad_widgets::*;
-use tokio::runtime::Runtime;
 use crate::{
     store::Store,
     utils::error::{LoginResult, MyError, MyTip},
@@ -8,7 +6,9 @@ use crate::{
         popup_list::{PopupItem, PopupKind, enqueue_popup_notification, set_global_popup_list},
     },
 };
-
+use makepad_widgets::*;
+use tokio::runtime::Runtime;
+use tracing::info;
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -192,7 +192,7 @@ pub struct App {
     #[rust]
     pub store: Store,
     #[rust(Runtime::new().unwrap())]
-        pub rt: Runtime,
+    pub rt: Runtime,
 }
 
 impl LiveRegister for App {
@@ -273,7 +273,7 @@ impl MatchEvent for App {
         for action in actions {
             if let Some(err) = action.downcast_ref::<MyError>() {
                 let content = err.to_string();
-                println!("{content}");
+                info!("{content}");
                 self.ui
                     .modal(id!(dialog_ui.dialog_ui_inner))
                     .label(id!(prompt))
@@ -282,7 +282,7 @@ impl MatchEvent for App {
             }
             if let Some(tip) = action.downcast_ref::<MyTip>() {
                 let content = tip.to_string();
-                println!("{content}");
+                info!("{content}");
                 self.ui
                     .modal(id!(dialog_ui.dialog_ui_inner))
                     .label(id!(prompt))
