@@ -226,7 +226,7 @@ pub async fn get_carton_datas(
         });
         seen_sns.insert(sn);
     }
-
+    
     // 处理空结果
     if all_datas.is_empty() {
         let query_key = if !carton.is_empty() {

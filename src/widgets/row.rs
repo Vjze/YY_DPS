@@ -89,44 +89,44 @@ impl Widget for DataRow {
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if let Some(data) = scope.data.get::<HashMap<String, String>>() {
-          let carton_nos = data.get("carton_no")
-                               .cloned()
-                               .unwrap_or_else(|| "".to_string());
+            let carton_nos = data
+                .get("carton_no")
+                .cloned()
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(h_wrapper.carton_no.label));
             label.set_text(cx, &carton_nos);
 
-            let box_nos = data.get("box_no").cloned() 
-                               .unwrap_or_else(|| "".to_string());
+            let box_nos = data
+                .get("box_no")
+                .cloned()
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(box_no.label));
             label.set_text(cx, &box_nos.to_string());
 
-            let sns = data.get("sn").cloned()
-                               .unwrap_or_else(|| "".to_string());
+            let sns = data.get("sn").cloned().unwrap_or_else(|| "".to_string());
             let label = self.label(id!(sn.label));
             label.set_text(cx, &sns);
 
-            let iths = data.get("ith").cloned()
-                               .unwrap_or_else(|| "".to_string());
+            let iths = data.get("ith").cloned().unwrap_or_else(|| "".to_string());
             let label = self.label(id!(ith.label));
             label.set_text(cx, &iths);
 
-            let pfs = data.get("po").cloned()
-                               .unwrap_or_else(|| "".to_string());
+            let pfs = data.get("po").cloned().unwrap_or_else(|| "".to_string());
             let label = self.label(id!(pf.label));
             label.set_text(cx, &pfs);
 
-            let ses = data.get("se").cloned()
-                               .unwrap_or_else(|| "".to_string());
+            let ses = data.get("se").cloned().unwrap_or_else(|| "".to_string());
             let label = self.label(id!(se.label));
             label.set_text(cx, &ses);
 
-            let sents = data.get("sen").cloned()
-                               .unwrap_or_else(|| "".to_string());
+            let sents = data.get("sen").cloned().unwrap_or_else(|| "".to_string());
             let label = self.label(id!(sen.label));
             label.set_text(cx, &sents);
 
-            let testtimes = data.get("testtime").cloned()
-                               .unwrap_or_else(|| "".to_string());
+            let testtimes = data
+                .get("testtime")
+                .cloned()
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(testtime.label));
             label.set_text(cx, &testtimes);
         };

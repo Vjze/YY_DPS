@@ -30,7 +30,6 @@ pub async fn build_base_union_query(
     test_devices: &str,
     pool: &MssqlPool,
 ) -> anyhow::Result<String, MyError> {
-    
     let mut sql_parts = Vec::new();
 
     // 1. 如果是 "10G" 或 "全部"，添加 10G 表
@@ -47,22 +46,25 @@ pub async fn build_base_union_query(
         for table in tables {
             // 确保动态表名不是 10G 表 (如果 get_tables 可能会返回它)
             if table.to_uppercase() != "[BOSAautotest_Data].[dbo].[MAC_10GBOSADATA]" {
-                 sql_parts.push(format!("SELECT {} FROM {}", SELECT_2_5G, table));
+                sql_parts.push(format!("SELECT {} FROM {}", SELECT_2_5G, table));
             }
         }
     }
-    
+
     // 3. 如果没有匹配的查询，返回错误
     if sql_parts.is_empty() {
         if test_devices == "10G" || test_devices == "2.5G" || test_devices == "全部" {
             // 这意味着 'get_tables' 可能返回了空列表
-             info!("没有找到 '2.5G' 的动态数据表");
+            info!("没有找到 '2.5G' 的动态数据表");
         } else {
             // 传入了无效的 test_devices 参数
-            return Err(MyError::Zdyknown(format!("无效的 test_devices 参数: {}", test_devices)));
+            return Err(MyError::Zdyknown(format!(
+                "无效的 test_devices 参数: {}",
+                test_devices
+            )));
         }
     }
-    
+
     // 4. 使用 UNION ALL 连接所有部分
     Ok(sql_parts.join(" UNION ALL "))
 }
