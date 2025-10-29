@@ -3,7 +3,8 @@ use sqlx_oldapi::mssql::MssqlPoolOptions;
 use sqlx_oldapi::{MssqlPool, Row};
 
 pub async fn client() -> anyhow::Result<MssqlPool, MyError> {
-    let database_url = "mssql://yytest:yytest@localhost:1433/BOSAautotestDB";
+    // let database_url = "mssql://yytest:yytest@localhost:1433/BOSAautotestDB";
+    let database_url = "mssql://sa:Wjz142857.@localhost:1433/BOSAautotestDB";
     let pool = MssqlPoolOptions::new()
         // 设置最大连接数：推荐 10-25
         .max_connections(100)

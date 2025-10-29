@@ -41,18 +41,34 @@ live_design! {
 
             h_wrapper = <View> {
                 flow: Right
-                width: Fit
+                width: Fill
                 // padding: {top: 10, bottom: 10, left: 20, right: 20}
                 spacing: 30
 
-                carton_no = <Col> {width: 180}
-                box_no =  <Col> {width: 180}
-                sn =  <Col> {width: 180}
-                ith =  <Col> {width: 70}
-                pf =  <Col> {width: 70}
-                se =  <Col> {width: 70}
-                sen =  <Col> {width: 70}
-                testtime = <Col> {width: 300}
+                carton_no = <Col> {width: Fill {
+                                        weight: 2.0
+                                    }}
+                box_no =  <Col> {width: Fill {
+                                        weight: 2.0
+                                    }}
+                sn =  <Col> {width: Fill {
+                                        weight: 2.0
+                                    }}
+                ith =  <Col> {width: Fill {
+                                        weight: 0.8
+                                    }}
+                pf =  <Col> {width: Fill {
+                                        weight: 0.8
+                                    }}
+                se =  <Col> {width: Fill {
+                                        weight: 0.8
+                                    }}
+                sen =  <Col> {width: Fill {
+                                        weight: 0.8
+                                    }}
+                testtime = <Col> {width: Fill {
+                                        weight: 2.0
+                                    }}
             }
             separator_line = <Line> {}
         }
@@ -73,35 +89,44 @@ impl Widget for DataRow {
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if let Some(data) = scope.data.get::<HashMap<String, String>>() {
-            let carton_nos = data.get("carton_no").unwrap().clone();
+          let carton_nos = data.get("carton_no")
+                               .cloned()
+                               .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(h_wrapper.carton_no.label));
             label.set_text(cx, &carton_nos);
 
-            let box_nos = data.get("box_no").unwrap().clone();
+            let box_nos = data.get("box_no").cloned() 
+                               .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(box_no.label));
             label.set_text(cx, &box_nos.to_string());
 
-            let sns = data.get("sn").unwrap().clone();
+            let sns = data.get("sn").cloned()
+                               .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(sn.label));
             label.set_text(cx, &sns);
 
-            let iths = data.get("ith").unwrap().clone();
+            let iths = data.get("ith").cloned()
+                               .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(ith.label));
             label.set_text(cx, &iths);
 
-            let pfs = data.get("po").unwrap().clone();
+            let pfs = data.get("po").cloned()
+                               .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(pf.label));
             label.set_text(cx, &pfs);
 
-            let ses = data.get("se").unwrap().clone();
+            let ses = data.get("se").cloned()
+                               .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(se.label));
             label.set_text(cx, &ses);
 
-            let sents = data.get("sen").unwrap().clone();
+            let sents = data.get("sen").cloned()
+                               .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(sen.label));
             label.set_text(cx, &sents);
 
-            let testtimes = data.get("testtime").unwrap().clone();
+            let testtimes = data.get("testtime").cloned()
+                               .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(testtime.label));
             label.set_text(cx, &testtimes);
         };

@@ -478,7 +478,7 @@ impl WidgetMatchEvent for QueryScreen {
                             }
                         }
                     });
-                } else if query_type == "箱号" {
+                } else if query_type == "盒号" {
                     rt.spawn(async move {
                         let res = processor
                             .box_query(

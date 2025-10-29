@@ -3,6 +3,7 @@ use sqlx_oldapi::{MssqlPool, query_as, Error as SqlxError, Row};
 use sqlx_oldapi::mssql::MssqlRow;
 use futures::stream::TryStreamExt;
 use chrono::NaiveDateTime;
+use tracing::info;
 use crate::{structs::{Data, Datas, PackData}, utils::{error::MyError, sql::client}};
 
 #[derive(Debug)]
@@ -86,6 +87,8 @@ pub async fn get_box_datas(
 
     // 添加排序
     sql.push_str(" ORDER BY CreateTime DESC");
+    info!("SQL: {}", sql);
+    info!("Params: {:?}", params);
 
     // 创建查询并绑定参数
     let mut query = query_as::<_, QueryRow>(&sql);
