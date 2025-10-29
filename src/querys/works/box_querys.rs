@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-
+use tracing::info;
 use chrono::NaiveDateTime;
 use crate::{structs::{Data, Datas, PackData}, utils::{error::MyError, sql::client}};
 
@@ -103,6 +103,7 @@ pub async fn get_box_datas(
             order by CreateTime desc"
         )
     };
+    info!("执行的SQL语句: {}", sql_text);
     let stream = client
         .simple_query(
             sql_text

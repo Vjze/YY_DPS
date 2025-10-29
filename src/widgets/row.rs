@@ -73,35 +73,59 @@ impl Widget for DataRow {
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if let Some(data) = scope.data.get::<HashMap<String, String>>() {
-            let carton_nos = data.get("carton_no").unwrap().clone();
+            let carton_nos = data
+                .get("carton_no")
+                .cloned() // 将 Option<&String> 转换为 Option<String>
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(h_wrapper.carton_no.label));
             label.set_text(cx, &carton_nos);
 
-            let box_nos = data.get("box_no").unwrap().clone();
+            let box_nos = data
+                .get("box_no")
+                .cloned() // 将 Option<&String> 转换为 Option<String>
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(box_no.label));
             label.set_text(cx, &box_nos.to_string());
 
-            let sns = data.get("sn").unwrap().clone();
+            let sns = data
+                .get("sn")
+                .cloned() // 将 Option<&String> 转换为 Option<String>
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(sn.label));
             label.set_text(cx, &sns);
 
-            let iths = data.get("ith").unwrap().clone();
+            let iths = data
+                .get("ith")
+                .cloned() // 将 Option<&String> 转换为 Option<String>
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(ith.label));
             label.set_text(cx, &iths);
 
-            let pfs = data.get("po").unwrap().clone();
+            let pfs = data
+                .get("po")
+                .cloned() // 将 Option<&String> 转换为 Option<String>
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(pf.label));
             label.set_text(cx, &pfs);
 
-            let ses = data.get("se").unwrap().clone();
+            let ses = data
+                .get("se")
+                .cloned() // 将 Option<&String> 转换为 Option<String>
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(se.label));
             label.set_text(cx, &ses);
 
-            let sents = data.get("sen").unwrap().clone();
+            let sents = data
+                .get("sen")
+                .cloned() // 将 Option<&String> 转换为 Option<String>
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(sen.label));
             label.set_text(cx, &sents);
 
-            let testtimes = data.get("testtime").unwrap().clone();
+            let testtimes = data
+                .get("testtime")
+                .cloned() // 将 Option<&String> 转换为 Option<String>
+                .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(testtime.label));
             label.set_text(cx, &testtimes);
         };

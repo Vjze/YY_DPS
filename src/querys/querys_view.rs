@@ -489,7 +489,7 @@ impl WidgetMatchEvent for QueryScreen {
                                 store.datas = None;
                             }
                         }
-                    } else if query_type == "箱号" {
+                    } else if query_type == "盒号" {
                         let res = rt.block_on(async move {
                             processor.box_query(
                                 query_input,
