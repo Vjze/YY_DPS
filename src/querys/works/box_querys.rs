@@ -127,11 +127,6 @@ pub async fn get_box_datas(
         });
         seen_sns.insert(sn);
     }
-    info!(
-        "all_datas长度: {}, all_datas: {:?}",
-        all_datas.len(),
-        all_datas
-    );
     let sns = all_datas
         .iter()
         .map(|d| format!("'{}'", d.sn_data.sn))

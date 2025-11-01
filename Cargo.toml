@@ -9,7 +9,7 @@ makepad-widgets ={ git = "https://github.com/makepad/makepad",rev = "ddcae99b691
 toml = "0.9"
 serde = { version = "1.0.226", features = ["derive"] }
 tokio = { version = "1.47.1", features = ["full"] }
-sqlx-oldapi = { version = "0.6", features = ["mssql", "macros", "runtime-tokio-rustls", "chrono"]}
+sqlx-oldapi = { version = "0.6", features = ["mssql", "macros", "runtime-tokio-rustls", "chrono"], default-features = false}
 chrono = { version = "0.4", features = ["serde"] }
 anyhow = "1.0.100"
 thiserror = {version = "2.0"}

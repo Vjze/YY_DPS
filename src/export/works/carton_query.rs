@@ -227,7 +227,7 @@ async fn get_data_for_no_pch_with_zdy_no_jzband(
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
     INNER JOIN [mes_Factory].[dbo].[jz_carton_bind] c ON a.Pack_no = c.box_no
     WHERE b.CartonNo = @P1 AND b.PnOptionID = '-100' 
-    ORDER BY b.CreateTime DESC, b.Packing_no DESC, a.Pack_no ASC
+    ORDER BY b.CreateTime DESC, a.Pack_no ASC
     ";
     let mut rows = query_as::<sqlx_oldapi::Mssql, RowData>(query)
         .bind(&carton)
@@ -294,7 +294,7 @@ async fn get_data_for_no_pch_with_zdy_with_jzband(
     inner join [mes_Factory].[dbo].[packing_carton] b on a.box_no=b.Packing_no
     inner join [mes_Factory].[dbo].[MaterialPackSn] c on c.Pack_no=b.Packing_no
     where b.CartonNo=@P1 and b.PnOptionID = '-100'
-    order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc";
+    order by b.CreateTime desc, b.Packing_no asc";
     let mut rows = query_as::<sqlx_oldapi::Mssql, RowData>(query)
         .bind(&carton)
         .fetch(pool);
@@ -394,7 +394,7 @@ async fn get_data_for_pch_box_with_zdy_with_jzband(
     inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on d.Pack_no=c.LABEL_KEY
     inner join [mes_Factory].[dbo].[MaterialPackSn] d on d.Pack_no=b.Packing_no
     where b.CartonNo=@P1 and b.PnOptionID = '-100'
-    order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc";
+    order by b.CreateTime desc, d.Pack_no asc";
     let mut rows = query_as::<sqlx_oldapi::Mssql, RowData>(query)
         .bind(&carton)
         .fetch(pool);
@@ -508,7 +508,7 @@ async fn get_data_for_pch_box_with_zdy_no_jzband(
     inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on d.Pack_no=c.LABEL_KEY
     inner join [mes_Factory].[dbo].[MaterialPackSn] d on d.Pack_no=b.Packing_no
     where b.CartonNo=@P1 and b.PnOptionID = '-100'
-    order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc";
+    order by b.CreateTime desc, d.Pack_no asc";
     let mut rows = query_as::<sqlx_oldapi::Mssql, RowData>(query)
         .bind(&carton)
         .fetch(pool);
@@ -590,10 +590,10 @@ async fn get_data_for_pch_carton_with_zdy_no_jzband(
       select d.sn AS sn, a.pkg_no AS pkg_no, d.pn AS pn, d.creator AS creator, d.createtime AS createtime, b.creator AS carton_creator, b.createtime AS carton_createtime, c.parameter AS parameter
     from [mes_Factory].[dbo].[jz_carton_bind] a
     inner join [mes_Factory].[dbo].[packing_carton] b on a.box_no=b.Packing_no
-    inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+    inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Box_no=c.LABEL_KEY
     inner join [mes_Factory].[dbo].[MaterialPackSn] d on d.Pack_no=b.Packing_no
     where b.CartonNo=@P1 and b.PnOptionID = '-100'
-    order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc";
+    order by b.CreateTime desc, d.Pack_no asc";
     let mut rows = query_as::<sqlx_oldapi::Mssql, RowData>(query)
         .bind(&carton)
         .fetch(pool);
@@ -676,10 +676,10 @@ async fn get_data_for_pch_carton_with_zdy_with_jzband(
       select d.sn AS sn, a.pkg_no AS pkg_no, d.pn AS pn, d.creator AS creator, d.createtime AS createtime, b.creator AS carton_creator, b.createtime AS carton_createtime, c.parameter AS parameter
     from [mes_Factory].[dbo].[jz_carton_bind] a
     inner join [mes_Factory].[dbo].[packing_carton] b on a.box_no=b.Packing_no
-    inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.Pack_no=c.LABEL_KEY
+    inner join [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c on a.box_no=c.LABEL_KEY
     inner join [mes_Factory].[dbo].[MaterialPackSn] d on d.Pack_no=b.Packing_no
     where b.CartonNo=@P1 and b.PnOptionID = '-100'
-    order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc";
+    order by b.CreateTime desc, d.Pack_no asc";
     let mut rows = query_as::<sqlx_oldapi::Mssql, RowData>(query)
         .bind(&carton)
         .fetch(pool);
