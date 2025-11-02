@@ -1,3 +1,4 @@
+#![windows_subsystem = "windows"]
 fn main() {
   tracing_subscriber::fmt()
           // enable everything
