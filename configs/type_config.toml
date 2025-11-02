@@ -23,8 +23,8 @@ update_time = "2025/07/31 02:21:41"
 [ConfigType.infos]
 is_have_pch = false
 carton_pch = false
-box_pch = true
-jz_band = true
+box_pch = false
+jz_band = false
 zdy_box = false
 
 [ConfigType.template]

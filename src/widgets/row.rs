@@ -123,12 +123,12 @@ impl Widget for DataRow {
             let label = self.label(id!(sen.label));
             label.set_text(cx, &sents);
 
-            let testtimes = data
-                .get("testtime")
+            let testdate = data
+                .get("testdate")
                 .cloned()
                 .unwrap_or_else(|| "".to_string());
             let label = self.label(id!(testtime.label));
-            label.set_text(cx, &testtimes);
+            label.set_text(cx, &testdate);
         };
 
         self.view.draw_walk(cx, scope, walk)

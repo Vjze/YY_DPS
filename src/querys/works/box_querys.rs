@@ -185,7 +185,7 @@ pub async fn get_box_datas(
             map.insert("res".to_string(), d.sn_data.res);
             map.insert("icc".to_string(), d.sn_data.icc);
             map.insert("idark".to_string(), d.sn_data.idark);
-            map.insert("testtime".to_string(), d.sn_data.testtime);
+            map.insert("testdate".to_string(), d.sn_data.testdate);
             map.insert("result".to_string(), d.sn_data.result);
             map.insert("tester".to_string(), d.sn_data.tester);
             map.insert("i_xtalk".to_string(), d.sn_data.i_xtalk);
@@ -222,7 +222,7 @@ async fn get_sn_info(sns: String) -> anyhow::Result<Vec<Data>, MyError> {
 
         // 3. 只保留最新的测试数据 (去重逻辑不变)
         if let Some(existing_data) = sn_map.get(&sn) {
-            if existing_data.testtime < data.testtime {
+            if existing_data.testdate < data.testdate {
                 sn_map.insert(sn, data);
             }
         } else {

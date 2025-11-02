@@ -30,7 +30,7 @@ pub struct Data {
     pub vbr: String,
     pub kink: String,
     pub imkink: String,
-    pub testtime: String, // 统一别名 testtime (数据库列名 TestDate)
+    pub testdate: String, // 统一别名 testtime (数据库列名 TestDate)
     pub idark: String,
     pub result: String,
     pub tester: String, // 统一别名 tester (数据库列名 ProductBill)
@@ -45,8 +45,8 @@ impl sqlx_oldapi::FromRow<'_, MssqlRow> for Data {
         // 使用 try_get("column_name") 替代 try_get(index)
         
         // 获取 NaiveDateTime (数据库列 TestDate AS testtime)
-        let testtime_dt: NaiveDateTime = row.try_get("testtime")?;
-        let testtime = testtime_dt.format("%Y-%m-%d %H:%M:%S").to_string();
+        let testtime_dt: NaiveDateTime = row.try_get("testdate")?;
+        let testdate = testtime_dt.format("%Y-%m-%d %H:%M:%S").to_string();
         
         // 获取 mdpid (数据库列 MDPId/Te AS mdpid) 并应用业务逻辑
         let mdpid_raw: String = row.try_get("mdpid")?;
@@ -73,7 +73,7 @@ impl sqlx_oldapi::FromRow<'_, MssqlRow> for Data {
             }),
             kink: row.try_get("kink")?,
             imkink: row.try_get("imkink")?,
-            testtime, // 格式化后的时间
+            testdate, // 格式化后的时间
             idark: row.try_get("idark")?,
             result: row.try_get("result")?,
             tester: row.try_get("tester")?,

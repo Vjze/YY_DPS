@@ -29,7 +29,7 @@ fn format_data(data: Vec<Data>) -> Vec<HashMap<String, String>> {
             map.insert("vbr".to_string(), d.vbr);
             map.insert("kink".to_string(), d.kink);
             map.insert("imkink".to_string(), d.imkink);
-            map.insert("testtime".to_string(), d.testtime);
+            map.insert("testdate".to_string(), d.testdate);
             map.insert("tester".to_string(), d.tester);
             map.insert("iop".to_string(), d.iop);
             map.insert("idark".to_string(), d.idark);
@@ -60,7 +60,7 @@ pub struct SnQueryRow {
     vbr: String,
     kink: String,
     imkink: String,
-    testtime: NaiveDateTime,
+    testdate: NaiveDateTime,
     idark: String,
     result: String,
     tester: String,
@@ -169,7 +169,7 @@ pub async fn sn_query_datas(
     //     "WITH RankedData AS (
     //         SELECT
     //             *,
-    //             ROW_NUMBER() OVER(PARTITION BY SN ORDER BY testtime DESC) as rn
+    //             ROW_NUMBER() OVER(PARTITION BY SN ORDER BY testdate DESC) as rn
     //         FROM (
     //             {}
     //         ) AS BaseData
@@ -177,22 +177,22 @@ pub async fn sn_query_datas(
     //     )
     //     SELECT
     //         sn, ith, po, vf, im, rs, se, sen, res, icc, vbr, kink, imkink,
-    //         testtime, idark, result, tester, iop, i_xtalk, mdpid, yypn
+    //         testdate, idark, result, tester, iop, i_xtalk, mdpid, yypn
     //     FROM RankedData
     //     WHERE rn = 1
-    //     ORDER BY testtime DESC",
+    //     ORDER BY testdate DESC",
     //     base_sql,
     //     where_sql
     // );
     let final_sql = format!(
         "SELECT 
         sn, ith, po, vf, im, rs, se, sen, res, icc, vbr, kink, imkink, 
-        testtime, idark, result, tester, iop, i_xtalk, mdpid, yypn
+        testdate, idark, result, tester, iop, i_xtalk, mdpid, yypn
     FROM (
         {}
     ) AS FinalData
     {}
-    ORDER BY testtime DESC",
+    ORDER BY testdate DESC",
         base_sql,  // 包含所有 UNION ALL 的 SELECT 语句
         where_sql  // 包含 WHERE SN IN (@P1)
     );
@@ -295,7 +295,7 @@ pub async fn execute_query_sn(
             vbr: row.vbr,
             kink: row.kink,
             imkink: row.imkink,
-            testtime: row.testtime.format("%Y-%m-%d %H:%M:%S").to_string(),
+            testdate: row.testdate.format("%Y-%m-%d %H:%M:%S").to_string(),
             tester: row.tester,
             iop: row.iop,
             idark: row.idark,

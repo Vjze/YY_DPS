@@ -11,7 +11,7 @@ use futures::{
     TryStreamExt as _,
     stream::{StreamExt as _, iter},
 };
-use sqlx_oldapi::MssqlPool;
+use sqlx_oldapi::{MssqlPool, Row as _};
 use std::collections::{HashMap, HashSet}; // 引入 HashSet
 use tokio::{
     fs,
@@ -19,7 +19,7 @@ use tokio::{
 };
 use tracing::info;
 
-#[derive(sqlx_oldapi::FromRow, Debug, Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct QueryResultRow {
     // MaterialPackSn/jz_carton_bind 的 SN 和相关信息
     pub sn: String,
@@ -43,6 +43,28 @@ pub struct QueryResultRow {
     pub w_sn: String, // 这个字段始终是 sn_field 的别名，保证非 NULL
     pub band_worker: Option<String>,
     pub band_time: Option<String>,
+}
+impl sqlx_oldapi::FromRow<'_, sqlx_oldapi::mssql::MssqlRow> for QueryResultRow {
+    fn from_row(row: &sqlx_oldapi::mssql::MssqlRow) -> Result<Self, sqlx_oldapi::Error> {
+        Ok(QueryResultRow {
+            // 非 Option 字段 (使用 try_get 提取)
+            sn: row.try_get("sn")?,
+            box_no: row.try_get("box_no")?,
+            pack_worker: row.try_get("pack_worker")?,
+            pack_time_dt: row.try_get("pack_time_dt")?,
+            yypn: row.try_get("yypn")?,
+            carton_worker: row.try_get("carton_worker")?,
+            carton_time_dt: row.try_get("carton_time_dt")?,
+            w_sn: row.try_get("w_sn")?,
+
+            // Option 字段 (使用 try_get 提取，sqlx 会自动将其映射为 Option<T>)
+            extracted_year: row.try_get("extracted_year")?,
+            extracted_week: row.try_get("extracted_week")?,
+            b_sn: row.try_get("b_sn")?,
+            band_worker: row.try_get("band_worker")?,
+            band_time: row.try_get("band_time")?,
+        })
+    }
 }
 
 async fn get_info() -> anyhow::Result<Vec<String>, MyError> {
@@ -77,8 +99,7 @@ pub async fn do_carton_query(
         "开始执行箱号查询: carton={}, typeinfos={}, is_multi={}",
         carton, typeinfos, is_multi
     );
-    let client = client().await?;
-    let pool = &client;
+    let pool = client().await?;
 
     if carton.is_empty() && is_multi {
         info!("执行批量查询模式");
@@ -113,7 +134,7 @@ pub async fn do_carton_query(
         Ok(all_datas)
     } else {
         info!("执行单箱查询模式");
-        carton_query_datas(carton, pool, typeinfos).await
+        carton_query_datas(carton, &pool, typeinfos).await
     }
 }
 
@@ -240,7 +261,7 @@ pub async fn carton_query_datas(
             map.insert("res".to_string(), d.sn_data.res);
             map.insert("icc".to_string(), d.sn_data.icc);
             map.insert("idark".to_string(), d.sn_data.idark);
-            map.insert("testtime".to_string(), d.sn_data.testtime);
+            map.insert("testdate".to_string(), d.sn_data.testdate);
             map.insert("result".to_string(), d.sn_data.result);
             map.insert("tester".to_string(), d.sn_data.tester);
             map.insert("i_xtalk".to_string(), d.sn_data.i_xtalk);
@@ -332,8 +353,8 @@ async fn get_base_data_unified(
         select_list.push("SUBSTRING(pch_log.parameter, CHARINDEX('YEAR=', pch_log.parameter) + 5, CHARINDEX(';', pch_log.parameter + ';', CHARINDEX('YEAR=', pch_log.parameter)) - (CHARINDEX('YEAR=', pch_log.parameter) + 5)) AS ExtractedYear".to_string());
         select_list.push("SUBSTRING(pch_log.parameter, CHARINDEX('WEEK=', pch_log.parameter) + 6, CHARINDEX(';', pch_log.parameter + ';', CHARINDEX('WEEK=', pch_log.parameter)) - (CHARINDEX('WEEK=', pch_log.parameter) + 6)) AS ExtractedWeek".to_string());
     } else {
-        select_list.push("NULL AS ExtractedYear".to_string());
-        select_list.push("NULL AS ExtractedWeek".to_string());
+        select_list.push("NULL AS extracted_year".to_string());
+        select_list.push("NULL AS extracted_week".to_string());
     }
 
     // --- 5. Band (绑定) 逻辑 (保持不变) ---
@@ -431,18 +452,18 @@ async fn get_base_data_unified(
 }
 
 pub async fn execute_query(sql_text_s: &str, pool: &MssqlPool) -> Result<Vec<Data>, MyError> {
-    info!("开始执行 carton_query 查询: {}", sql_text_s);
+    // info!("开始执行 carton_query 查询: {}", sql_text_s);
     let mut rows = sqlx_oldapi::query_as::<sqlx_oldapi::Mssql, Data>(sql_text_s).fetch(pool);
     info!("查询执行完毕，开始处理结果集...");
     let mut sn_map: HashMap<String, Data> = HashMap::new();
-    let mut row_count = 0;
+    let mut row_count = 1;
     while let Some(data) = rows.try_next().await.map_err(MyError::from)? {
         row_count += 1;
         let sn = data.sn.clone();
 
         // 3. 只保留最新的测试数据 (去重逻辑不变)
         if let Some(existing_data) = sn_map.get(&sn) {
-            if existing_data.testtime < data.testtime {
+            if existing_data.testdate < data.testdate {
                 sn_map.insert(sn, data);
             }
         } else {
@@ -453,7 +474,7 @@ pub async fn execute_query(sql_text_s: &str, pool: &MssqlPool) -> Result<Vec<Dat
     info!(
         "共处理 {} 行原始数据，去重后得到 {} 条最新SN数据。",
         row_count,
-        datas.len()
+        datas.len() + 1
     );
     if datas.is_empty() {
         return Err(MyError::NoResult(format!("")));
@@ -466,72 +487,75 @@ pub async fn execute_query(sql_text_s: &str, pool: &MssqlPool) -> Result<Vec<Dat
  * - 优化: 使用 ROW_NUMBER() 在 SQL 端对每个 SN 按 TestDate 排序，只取最新 (rn = 1)
  */
 pub async fn build_query_sql(sn_list: &str, pool: &MssqlPool) -> anyhow::Result<String, MyError> {
-    // 定义字段
-    let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
-    let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
-    let sql_10 = format!(
-        "SELECT {0} FROM [BOSAautotest_Data].[dbo].[MAC_10GBOSADATA] ",
-        testtype
+    
+    // 1. 定义最终结果集中的所有列 (全部小写，用于 Rust 映射)
+    let final_columns = "sn,ith,po,vf,im,rs,se,sen,res,icc,vbr,kink,imkink,testdate,idark,result,tester,iop,i_xtalk,mdpid,yypn";
+
+    // 2. 定义第一个表的 SELECT 映射 (MAC_10GBOSADATA)
+    let select_10 = format!(
+        // 注意：将所有类型不确定的列（如 TestDate）强制转换为统一类型，并设置统一别名（小写）
+        "SELECT 
+            SN AS sn, Ith AS ith, 
+            Pf AS po, Vop AS vf, Im AS im, Rs AS rs, 
+            Se AS se, Sen AS sen, Res AS res, ICC AS icc, Vbr AS vbr, 
+            Kink AS kink, imkink AS imkink, 
+            CAST(TestDate AS DATETIME2(0)) AS testdate, /* 强制类型转换 */
+            Idark AS idark, Result AS result, ProductBill AS tester, 
+            iop AS iop, ixtalk AS i_xtalk, MDPId AS mdpid, testtype AS yypn
+        FROM [BOSAautotest_Data].[dbo].[MAC_10GBOSADATA]"
     );
-    let mut sql_text = String::from(&sql_10);
-    let tables = get_tables(pool).await?;
-    for i in tables {
-        let s = format!("UNION ALL SELECT {} FROM {} ", testtype_12, i);
+
+    // 3. 定义后续表的 SELECT 映射 (MAC_xxx)
+    let select_other_template = format!(
+        // 注意：使用 CAST(NULL AS TYPE) 占位缺失的列，并统一相似的列名
+        "UNION ALL SELECT 
+            SN AS sn, Ith AS ith, 
+            Po AS po, Vf AS vf, Im AS im, Rs AS rs, 
+            Pslop AS se, /* Pslop 映射到 se */
+            Sen AS sen, Res AS res, ICC AS icc, Vbr AS vbr, 
+            Kink_I AS kink, kinkim_i AS imkink, 
+            CAST(TestDate AS DATETIME2(0)) AS testdate, /* 强制类型转换 */
+            Idark AS idark, Result AS result, ProductBill AS tester, 
+            io AS iop, /* io 映射到 iop */
+            xtalk AS i_xtalk, /* xtalk 映射到 i_xtalk */
+            Te AS mdpid, /* Te 映射到 mdpid */
+            testtype AS yypn
+        FROM {{}} /* 占位符 for 表名 */ "
+    );
+
+    let mut sql_text = String::from(&select_10);
+    
+    let tables = get_tables(pool).await?; // 假设 get_tables 成功返回表名
+    
+    for table_name in tables {
+        // 使用 format! 插入表名到模板中
+        let s = select_other_template.replace("{}", &table_name);
         sql_text.push_str(&s);
     }
-    if sql_text.ends_with(" UNION ALL ") {
-        sql_text.truncate(sql_text.len() - " UNION ALL ".len());
-    }
 
-    // --- 核心优化 ---
-    // 1. 将所有 UNION ALL 的结果作为子查询 (AllData)
-    // 2. 在外层使用 ROW_NUMBER() 进行分区排序
-    // 3. 在最外层 SELECT 中筛选 rn = 1
+    // 4. 构建最终查询
+    
+    // 使用统一的列名来构建外部 SELECT
     let base_query = format!(
-        "SELECT *, ROW_NUMBER() OVER(PARTITION BY SN ORDER BY TestDate DESC) as rn FROM ({}) AllData",
-        sql_text
+        "SELECT {final_columns}, ROW_NUMBER() OVER(PARTITION BY sn ORDER BY testdate DESC) as rn FROM ({sql_text}) AllData",
+        final_columns = final_columns,
+        sql_text = sql_text
     );
 
     let query_ty = if sn_list.is_empty() {
-        format!("WHERE Result = 'OK'") // 如果 SN 列表为空，这个查询意义不大，但保留原逻辑
+        // 在 WHERE 子句中，使用小写别名
+        "WHERE result = 'OK'".to_string() 
     } else {
-        format!("WHERE SN IN ({}) AND Result = 'OK'", sn_list)
+        // 在 WHERE 子句中，使用小写别名
+        format!("WHERE sn IN ({}) AND result = 'OK'", sn_list)
     };
 
     // 最终 SQL: 从已排序和编号的 (tmp) 结果中只选择 rn = 1 的行
     Ok(format!(
-        "SELECT * FROM ({}) tmp {} AND tmp.rn = 1",
-        base_query, query_ty
+        "SELECT {final_columns} FROM ({base_query}) tmp {query_ty} AND tmp.rn = 1",
+        final_columns = final_columns,
+        base_query = base_query,
+        query_ty = query_ty
     ))
 }
 
-// pub async fn build_query_sql(
-//     sn_list: &str,
-//     pool: &bb8::Pool<ConnectionManager>,
-// ) -> anyhow::Result<String, MyError> {
-//     // 定义字段
-//     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
-//     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
-//     let sql_10 = format!(
-//         "SELECT {0} FROM [BOSAautotest_Data].[dbo].[MAC_10GBOSADATA] ",
-//         testtype
-//     );
-//     let mut sql_text = String::from(&sql_10);
-//     let tables = get_tables(pool).await?;
-//     for i in tables {
-//         let s = format!("UNION ALL SELECT {} FROM {} ", testtype_12, i);
-//         sql_text.push_str(&s);
-//     }
-//     if sql_text.ends_with(" UNION ALL ") {
-//         sql_text.truncate(sql_text.len() - " UNION ALL ".len());
-//     }
-//     let query_ty = if sn_list.is_empty() {
-//         format!("WHERE Result = 'OK' ORDER BY TestDate DESC")
-//     } else {
-//         format!(
-//             "WHERE SN IN ({}) AND Result = 'OK' ORDER BY TestDate DESC",
-//             sn_list
-//         )
-//     };
-//     Ok(format!("SELECT * FROM ({}) tmp {}", sql_text, query_ty))
-// }
