@@ -72,7 +72,7 @@ pub struct ImportTable {
 impl Widget for ImportTable {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
-            self.datas = store.import_datas.data.clone()
+            self.datas = store.import_store.import_datas.data.clone()
         }
         self.view.handle_event(cx, event, scope);
     }

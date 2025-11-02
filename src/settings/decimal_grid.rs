@@ -95,7 +95,7 @@ impl Widget for DecimalRow {
             // --- THE FIX ---
             // 1. 在循环外获取数据并克隆，立即释放对 `scope` 的不可变借用。
             //    `values` 现在是一个拥有的 HashMap (如果 store 存在的话)。
-            let values = state.template_infos.numbers.clone();
+            let values = state.setting_store.template_infos.numbers.clone();
             // 循环开始时，对 `scope` 的不可变借用已经结束。
 
             for i in 0..num_to_render {
@@ -149,10 +149,10 @@ impl WidgetMatchEvent for DecimalRow {
                 let id = text_input.widget_uid();
                 if let Some(i) = self.ids.get(&id) {
                     if let Some(store) = scope.data.get_mut::<Store>() {
-                        if let Some(value) = store.template_infos.numbers.get_mut(i) {
+                        if let Some(value) = store.setting_store.template_infos.numbers.get_mut(i) {
                             *value = input.parse::<i64>().unwrap_or_default();
                         } else {
-                            store
+                            store.setting_store
                                 .template_infos
                                 .numbers
                                 .insert(i.clone(), input.parse::<i64>().unwrap_or_default());
@@ -204,8 +204,8 @@ impl Widget for DecimalGrid {
 
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
-            if !store.template_infos.numbers.is_empty() {
-                self.data = store.template_infos.numbers.clone()
+            if !store.setting_store.template_infos.numbers.is_empty() {
+                self.data = store.setting_store.template_infos.numbers.clone()
             }
         }
         self.view.handle_event(cx, event, scope);

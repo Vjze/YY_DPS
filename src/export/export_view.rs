@@ -1,6 +1,6 @@
-use std::sync::Arc;
-
 use makepad_widgets::*;
+use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::runtime::Runtime;
 
 use crate::{export::Exportable, store::Store};
@@ -154,6 +154,10 @@ pub struct ExportScreen {
     #[rust(None)] // 默认初始化为 None
     pub export_processor: Option<Arc<dyn Exportable>>,
 }
+#[derive(Clone, Debug, Default)]
+pub struct ExportAction {
+    data: Vec<HashMap<String, String>>,
+}
 impl LiveHook for ExportScreen {
     fn after_new_from_doc(&mut self, _cx: &mut Cx) {
         self.export_processor = Some(crate::export::new_export_processor());
@@ -164,8 +168,8 @@ impl Widget for ExportScreen {
         if let Some(store) = scope.data.get::<Store>() {
             self.view
                 .drop_down(id!(type_selector))
-                .set_labels(cx, store.types.clone());
-            if store.datas.is_none() {
+                .set_labels(cx, store.setting_store.types.clone());
+            if store.datas_store.datas.is_empty(){
                 self.view.button(id!(export_btn)).set_disabled(cx, true);
             } else {
                 self.view.button(id!(export_btn)).set_disabled(cx, false);
@@ -186,8 +190,17 @@ impl WidgetMatchEvent for ExportScreen {
         let query_btn = self.view.button(id!(query_btn));
         let export_btn = self.view.button(id!(export_btn));
         let type_name = self.view.drop_down(id!(type_selector));
+        let qty_label = self.label(id!(qty_label));
         let rt = self.rt.handle().clone();
-
+        for action in actions {
+            if let Some(data_action) = action.downcast_ref::<ExportAction>() {
+                if let Some(store) = scope.data.get_mut::<Store>() {
+                    store.datas_store.datas = data_action.data.clone();
+                    let qty = format!("总数量: {} PCS",data_action.data.len());
+                    qty_label.set_text(cx, &qty);
+                }
+            }
+        }
         if input.text().is_empty() {
             query_btn.set_text(cx, "批量查询");
         } else {
@@ -196,40 +209,39 @@ impl WidgetMatchEvent for ExportScreen {
 
         if query_btn.clicked(actions) {
             let processor = self.export_processor.as_ref().unwrap().clone();
-            let _guard = rt.enter();
             let carton = input.text().clone();
             let is_multi = query_btn.text() == "批量查询";
             let type_name = type_name.selected_label().clone();
-            if let Some(store) = scope.data.get_mut::<Store>() {
-                let res = rt.block_on(async move {
-                    processor.carton_query(carton, type_name, is_multi).await
-                });
+            rt.spawn(async move {
+                let res = processor.carton_query(carton, type_name, is_multi).await;
+
                 match res {
-                    Ok(r) => {
-                        store.datas = Some(r);
+                    Ok(data) => {
+                        Cx::post_action(ExportAction { data });
                     }
                     Err(e) => {
                         Cx::post_action(e);
-                        store.datas = None;
                     }
                 }
-            }
+            });
         }
         if export_btn.clicked(actions) {
             let processor = self.export_processor.as_ref().unwrap().clone();
-            let _guard = rt.enter();
             if let Some(store) = scope.data.get_mut::<Store>() {
-                if let Some(datas) = store.datas.clone() {
+                if !store.datas_store.datas.is_empty() {
                     let type_name = type_name.clone().selected_label();
-                    let res = rt.block_on(async move { processor.export(type_name, datas).await });
-                    match res {
-                        Ok(_) => {
-                            Cx::post_action("导出成功");
+                    let data = store.datas_store.datas.clone();
+                    rt.spawn(async move {
+                        let res = processor.export(type_name, data).await;
+                        match res {
+                            Ok(_) => {
+                                Cx::post_action("导出成功");
+                            }
+                            Err(e) => {
+                                Cx::post_action(e);
+                            }
                         }
-                        Err(e) => {
-                            Cx::post_action(e);
-                        }
-                    }
+                    });
                 }
             }
         }

@@ -272,10 +272,10 @@ struct TemplateView {
 impl Widget for TemplateView {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get_mut::<Store>() {
-            if !store.templates.is_empty() {
+            if !store.setting_store.templates.is_empty() {
                 self.view
                     .drop_down(id!(template_selector))
-                    .set_labels(cx, store.templates.clone());
+                    .set_labels(cx, store.setting_store.templates.clone());
             };
         }
         self.view.handle_event(cx, event, scope);
@@ -311,7 +311,7 @@ impl WidgetMatchEvent for TemplateView {
                 }
             });
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.template_infos = decimal_infos;
+                store.setting_store.template_infos = decimal_infos;
             }
         }
         if add_btn.clicked(actions) {
@@ -321,7 +321,7 @@ impl WidgetMatchEvent for TemplateView {
             let template_name = input.text().clone();
             let rt = self.rt.handle().clone();
             if let Some(store) = scope.data.get_mut::<Store>() {
-                let template_infos = store.template_infos.clone();
+                let template_infos = store.setting_store.template_infos.clone();
                 let _guard = rt.enter();
                 rt.block_on(async move {
                     match update_template(template_name, template_infos).await {
@@ -345,7 +345,7 @@ impl WidgetMatchEvent for TemplateView {
         }
         if clear_btn.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.template_infos = DecimalConfig::default();
+                store.setting_store.template_infos = DecimalConfig::default();
                 input.set_text(cx, "");
             }
         }
@@ -357,7 +357,7 @@ impl WidgetMatchEvent for TemplateView {
                 let template_name = input.text().clone();
                 let rt = self.rt.handle().clone();
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    let template_infos = store.template_infos.clone();
+                    let template_infos = store.setting_store.template_infos.clone();
                     let _guard = rt.enter();
                     rt.block_on(async move {
                         match add_new_template(template_name, template_infos, rows.clone()).await {

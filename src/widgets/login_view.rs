@@ -247,12 +247,12 @@ impl WidgetMatchEvent for LoginView {
                     return;
                 }
 
-                store.logined = true;
+                store.login_store.logined = true;
             }
         }
         if cancel_button.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.logined = false;
+                store.login_store.logined = false;
             }
         }
     }

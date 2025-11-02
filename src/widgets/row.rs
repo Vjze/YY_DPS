@@ -41,18 +41,34 @@ live_design! {
 
             h_wrapper = <View> {
                 flow: Right
-                width: Fit
+                width: Fill
                 // padding: {top: 10, bottom: 10, left: 20, right: 20}
                 spacing: 30
 
-                carton_no = <Col> {width: 180}
-                box_no =  <Col> {width: 180}
-                sn =  <Col> {width: 180}
-                ith =  <Col> {width: 70}
-                pf =  <Col> {width: 70}
-                se =  <Col> {width: 70}
-                sen =  <Col> {width: 70}
-                testtime = <Col> {width: 300}
+                carton_no = <Col> {width: Fill {
+                                        weight: 2.0
+                                    }}
+                box_no =  <Col> {width: Fill {
+                                        weight: 2.0
+                                    }}
+                sn =  <Col> {width: Fill {
+                                        weight: 2.0
+                                    }}
+                ith =  <Col> {width: Fill {
+                                        weight: 0.8
+                                    }}
+                pf =  <Col> {width: Fill {
+                                        weight: 0.8
+                                    }}
+                se =  <Col> {width: Fill {
+                                        weight: 0.8
+                                    }}
+                sen =  <Col> {width: Fill {
+                                        weight: 0.8
+                                    }}
+                testtime = <Col> {width: Fill {
+                                        weight: 2.0
+                                    }}
             }
             separator_line = <Line> {}
         }

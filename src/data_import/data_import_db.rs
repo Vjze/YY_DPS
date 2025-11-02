@@ -153,7 +153,10 @@ pub struct DataImportDb {
     #[rust(None)] // 默认初始化为 None
     pub import_processor: Option<Arc<dyn DataImport>>,
 }
-
+#[derive(Clone, Debug, Default)]
+pub struct DataExtractedAction {
+    data: DbData,
+}
 #[derive(Debug, Default, Clone)]
 pub struct DbData {
     pub data: Vec<ImportDBDatas>,
@@ -177,84 +180,94 @@ impl Widget for DataImportDb {
 }
 impl WidgetMatchEvent for DataImportDb {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let select_btn = self.button(id!(select_btn));
-        let action_btn = self.button(id!(action_btn));
+        for action in actions {
+            if let Some(data_action) = action.downcast_ref::<DataExtractedAction>() {
+                if let Some(store) = scope.data.get_mut::<Store>() {
+                    let qty = data_action.data.data.len();
+                    store.import_store.import_datas = data_action.data.clone();
+                    info!(
+                        "Store 更新完成，导入数据量: {}",
+                        store.import_store.import_datas.data.len()
+                    );
 
-        let rt = self.rt.handle().clone();
+                    // UI 刷新
+                    self.view
+                        .text_input(id!(pn))
+                        .set_text(cx, &store.import_store.import_datas.pn);
+                    self.view.label(id!(qty)).set_text(cx, &qty.to_string());
 
-        if select_btn.clicked(actions) {
-            info!("开始选择文件");
-            let procrssor = self.import_processor.as_ref().unwrap().clone();
-            let _guard = rt.enter();
-
-            // 1. 启动文件选择和数据提取的异步任务
-            let path = rt.block_on(async move {
-                let result = procrssor.select_file().await; // 异步文件选择
-                info!("选择文件结果: {:?}", result);
-                result
-            });
-            match path {
-                Ok(p) => {
-                    let file_name = p.to_str().unwrap();
-                    let procrssor = self.import_processor.as_ref().unwrap().clone();
-                    let res = rt.block_on(async move {
-                        let path = file_name;
-                        procrssor.extract(&path).await
+                    enqueue_popup_notification(PopupItem {
+                        kind: PopupKind::Success,
+                        auto_dismissal_duration: Some(2.5),
+                        message: "数据提取完成".to_string(),
                     });
-                    match res {
-                        Ok(r) => {
-                            let f = p.file_name().unwrap().display().to_string();
-                            let pn = f[..8].to_string();
-                            let file_path = p;
-                            let data = DbData {
-                                data: r.clone(),
-                                pn,
-                                file_path,
-                            };
-                            if let Some(store) = scope.data.get_mut::<Store>() {
-                                let qty = r.len();
-
-                                store.import_datas = data;
-                                info!(
-                                    "Store 更新完成，导入数据量: {}",
-                                    store.import_datas.data.len()
-                                );
-
-                                // UI 刷新
-                                self.view
-                                    .text_input(id!(pn))
-                                    .set_text(cx, &store.import_datas.pn);
-                                self.view.label(id!(qty)).set_text(cx, &qty.to_string());
-
-                                enqueue_popup_notification(PopupItem {
-                                    kind: PopupKind::Success,
-                                    auto_dismissal_duration: Some(2.5),
-                                    message: "数据提取完成".to_string(),
-                                });
-                            }
-                        }
-                        Err(e) => {
-                            Cx::post_action(e);
-                        }
-                    }
-                }
-                Err(e) => {
-                    Cx::post_action(e);
                 }
             }
+        }
+        let select_btn = self.button(id!(select_btn));
+        let action_btn = self.button(id!(action_btn));
+        let rt = self.rt.handle().clone();
+        if select_btn.clicked(actions) {
+            info!("开始选择文件 (异步)");
+            let procrssor = self.import_processor.as_ref().unwrap().clone();
+
+            // 3. 启动异步任务，不阻塞 UI
+            rt.spawn(async move {
+                // 1. 异步文件选择
+                let path_result = procrssor.select_file().await;
+                info!("选择文件结果: {:?}", path_result);
+                // let path_result = select_file_sync();
+
+                let p = match path_result {
+                    Ok(p) => p,
+                    Err(e) => {
+                        Cx::post_action(e); // 从异步线程 post 错误
+                        return;
+                    }
+                };
+
+                // 2. 异步提取数据
+                let file_name = match p.to_str() {
+                    Some(s) => s.to_string(),
+                    None => {
+                        info!("Invalid file path encoding");
+                        // TODO: Post 一个特定的错误 Action
+                        return;
+                    }
+                };
+                let res = procrssor.extract(&file_name).await;
+                match res {
+                    Ok(r) => {
+                        // 3. 准备数据
+                        let f = p.file_name().unwrap().display().to_string();
+                        let pn = f[..8].to_string();
+                        let file_path = p;
+                        let data = DbData {
+                            data: r.clone(),
+                            pn,
+                            file_path,
+                        };
+
+                        // 4. Post 包含数据的成功 Action 回 UI 线程
+                        Cx::post_action(DataExtractedAction { data });
+                    }
+                    Err(e) => {
+                        Cx::post_action(e); // Post 错误
+                    }
+                }
+            });
         }
 
         if action_btn.clicked(actions) {
             info!("开始写入数据");
             let processor = self.import_processor.as_ref().unwrap().clone();
             if let Some(store) = scope.data.get::<Store>() {
-                let data = store.import_datas.clone();
-                let rt = self.rt.handle().clone();
-                let _guard = rt.enter();
-                rt.spawn(async move {
+                let data = store.import_store.import_datas.clone();
+                let _ = rt.spawn(async move {
                     let res = processor.write(data).await;
                     match res {
                         Ok(_) => {
+                            // enqueue_popup_notification 可能是线程安全的（因为它不接受 &mut Cx）
                             enqueue_popup_notification(PopupItem {
                                 kind: PopupKind::Success,
                                 auto_dismissal_duration: Some(3.0),
@@ -263,7 +276,7 @@ impl WidgetMatchEvent for DataImportDb {
                             info!("数据写入成功");
                         }
                         Err(e) => {
-                            Cx::post_action(e);
+                            Cx::post_action(e); // 确保使用线程安全的 post
                         }
                     };
                 });

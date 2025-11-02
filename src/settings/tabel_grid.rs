@@ -111,6 +111,7 @@ impl Widget for TableRow {
                 if let Some(state) = scope.data.get::<Store>() {
                     list.set_item_range(cx, 0, 2);
                     let mut keys = state
+                        .setting_store
                         .template_infos
                         .tables
                         .iter()
@@ -119,9 +120,9 @@ impl Widget for TableRow {
                             k
                         })
                         .collect::<Vec<_>>();
-                    keys.sort(); 
+                    keys.sort();
                     let keys_len = keys.len();
-                    let values = state.template_infos.tables.clone();
+                    let values = state.setting_store.template_infos.tables.clone();
                     let props = scope.props.get::<TableRowProps>().unwrap();
                     let row_idx = props.props;
                     let first_idx = row_idx * 2;
@@ -229,13 +230,14 @@ impl WidgetMatchEvent for TableRow {
                         // 移除旧键，并获取对应的值
                         if !old_key.is_empty() {
                             if let Some(removed_value) =
-                                store.template_infos.tables.remove(&old_key)
+                                store.setting_store.template_infos.tables.remove(&old_key)
                             {
                                 value_to_insert = removed_value;
                             }
                         }
                         // 插入新键和值
                         store
+                            .setting_store
                             .template_infos
                             .tables
                             .insert(new_key.clone(), value_to_insert);
@@ -255,7 +257,9 @@ impl WidgetMatchEvent for TableRow {
                 if let Some(key) = self.value_ids.get(&id) {
                     if !key.is_empty() {
                         if let Some(store) = scope.data.get_mut::<Store>() {
-                            if let Some(value) = store.template_infos.tables.get_mut(key) {
+                            if let Some(value) =
+                                store.setting_store.template_infos.tables.get_mut(key)
+                            {
                                 *value = new_value;
                                 cx.redraw_all();
                             }
@@ -299,7 +303,7 @@ impl Widget for TableGrid {
         self.view.handle_event(cx, event, scope);
         // if let Event::Trigger(trigger_event) = event {
         //     if let Some(store) = scope.data.get::<Store>() {
-        //         let grid_area = store.grid_area;
+        //         let grid_area = store.setting_store.grid_area;
         //         if let Some(triggers) = trigger_event.triggers.get(&grid_area) {
         //             for trigger in triggers {
         //                 if trigger.id == live_id!(update_decimal_inputs) {

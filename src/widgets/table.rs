@@ -98,8 +98,8 @@ pub struct InfosTable {
 impl Widget for InfosTable {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(props) = scope.data.get::<Store>() {
-            if let Some(datas) = props.datas.clone() {
-                self.data = datas.clone();
+            if !props.datas_store.datas.is_empty() {
+                self.data = props.datas_store.datas.clone();
             }
 
         }

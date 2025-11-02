@@ -15,14 +15,14 @@ pub async fn client() -> anyhow::Result<bb8::Pool<ConnectionManager>,MyError> {
     //     .max_size(10) // 最大连接数，调整根据需要
     //     .build(manager)
     //     .await?;
-     config.host("192.3.85.240");
-    config.port(6001);
+     config.host("127.0.0.1");
+    config.port(1433);
     config.database("BOSAautotestDB");
-    config.authentication(AuthMethod::sql_server("yytest", "yytest"));
+    config.authentication(AuthMethod::sql_server("sa", "Wjz142857."));
     config.trust_cert();
     let manager = ConnectionManager::new(config);
     let pool = bb8::Pool::builder()
-        .max_size(10) // 最大连接数，调整根据需要
+        .max_size(25) // 最大连接数，调整根据需要
         .build(manager)
         .await?;
     Ok(pool)
