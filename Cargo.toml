@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# makepad-widgets ={ git = "https://github.com/makepad/makepad",branch = "dev"}
-makepad-widgets ={ git = "https://github.com/makepad/makepad",rev = "ddcae99b691be2a7fd37e2545b5beafadfe24359"}
+makepad-widgets ={ git = "https://github.com/makepad/makepad",branch = "dev"}
+# makepad-widgets ={ git = "https://github.com/makepad/makepad",rev = "ddcae99b691be2a7fd37e2545b5beafadfe24359"}
 toml = "0.9"
 serde = { version = "1.0.226", features = ["derive"] }
 tokio = { version = "1.47.1", features = ["full"] }

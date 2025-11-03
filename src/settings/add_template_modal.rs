@@ -225,15 +225,15 @@ impl Widget for AddTemplateModal {
 }
 impl WidgetMatchEvent for AddTemplateModal {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        let accept_button = self.button(id!(accept_button));
-        let cancel_button = self.button(id!(cancel_button));
-        let text_input = self.text_input(id!(row_input));
+        let accept_button = self.button(ids!(accept_button));
+        let cancel_button = self.button(ids!(cancel_button));
+        let text_input = self.text_input(ids!(row_input));
         if cancel_button.clicked(actions) {
             Cx::post_action(TemplateModalAction::Close);
         }
         if accept_button.clicked(actions) {
             if text_input.text().is_empty() {
-                self.label(id!(error)).set_text(cx, "输入框不能为空!!");
+                self.label(ids!(error)).set_text(cx, "输入框不能为空!!");
             } else {
                 let rows = text_input.text();
                 Cx::post_action(TemplateModalAction::Action(rows));

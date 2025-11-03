@@ -190,9 +190,9 @@ impl WidgetMatchEvent for DataImportDb {
 
                     // UI 刷新
                     self.view
-                        .text_input(id!(pn))
+                        .text_input(ids!(pn))
                         .set_text(cx, &store.import_store.import_datas.pn);
-                    self.view.label(id!(qty)).set_text(cx, &qty.to_string());
+                    self.view.label(ids!(qty)).set_text(cx, &qty.to_string());
 
                     enqueue_popup_notification(PopupItem {
                         kind: PopupKind::Success,
@@ -202,8 +202,8 @@ impl WidgetMatchEvent for DataImportDb {
                 }
             }
         }
-        let select_btn = self.button(id!(select_btn));
-        let action_btn = self.button(id!(action_btn));
+        let select_btn = self.button(ids!(select_btn));
+        let action_btn = self.button(ids!(action_btn));
         let rt = self.rt.handle().clone();
         if select_btn.clicked(actions) {
             info!("开始选择文件 (异步)");

@@ -9,7 +9,7 @@ use tokio::fs;
 
 use crate::utils::error::{MyError, MyTip};
 
-const TOML_FILE_PATH: &str = "././configs/column_map_config.toml"; // TOML 文件路径
+const TOML_FILE_PATH: &str = "configs/column_map_config.toml"; // TOML 文件路径
 // const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\column_map_config.toml"; // TOML 文件路径
 
 // 定义根结构体，用于匹配 TOML 文件中的 [[ColumnMapConfig]]

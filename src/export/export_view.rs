@@ -166,12 +166,12 @@ impl Widget for ExportScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
             self.view
-                .drop_down(id!(type_selector))
+                .drop_down(ids!(type_selector))
                 .set_labels(cx, store.setting_store.types.clone());
             if store.datas_store.datas.is_empty() {
-                self.view.button(id!(export_btn)).set_disabled(cx, true);
+                self.view.button(ids!(export_btn)).set_disabled(cx, true);
             } else {
-                self.view.button(id!(export_btn)).set_disabled(cx, false);
+                self.view.button(ids!(export_btn)).set_disabled(cx, false);
             }
         }
         self.widget_match_event(cx, event, scope);
@@ -185,20 +185,17 @@ impl Widget for ExportScreen {
 
 impl WidgetMatchEvent for ExportScreen {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let input = self.view.text_input(id!(carton_input));
-        let query_btn = self.view.button(id!(query_btn));
-        let export_btn = self.view.button(id!(export_btn));
-        let type_name = self.view.drop_down(id!(type_selector));
-        let qty_label = self.view.label(id!(qty_label));
+        let input = self.view.text_input(ids!(carton_input));
+        let query_btn = self.view.button(ids!(query_btn));
+        let export_btn = self.view.button(ids!(export_btn));
+        let type_name = self.view.drop_down(ids!(type_selector));
+        let qty_label = self.view.label(ids!(qty_label));
         let rt = self.rt.handle().clone();
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<ExportAction>() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     store.datas_store.datas = data_action.data.clone();
-                    qty_label.set_text(
-                        cx,
-                        &format!("总数量: {} PCS", data_action.data.len()),
-                    );
+                    qty_label.set_text(cx, &format!("总数量: {} PCS", data_action.data.len()));
                 }
             }
         }

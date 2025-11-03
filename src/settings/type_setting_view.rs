@@ -1,11 +1,11 @@
-use makepad_widgets::*;
-use tokio::runtime::Runtime;
 use crate::{
     configs::type_config::{Infos, add_new_type, delete_type, get_type_infos, update_type},
     settings::type_add_template_modal::TemplateNameModalAction,
     store::Store,
     utils::error::MyError,
 };
+use makepad_widgets::*;
+use tokio::runtime::Runtime;
 
 live_design! {
     use link::theme::*;
@@ -348,7 +348,7 @@ struct TypeView {
     #[deref]
     view: View,
     #[rust(Runtime::new().unwrap())]
-        pub rt: Runtime,
+    pub rt: Runtime,
 }
 
 impl Widget for TypeView {
@@ -356,16 +356,16 @@ impl Widget for TypeView {
         if let Some(store) = scope.data.get_mut::<Store>() {
             if !store.setting_store.types.is_empty() {
                 self.view
-                    .drop_down(id!(type_selector))
+                    .drop_down(ids!(type_selector))
                     .set_labels(cx, store.setting_store.types.clone());
             };
             if store.setting_store.type_infos.1.is_have_pch {
                 self.view
-                    .widget(id!(is_have_pch_view))
+                    .widget(ids!(is_have_pch_view))
                     .set_visible(cx, true);
             } else {
                 self.view
-                    .widget(id!(is_have_pch_view))
+                    .widget(ids!(is_have_pch_view))
                     .set_visible(cx, false);
             }
         }
@@ -380,17 +380,17 @@ impl Widget for TypeView {
 
 impl WidgetMatchEvent for TypeView {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let select = self.view.drop_down(id!(type_selector));
-        let input = self.view.text_input(id!(type_input));
-        let add_type_btn = self.view.button(id!(add_type_btn));
-        let pch_check = self.view.check_box(id!(pch_check));
-        let carton_pch_check = self.view.check_box(id!(carton_pch_check));
-        let box_pch_check = self.view.check_box(id!(box_pch_check));
-        let zdy_box_check = self.view.check_box(id!(zdy_box_check));
-        let jz_band_check = self.view.check_box(id!(jz_band_check));
-        let save_type_btn = self.view.button(id!(update_type_btn));
-        let del_type_btn = self.view.button(id!(del_type_btn));
-        let add_template_btn = self.view.button(id!(add_template_btn));
+        let select = self.view.drop_down(ids!(type_selector));
+        let input = self.view.text_input(ids!(type_input));
+        let add_type_btn = self.view.button(ids!(add_type_btn));
+        let pch_check = self.view.check_box(ids!(pch_check));
+        let carton_pch_check = self.view.check_box(ids!(carton_pch_check));
+        let box_pch_check = self.view.check_box(ids!(box_pch_check));
+        let zdy_box_check = self.view.check_box(ids!(zdy_box_check));
+        let jz_band_check = self.view.check_box(ids!(jz_band_check));
+        let save_type_btn = self.view.button(ids!(update_type_btn));
+        let del_type_btn = self.view.button(ids!(del_type_btn));
+        let add_template_btn = self.view.button(ids!(add_template_btn));
         let rt = self.rt.handle().clone();
         if let Some(s) = select.changed_label(actions) {
             input.set_text(cx, &s);
@@ -410,19 +410,19 @@ impl WidgetMatchEvent for TypeView {
                     store.setting_store.type_infos = type_infos;
 
                     self.view
-                        .check_box(id!(pch_check))
+                        .check_box(ids!(pch_check))
                         .set_active(cx, store.setting_store.type_infos.1.is_have_pch);
                     self.view
-                        .check_box(id!(carton_pch_check))
+                        .check_box(ids!(carton_pch_check))
                         .set_active(cx, store.setting_store.type_infos.1.carton_pch);
                     self.view
-                        .check_box(id!(box_pch_check))
+                        .check_box(ids!(box_pch_check))
                         .set_active(cx, store.setting_store.type_infos.1.box_pch);
                     self.view
-                        .check_box(id!(jz_band_check))
+                        .check_box(ids!(jz_band_check))
                         .set_active(cx, store.setting_store.type_infos.1.jz_band);
                     self.view
-                        .check_box(id!(zdy_box_check))
+                        .check_box(ids!(zdy_box_check))
                         .set_active(cx, store.setting_store.type_infos.1.zdy_box);
                 }
             }
@@ -442,7 +442,7 @@ impl WidgetMatchEvent for TypeView {
                 store.setting_store.type_infos.1.carton_pch = check;
                 store.setting_store.type_infos.1.box_pch = !check; // 同步盒号查询状态
                 self.view
-                    .check_box(id!(box_pch_check))
+                    .check_box(ids!(box_pch_check))
                     .set_active(cx, !check); // 同步盒号查询状态
             }
         }
@@ -451,7 +451,7 @@ impl WidgetMatchEvent for TypeView {
                 store.setting_store.type_infos.1.box_pch = check;
                 store.setting_store.type_infos.1.carton_pch = !check; // 同步箱号查询状态
                 self.view
-                    .check_box(id!(carton_pch_check))
+                    .check_box(ids!(carton_pch_check))
                     .set_active(cx, !check); // 同步箱号查询状态
             }
         }
@@ -493,7 +493,7 @@ impl WidgetMatchEvent for TypeView {
                 Cx::post_action(MyError::Zdyknown("型号名称不能为空".to_string()));
                 return;
             }
-            self.view.modal(id!(type_add_template_modal)).open(cx);
+            self.view.modal(ids!(type_add_template_modal)).open(cx);
         }
         if save_type_btn.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
@@ -538,18 +538,18 @@ impl WidgetMatchEvent for TypeView {
         }
         for action in actions {
             if let Some(TemplateNameModalAction::Close) = action.downcast_ref() {
-                self.view.modal(id!(type_add_template_modal)).close(cx);
+                self.view.modal(ids!(type_add_template_modal)).close(cx);
             }
             if let Some(TemplateNameModalAction::Action(template_name)) = action.downcast_ref() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     store.setting_store.type_infos.0.push(template_name.clone());
                 }
-                self.view.modal(id!(type_add_template_modal)).close(cx);
+                self.view.modal(ids!(type_add_template_modal)).close(cx);
             }
         }
-        let list_widget = self.view.portal_list(id!(list));
+        let list_widget = self.view.portal_list(ids!(list));
         for (item_id, item_widget) in list_widget.items_with_actions(actions) {
-            if item_widget.button(id!(del_btn)).clicked(actions) {
+            if item_widget.button(ids!(del_btn)).clicked(actions) {
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     store.setting_store.type_infos.0.remove(item_id);
                 }
@@ -576,7 +576,7 @@ impl Widget for TemplateItemsRow {
                         continue;
                     }
                     let item = list.item(cx, item_idx, live_id!(TemplateItems));
-                    let label_name = item.label(id!(template_name));
+                    let label_name = item.label(ids!(template_name));
                     let t_name = store.setting_store.type_infos.0.get(item_idx).unwrap();
                     label_name.set_text(cx, &t_name);
                     item.draw_all(cx, &mut Scope::empty());

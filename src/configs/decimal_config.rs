@@ -12,7 +12,7 @@ use tokio::fs;
 use toml::Value;
 use umya_spreadsheet::reader::xlsx::read;
 
-const TOML_FILE_PATH: &str = "././configs/decimal_config.toml";
+const TOML_FILE_PATH: &str = "configs/decimal_config.toml";
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Config {

@@ -93,41 +93,41 @@ impl Widget for DataRow {
                 .get("carton_no")
                 .cloned()
                 .unwrap_or_else(|| "".to_string());
-            let label = self.label(id!(h_wrapper.carton_no.label));
+            let label = self.label(ids!(h_wrapper.carton_no.label));
             label.set_text(cx, &carton_nos);
 
             let box_nos = data
                 .get("box_no")
                 .cloned()
                 .unwrap_or_else(|| "".to_string());
-            let label = self.label(id!(box_no.label));
+            let label = self.label(ids!(box_no.label));
             label.set_text(cx, &box_nos.to_string());
 
             let sns = data.get("sn").cloned().unwrap_or_else(|| "".to_string());
-            let label = self.label(id!(sn.label));
+            let label = self.label(ids!(sn.label));
             label.set_text(cx, &sns);
 
             let iths = data.get("ith").cloned().unwrap_or_else(|| "".to_string());
-            let label = self.label(id!(ith.label));
+            let label = self.label(ids!(ith.label));
             label.set_text(cx, &iths);
 
             let pfs = data.get("po").cloned().unwrap_or_else(|| "".to_string());
-            let label = self.label(id!(pf.label));
+            let label = self.label(ids!(pf.label));
             label.set_text(cx, &pfs);
 
             let ses = data.get("se").cloned().unwrap_or_else(|| "".to_string());
-            let label = self.label(id!(se.label));
+            let label = self.label(ids!(se.label));
             label.set_text(cx, &ses);
 
             let sents = data.get("sen").cloned().unwrap_or_else(|| "".to_string());
-            let label = self.label(id!(sen.label));
+            let label = self.label(ids!(sen.label));
             label.set_text(cx, &sents);
 
             let testdate = data
                 .get("testdate")
                 .cloned()
                 .unwrap_or_else(|| "".to_string());
-            let label = self.label(id!(testtime.label));
+            let label = self.label(ids!(testtime.label));
             label.set_text(cx, &testdate);
         };
 

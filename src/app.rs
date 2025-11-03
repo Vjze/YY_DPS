@@ -225,7 +225,7 @@ impl AppMain for App {
 impl MatchEvent for App {
     fn handle_startup(&mut self, cx: &mut Cx) {
         let rt = self.rt.handle().clone();
-        self.ui.view(id!(body)).set_visible(cx, false);
+        self.ui.view(ids!(body)).set_visible(cx, false);
         let store = rt.block_on(async move { Store::init().await });
         self.store = store;
     }
@@ -239,7 +239,7 @@ impl MatchEvent for App {
         // TODO: Replace this with a proper navigation widget.
         if let Some(selected_tab) = self
             .ui
-            .radio_button_set(ids!(
+            .radio_button_set(ids_array!(
                 sidebar_menu.export_tab,
                 sidebar_menu.sn_tab,
                 sidebar_menu.box_band_tab,
@@ -260,48 +260,48 @@ impl MatchEvent for App {
         }
         // Handle navigation after processing all actions
         if navigate_to_providers {
-            self.navigate_to(cx, id!(application_pages.providers_frame));
+            self.navigate_to(cx, ids!(application_pages.providers_frame));
         } else if navigate_to_export {
-            self.navigate_to(cx, id!(application_pages.export_frame));
+            self.navigate_to(cx, ids!(application_pages.export_frame));
         } else if navigate_to_box_band {
-            self.navigate_to(cx, id!(application_pages.box_band_frame));
+            self.navigate_to(cx, ids!(application_pages.box_band_frame));
         } else if navigate_to_data_import_db {
-            self.navigate_to(cx, id!(application_pages.data_import_db_frame));
+            self.navigate_to(cx, ids!(application_pages.data_import_db_frame));
         } else if navigate_to_sn {
-            self.navigate_to(cx, id!(application_pages.querys_frame));
+            self.navigate_to(cx, ids!(application_pages.querys_frame));
         }
         for action in actions {
             if let Some(err) = action.downcast_ref::<MyError>() {
                 let content = err.to_string();
                 info!("{content}");
                 self.ui
-                    .modal(id!(dialog_ui.dialog_ui_inner))
-                    .label(id!(prompt))
+                    .modal(ids!(dialog_ui.dialog_ui_inner))
+                    .label(ids!(prompt))
                     .set_text(cx, &content);
-                self.ui.modal(id!(dialog_ui)).open(cx);
+                self.ui.modal(ids!(dialog_ui)).open(cx);
             }
             if let Some(tip) = action.downcast_ref::<MyTip>() {
                 let content = tip.to_string();
                 info!("{content}");
                 self.ui
-                    .modal(id!(dialog_ui.dialog_ui_inner))
-                    .label(id!(prompt))
+                    .modal(ids!(dialog_ui.dialog_ui_inner))
+                    .label(ids!(prompt))
                     .set_text(cx, &content);
-                self.ui.modal(id!(dialog_ui)).open(cx);
+                self.ui.modal(ids!(dialog_ui)).open(cx);
             }
             if let Some(ErrprModalAction::Close) = action.downcast_ref() {
-                self.ui.modal(id!(dialog_ui)).close(cx);
+                self.ui.modal(ids!(dialog_ui)).close(cx);
             }
             if let Some(LoginResult::Logined) = action.downcast_ref() {
                 let store = self.store.clone();
                 // store.logined = true;
                 // store.free_login = false;
                 let show_login = !store.login_store.logined;
-                self.ui.view(id!(login_view)).set_visible(cx, show_login);
+                self.ui.view(ids!(login_view)).set_visible(cx, show_login);
                 self.ui
-                    .view(id!(root_adaptive_view))
+                    .view(ids!(root_adaptive_view))
                     .set_visible(cx, !show_login);
-                self.ui.view(id!(set_btn)).set_visible(cx, true);
+                self.ui.view(ids!(set_btn)).set_visible(cx, true);
 
                 enqueue_popup_notification(PopupItem {
                     kind: PopupKind::Success,
@@ -314,12 +314,12 @@ impl MatchEvent for App {
                 // store.logined = true;
                 // store.free_login = true;
                 let show_login = !store.login_store.logined;
-                self.ui.view(id!(login_view)).set_visible(cx, show_login);
+                self.ui.view(ids!(login_view)).set_visible(cx, show_login);
                 self.ui
-                    .view(id!(root_adaptive_view))
+                    .view(ids!(root_adaptive_view))
                     .set_visible(cx, !show_login);
-                self.ui.button(id!(providers_tab)).set_visible(cx, false);
-                self.ui.view(id!(set_btn)).set_visible(cx, false);
+                self.ui.button(ids!(providers_tab)).set_visible(cx, false);
+                self.ui.view(ids!(set_btn)).set_visible(cx, false);
 
                 enqueue_popup_notification(PopupItem {
                     kind: PopupKind::Warning,
@@ -334,11 +334,11 @@ impl MatchEvent for App {
 
 impl App {
     fn navigate_to(&mut self, cx: &mut Cx, id: &[LiveId]) {
-        let providers_id = id!(application_pages.providers_frame);
-        let export_id = id!(application_pages.export_frame);
-        let box_band_id = id!(application_pages.box_band_frame);
-        let sn_id = id!(application_pages.querys_frame);
-        let data_import_db_id = id!(application_pages.data_import_db_frame);
+        let providers_id = ids!(application_pages.providers_frame);
+        let export_id = ids!(application_pages.export_frame);
+        let box_band_id = ids!(application_pages.box_band_frame);
+        let sn_id = ids!(application_pages.querys_frame);
+        let data_import_db_id = ids!(application_pages.data_import_db_frame);
 
         if id != providers_id {
             self.ui.widget(providers_id).set_visible(cx, false);

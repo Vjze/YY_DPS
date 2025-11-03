@@ -1,5 +1,3 @@
-use makepad_widgets::*;
-use tokio::runtime::Runtime;
 use crate::{
     configs::decimal_config::{
         DecimalConfig, add_new_template, delete_template, get_decimal_config_value, update_template,
@@ -8,6 +6,8 @@ use crate::{
     store::Store,
     utils::error::MyError,
 };
+use makepad_widgets::*;
+use tokio::runtime::Runtime;
 
 live_design! {
     use link::theme::*;
@@ -265,7 +265,7 @@ struct TemplateView {
     #[deref]
     view: View,
     #[rust(Runtime::new().unwrap())]
-        pub rt: Runtime,
+    pub rt: Runtime,
 }
 
 impl Widget for TemplateView {
@@ -273,7 +273,7 @@ impl Widget for TemplateView {
         if let Some(store) = scope.data.get_mut::<Store>() {
             if !store.setting_store.templates.is_empty() {
                 self.view
-                    .drop_down(id!(template_selector))
+                    .drop_down(ids!(template_selector))
                     .set_labels(cx, store.setting_store.templates.clone());
             };
         }
@@ -288,12 +288,12 @@ impl Widget for TemplateView {
 
 impl WidgetMatchEvent for TemplateView {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let select = self.view.drop_down(id!(template_selector));
-        let input = self.view.text_input(id!(template_input));
-        let add_btn = self.view.button(id!(add_template_btn));
-        let update_btn = self.view.button(id!(update_template_btn));
-        let delete_btn = self.view.button(id!(delete_template_btn));
-        let clear_btn = self.view.button(id!(clear_template_btn));
+        let select = self.view.drop_down(ids!(template_selector));
+        let input = self.view.text_input(ids!(template_input));
+        let add_btn = self.view.button(ids!(add_template_btn));
+        let update_btn = self.view.button(ids!(update_template_btn));
+        let delete_btn = self.view.button(ids!(delete_template_btn));
+        let clear_btn = self.view.button(ids!(clear_template_btn));
         let rt = self.rt.handle().clone();
         if let Some(value) = select.changed_label(actions) {
             input.set_text(cx, &value);
@@ -313,7 +313,7 @@ impl WidgetMatchEvent for TemplateView {
             }
         }
         if add_btn.clicked(actions) {
-            self.modal(id!(add_modal)).open(cx);
+            self.modal(ids!(add_modal)).open(cx);
         }
         if update_btn.clicked(actions) {
             let template_name = input.text().clone();
@@ -336,7 +336,7 @@ impl WidgetMatchEvent for TemplateView {
             if input.text().is_empty() {
                 Cx::post_action(MyError::Zdyknown(format!("模板名称不能为空!!!")));
             } else {
-                self.modal(id!(delete_modal)).open(cx);
+                self.modal(ids!(delete_modal)).open(cx);
             }
         }
         if clear_btn.clicked(actions) {
@@ -347,7 +347,7 @@ impl WidgetMatchEvent for TemplateView {
         }
         for action in actions {
             if let Some(TemplateModalAction::Close) = action.downcast_ref() {
-                self.modal(id!(add_modal)).close(cx);
+                self.modal(ids!(add_modal)).close(cx);
             }
             if let Some(TemplateModalAction::Action(rows)) = action.downcast_ref() {
                 let template_name = input.text().clone();
@@ -367,7 +367,7 @@ impl WidgetMatchEvent for TemplateView {
                 };
             }
             if let Some(DeleteModalAction::Close) = action.downcast_ref() {
-                self.modal(id!(delete_modal)).close(cx);
+                self.modal(ids!(delete_modal)).close(cx);
             }
             if let Some(DeleteModalAction::Action) = action.downcast_ref() {
                 let template_name = select.text().clone();

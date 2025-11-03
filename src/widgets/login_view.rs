@@ -234,12 +234,12 @@ impl Widget for LoginView {
 }
 impl WidgetMatchEvent for LoginView {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let accept_button = self.button(id!(accept_button));
-        let cancel_button = self.button(id!(cancel_button));
-        let user_name = self.text_input(id!(user_name)).text();
-        let user_password = self.text_input(id!(user_password)).text();
-        if self.text_input(id!(user_name)).returned(actions).is_some() {
-            self.text_input(id!(user_password)).set_key_focus(cx);
+        let accept_button = self.button(ids!(accept_button));
+        let cancel_button = self.button(ids!(cancel_button));
+        let user_name = self.text_input(ids!(user_name)).text();
+        let user_password = self.text_input(ids!(user_password)).text();
+        if self.text_input(ids!(user_name)).returned(actions).is_some() {
+            self.text_input(ids!(user_password)).set_key_focus(cx);
         }
         if accept_button.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {

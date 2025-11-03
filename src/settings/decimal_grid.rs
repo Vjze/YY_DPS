@@ -121,8 +121,8 @@ impl Widget for DecimalRow {
                         let key = keys[global_idx];
                         let item_widget = list.item(cx, i, live_id!(DecimalItem));
 
-                        let label_name = item_widget.label(id!(decimal_name));
-                        let input_widget = item_widget.text_input(id!(decimal_input));
+                        let label_name = item_widget.label(ids!(decimal_name));
+                        let input_widget = item_widget.text_input(ids!(decimal_input));
                         let widget_id = input_widget.widget_uid();
 
                         self.ids.insert(widget_id, key.to_string());
@@ -159,9 +159,9 @@ impl Widget for DecimalRow {
 }
 impl WidgetMatchEvent for DecimalRow {
     fn handle_actions(&mut self, _cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let list_widget = self.view.portal_list(id!(decimal_row));
+        let list_widget = self.view.portal_list(ids!(decimal_row));
         for (_, item_widget) in list_widget.items_with_actions(actions) {
-            let text_input = item_widget.text_input(id!(decimal_input));
+            let text_input = item_widget.text_input(ids!(decimal_input));
             if let Some(input) = text_input.changed(actions) {
                 let id = text_input.widget_uid();
                 if let Some(i) = self.ids.get(&id) {

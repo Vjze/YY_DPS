@@ -395,9 +395,9 @@ impl Widget for QueryScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
             if store.datas_store.datas.is_empty() {
-                self.view.button(id!(export_btn)).set_disabled(cx, true);
+                self.view.button(ids!(export_btn)).set_disabled(cx, true);
             } else {
-                self.view.button(id!(export_btn)).set_disabled(cx, false);
+                self.view.button(ids!(export_btn)).set_disabled(cx, false);
             }
         }
         self.widget_match_event(cx, event, scope);
@@ -411,19 +411,19 @@ impl Widget for QueryScreen {
 
 impl WidgetMatchEvent for QueryScreen {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let input = self.view.text_input(id!(query_input));
-        let query_btn = self.view.button(id!(query_btn));
-        let export_btn = self.view.button(id!(export_btn));
-        let type_select = self.view.drop_down(id!(type_selector));
-        let use_date = self.view.check_box(id!(date));
-        let start_time_input = self.view.text_input(id!(start_time_input));
-        let end_time_input = self.view.text_input(id!(end_time_input));
-        let pn_input = self.view.text_input(id!(pn_input));
-        let worker_input = self.view.text_input(id!(worker_input));
-        let devices = self.view.drop_down(id!(devices_selector));
-        let res = self.view.drop_down(id!(result_selector));
+        let input = self.view.text_input(ids!(query_input));
+        let query_btn = self.view.button(ids!(query_btn));
+        let export_btn = self.view.button(ids!(export_btn));
+        let type_select = self.view.drop_down(ids!(type_selector));
+        let use_date = self.view.check_box(ids!(date));
+        let start_time_input = self.view.text_input(ids!(start_time_input));
+        let end_time_input = self.view.text_input(ids!(end_time_input));
+        let pn_input = self.view.text_input(ids!(pn_input));
+        let worker_input = self.view.text_input(ids!(worker_input));
+        let devices = self.view.drop_down(ids!(devices_selector));
+        let res = self.view.drop_down(ids!(result_selector));
         let processor = self.datas_query_processor.as_ref().unwrap().clone();
-        let qty_label = self.view.label(id!(qty_label));
+        let qty_label = self.view.label(ids!(qty_label));
         let rt = self.rt.handle().clone();
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<QueryAction>() {
@@ -564,14 +564,14 @@ impl WidgetMatchEvent for QueryScreen {
             // end_time_input.set_text(cx, "");
         }
         if use_date.active(cx) {
-            self.view.widget(id!(date_view)).set_visible(cx, true);
+            self.view.widget(ids!(date_view)).set_visible(cx, true);
         } else {
-            self.view.widget(id!(date_view)).set_visible(cx, false);
+            self.view.widget(ids!(date_view)).set_visible(cx, false);
         }
         if type_select.selected_label() != "Sn" {
-            self.view.widget(id!(is_sn_query)).set_visible(cx, false);
+            self.view.widget(ids!(is_sn_query)).set_visible(cx, false);
         } else {
-            self.view.widget(id!(is_sn_query)).set_visible(cx, true);
+            self.view.widget(ids!(is_sn_query)).set_visible(cx, true);
         }
     }
 }

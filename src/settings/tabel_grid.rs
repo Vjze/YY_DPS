@@ -129,8 +129,8 @@ impl Widget for TableRow {
                     for i in 0..2 {
                         let global_idx = first_idx + i;
                         let item = list.item(cx, i, live_id!(TableItem));
-                        let tabel_key_input = item.text_input(id!(tabel_key));
-                        let table_value_input = item.text_input(id!(table_value));
+                        let tabel_key_input = item.text_input(ids!(tabel_key));
+                        let table_value_input = item.text_input(ids!(table_value));
                         let key_id = tabel_key_input.widget_uid();
                         let value_id = table_value_input.widget_uid();
 
@@ -163,10 +163,10 @@ impl Widget for TableRow {
 }
 impl WidgetMatchEvent for TableRow {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let list_widget = self.view.portal_list(id!(table_row));
+        let list_widget = self.view.portal_list(ids!(table_row));
         for (_, item_widget) in list_widget.items_with_actions(actions) {
-            let tabel_key_input = item_widget.text_input(id!(tabel_key));
-            let table_value_input = item_widget.text_input(id!(table_value));
+            let tabel_key_input = item_widget.text_input(ids!(tabel_key));
+            let table_value_input = item_widget.text_input(ids!(table_value));
 
             if let Some(new_key) = tabel_key_input.changed(actions) {
                 let id = tabel_key_input.widget_uid();

@@ -198,8 +198,8 @@ impl Widget for DeleteModal {
 }
 impl WidgetMatchEvent for DeleteModal {
     fn handle_actions(&mut self, _cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        let accept_button = self.button(id!(accept_button));
-        let cancel_button = self.button(id!(cancel_button));
+        let accept_button = self.button(ids!(accept_button));
+        let cancel_button = self.button(ids!(cancel_button));
         if cancel_button.clicked(actions) {
             Cx::post_action(DeleteModalAction::Close);
         }
