@@ -1,8 +1,8 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
 fn main() {
     tracing_subscriber::fmt()
         // enable everything
-        .with_max_level(tracing::Level::INFO)
+        .with_max_level(tracing::Level::DEBUG)
         // display source code file paths
         .with_file(true)
         // display source code line numbers

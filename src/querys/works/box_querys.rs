@@ -136,7 +136,7 @@ pub async fn get_box_datas(
         .map(|s| format!("'{}'", s.sn_data.sn))
         .collect::<Vec<String>>();
     let sn_list_chunks = sn_placeholders
-        .chunks(1400) // SQL Server IN 子句限制约 2100, 900 是个安全数
+        .chunks(1000) // SQL Server IN 子句限制约 2100, 900 是个安全数
         .map(|chunk| chunk.join(", "))
         .collect::<Vec<String>>();
     // let sn_datas = get_sn_info(sns).await?;
@@ -153,7 +153,7 @@ pub async fn get_box_datas(
     } else {
         // (优化) 并发执行多个 Chunks
         info!(
-            "SN总数 {} 超过900，将执行 {} 个并行查询",
+            "SN总数 {} 超过1000，将执行 {} 个并行查询",
             sn_placeholders.len(),
             sn_list_chunks.len()
         );
