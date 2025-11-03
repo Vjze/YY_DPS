@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use chrono::Local;
 use rust_xlsxwriter::{Color, Format, FormatAlign, FormatBorder, Workbook};
+use sqlx_oldapi::types::chrono::Local;
+use std::collections::HashMap;
 
 use crate::utils::error::MyError;
 
@@ -42,8 +42,7 @@ pub async fn sn_export(datas: Vec<HashMap<String, String>>) -> anyhow::Result<St
 
     // 写入列头并设置列宽
     for (y, key) in headers.iter().enumerate() {
-        worksheet
-            .write_string_with_format(0, y as u16, key, &blue_format)?;
+        worksheet.write_string_with_format(0, y as u16, key, &blue_format)?;
 
         match key.as_str() {
             "sn" | "testtime" | "carton_no" | "carton_packtime" | "box_no" | "pack_packtime" => {
@@ -61,12 +60,10 @@ pub async fn sn_export(datas: Vec<HashMap<String, String>>) -> anyhow::Result<St
 
         for (y, header) in headers.iter().enumerate() {
             if let Some(value) = data.get(header) {
-                worksheet
-                    .write_string_with_format(x, y as u16, value, &str_format)?;
+                worksheet.write_string_with_format(x, y as u16, value, &str_format)?;
             } else {
                 // 如果某个 HashMap 缺少某个键，可以写入空字符串或者其他默认值
-                worksheet
-                    .write_string_with_format(x, y as u16, "", &str_format)?;
+                worksheet.write_string_with_format(x, y as u16, "", &str_format)?;
             }
         }
     }
@@ -77,8 +74,8 @@ pub async fn sn_export(datas: Vec<HashMap<String, String>>) -> anyhow::Result<St
 
     match workbook.save(path.clone()) {
         Ok(_) => Ok(path),
-        Err(_e) => {
-            Err(MyError::Zdyknown("数据导出错误，请注意软件目录下是否存在同名文件以及是否有读写权限!!!".to_string()))
-        }
+        Err(_e) => Err(MyError::Zdyknown(
+            "数据导出错误，请注意软件目录下是否存在同名文件以及是否有读写权限!!!".to_string(),
+        )),
     }
 }

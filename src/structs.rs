@@ -1,6 +1,6 @@
-use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use sqlx_oldapi::mssql::MssqlRow;
+use sqlx_oldapi::types::chrono::NaiveDateTime;
 use sqlx_oldapi::{Error as SqlxError, FromRow, Row};
 use std::result::Result as StdResult; // 假设 MssqlRow 在这里
 #[derive(FromRow, Debug)]
@@ -41,13 +41,12 @@ pub struct Data {
 }
 impl sqlx_oldapi::FromRow<'_, MssqlRow> for Data {
     fn from_row(row: &MssqlRow) -> StdResult<Self, SqlxError> {
-        
         // 使用 try_get("column_name") 替代 try_get(index)
-        
+
         // 获取 NaiveDateTime (数据库列 TestDate AS testtime)
         let testtime_dt: NaiveDateTime = row.try_get("testdate")?;
         let testdate = testtime_dt.format("%Y-%m-%d %H:%M:%S").to_string();
-        
+
         // 获取 mdpid (数据库列 MDPId/Te AS mdpid) 并应用业务逻辑
         let mdpid_raw: String = row.try_get("mdpid")?;
         let mdpid = if mdpid_raw == "0" {
@@ -60,7 +59,7 @@ impl sqlx_oldapi::FromRow<'_, MssqlRow> for Data {
         Ok(Data {
             sn: row.try_get("sn")?,
             ith: row.try_get("ith")?,
-            po: row.try_get("po")?, 
+            po: row.try_get("po")?,
             vf: row.try_get("vf")?,
             im: row.try_get("im")?,
             rs: row.try_get("rs")?,
@@ -68,9 +67,7 @@ impl sqlx_oldapi::FromRow<'_, MssqlRow> for Data {
             sen: row.try_get("sen")?,
             res: row.try_get("res")?,
             icc: row.try_get("icc")?,
-            vbr: row.try_get("vbr").unwrap_or_else(|_e| {
-                "0.00".to_string()
-            }),
+            vbr: row.try_get("vbr").unwrap_or_else(|_e| "0.00".to_string()),
             kink: row.try_get("kink")?,
             imkink: row.try_get("imkink")?,
             testdate, // 格式化后的时间
@@ -80,7 +77,7 @@ impl sqlx_oldapi::FromRow<'_, MssqlRow> for Data {
             iop: row.try_get("iop")?,
             i_xtalk: row.try_get("i_xtalk")?,
             mdpid, // 处理后的 mdpid
-            yypn: row.try_get("yypn")?, 
+            yypn: row.try_get("yypn")?,
         })
     }
 }

@@ -1,7 +1,7 @@
-use chrono::NaiveDateTime;
 use futures::stream::TryStreamExt;
 use sqlx_oldapi::FromRow;
 use sqlx_oldapi::query_as;
+use sqlx_oldapi::types::chrono::NaiveDateTime;
 use std::collections::{HashMap, HashSet};
 
 use crate::{
@@ -57,8 +57,8 @@ fn format_data(all_datas: Vec<Datas>) -> Vec<HashMap<String, String>> {
 
 // SQL 常量：完整字面量，无 concat!
 const SQL_CARTON_ONLY: &str = "
-    SELECT a.sn, a.Pack_no, a.pn, 
-           a.creator AS pack_creator, a.createtime AS pack_time, 
+    SELECT a.sn, a.Pack_no, a.pn,
+           a.creator AS pack_creator, a.createtime AS pack_time,
            b.creator AS carton_creator, b.createtime AS carton_time, b.CartonNo
     FROM [mes_Factory].[dbo].[MaterialPackSn] a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
@@ -68,8 +68,8 @@ const SQL_CARTON_ONLY: &str = "
 ";
 
 const SQL_CARTON_PN: &str = "
-    SELECT a.sn, a.Pack_no, a.pn, 
-           a.creator AS pack_creator, a.createtime AS pack_time, 
+    SELECT a.sn, a.Pack_no, a.pn,
+           a.creator AS pack_creator, a.createtime AS pack_time,
            b.creator AS carton_creator, b.createtime AS carton_time, b.CartonNo
     FROM [mes_Factory].[dbo].[MaterialPackSn] a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
@@ -79,8 +79,8 @@ const SQL_CARTON_PN: &str = "
 ";
 
 const SQL_CARTON_TIME: &str = "
-    SELECT a.sn, a.Pack_no, a.pn, 
-           a.creator AS pack_creator, a.createtime AS pack_time, 
+    SELECT a.sn, a.Pack_no, a.pn,
+           a.creator AS pack_creator, a.createtime AS pack_time,
            b.creator AS carton_creator, b.createtime AS carton_time, b.CartonNo
     FROM [mes_Factory].[dbo].[MaterialPackSn] a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
@@ -90,8 +90,8 @@ const SQL_CARTON_TIME: &str = "
 ";
 
 const SQL_PN_TIME: &str = "
-    SELECT a.sn, a.Pack_no, a.pn, 
-           a.creator AS pack_creator, a.createtime AS pack_time, 
+    SELECT a.sn, a.Pack_no, a.pn,
+           a.creator AS pack_creator, a.createtime AS pack_time,
            b.creator AS carton_creator, b.createtime AS carton_time, b.CartonNo
     FROM [mes_Factory].[dbo].[MaterialPackSn] a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
@@ -101,8 +101,8 @@ const SQL_PN_TIME: &str = "
 ";
 
 const SQL_ALL: &str = "
-    SELECT a.sn, a.Pack_no, a.pn, 
-           a.creator AS pack_creator, a.createtime AS pack_time, 
+    SELECT a.sn, a.Pack_no, a.pn,
+           a.creator AS pack_creator, a.createtime AS pack_time,
            b.creator AS carton_creator, b.createtime AS carton_time, b.CartonNo
     FROM [mes_Factory].[dbo].[MaterialPackSn] a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
@@ -112,8 +112,8 @@ const SQL_ALL: &str = "
 ";
 
 const SQL_TIME_ONLY: &str = "
-    SELECT a.sn, a.Pack_no, a.pn, 
-           a.creator AS pack_creator, a.createtime AS pack_time, 
+    SELECT a.sn, a.Pack_no, a.pn,
+           a.creator AS pack_creator, a.createtime AS pack_time,
            b.creator AS carton_creator, b.createtime AS carton_time, b.CartonNo
     FROM [mes_Factory].[dbo].[MaterialPackSn] a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
@@ -123,8 +123,8 @@ const SQL_TIME_ONLY: &str = "
 ";
 
 const SQL_PN_ONLY: &str = "
-    SELECT a.sn, a.Pack_no, a.pn, 
-           a.creator AS pack_creator, a.createtime AS pack_time, 
+    SELECT a.sn, a.Pack_no, a.pn,
+           a.creator AS pack_creator, a.createtime AS pack_time,
            b.creator AS carton_creator, b.createtime AS carton_time, b.CartonNo
     FROM [mes_Factory].[dbo].[MaterialPackSn] a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
@@ -134,8 +134,8 @@ const SQL_PN_ONLY: &str = "
 ";
 
 const SQL_DEFAULT: &str = "
-    SELECT a.sn, a.Pack_no, a.pn, 
-           a.creator AS pack_creator, a.createtime AS pack_time, 
+    SELECT a.sn, a.Pack_no, a.pn,
+           a.creator AS pack_creator, a.createtime AS pack_time,
            b.creator AS carton_creator, b.createtime AS carton_time, b.CartonNo
     FROM [mes_Factory].[dbo].[MaterialPackSn] a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
@@ -226,7 +226,7 @@ pub async fn get_carton_datas(
         });
         seen_sns.insert(sn);
     }
-    
+
     // 处理空结果
     if all_datas.is_empty() {
         let query_key = if !carton.is_empty() {

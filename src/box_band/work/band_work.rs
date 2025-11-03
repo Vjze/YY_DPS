@@ -3,6 +3,7 @@ use crate::{
     utils::{error::MyError, sql::client},
 };
 use anyhow::Result;
+use sqlx_oldapi::types::chrono::Local;
 use sqlx_oldapi::{MssqlPool, query};
 use tracing::info;
 
@@ -32,10 +33,10 @@ pub async fn band_work(box_data: Vec<BoxBandData>) -> Result<(), MyError> {
 
 pub async fn band_box(box_data: &BoxBandData) -> Result<(), MyError> {
     let pool: &MssqlPool = &client().await?;
-    let datetime = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    let datetime = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
-    let sql_text = "INSERT INTO [mes_Factory].[dbo].[jz_carton_bind] 
-            (carton_No, pkg_No, box_No, [module], p_No, status, bindtime) 
+    let sql_text = "INSERT INTO [mes_Factory].[dbo].[jz_carton_bind]
+            (carton_No, pkg_No, box_No, [module], p_No, status, bindtime)
         VALUES (
             @P1, @P2, @P3, @P4, @P5, @P6, @P7
         );";

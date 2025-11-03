@@ -3,8 +3,8 @@ use std::{
     path::PathBuf,
 };
 
-use chrono::Local;
 use serde::{Deserialize, Serialize};
+use sqlx_oldapi::types::chrono::Local;
 
 use crate::utils::error::{MyError, MyTip};
 

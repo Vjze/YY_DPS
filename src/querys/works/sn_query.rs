@@ -1,6 +1,5 @@
-// sn_query.rs
-use chrono::NaiveDateTime;
 use futures::stream::TryStreamExt;
+use sqlx_oldapi::types::chrono::NaiveDateTime;
 use sqlx_oldapi::{Mssql, MssqlPool, Row, mssql::MssqlArguments, query::QueryAs, query_as};
 use std::collections::HashMap;
 use tracing::info;
@@ -185,8 +184,8 @@ pub async fn sn_query_datas(
     //     where_sql
     // );
     let final_sql = format!(
-        "SELECT 
-        sn, ith, po, vf, im, rs, se, sen, res, icc, vbr, kink, imkink, 
+        "SELECT
+        sn, ith, po, vf, im, rs, se, sen, res, icc, vbr, kink, imkink,
         testdate, idark, result, tester, iop, i_xtalk, mdpid, yypn
     FROM (
         {}
@@ -237,7 +236,7 @@ pub async fn sn_query_datas(
 }
 async fn get_box_caoton(sn: String) -> anyhow::Result<HashMap<String, String>, MyError> {
     let pool: &MssqlPool = &client().await?;
-    let sql = "SELECT TOP 1 a.Pack_no, b.cartonno FROM [mes_Factory].[dbo].[MaterialPackSn]a 
+    let sql = "SELECT TOP 1 a.Pack_no, b.cartonno FROM [mes_Factory].[dbo].[MaterialPackSn]a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no WHERE a.sn = @P1 AND a.PnOptionID = '-100' ORDER BY a.CreateTime DESC";
     let row = sqlx_oldapi::query(sql)
         .bind(sn)

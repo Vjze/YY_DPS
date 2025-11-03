@@ -8,9 +8,9 @@ use crate::{
     },
     utils::error::MyError,
 };
-use chrono::{Local, NaiveDateTime};
 use rayon::prelude::*;
 use regex::Regex;
+use sqlx_oldapi::types::chrono::{Local, NaiveDateTime};
 use std::{collections::HashMap, sync::Arc};
 use tracing::info;
 use umya_spreadsheet::{
@@ -228,13 +228,13 @@ pub async fn write_to_excel(
     let mut errors = vec![];
 
     // 检查每个任务的结果，收集错误
-        for result in results {
-            match result {
-                Ok((_template_name, Ok(()))) => {} // 成功，无需操作
-                Ok((template_name, Err(e))) => errors.push(format!("{}: {}", template_name, e)),
-                Err(e) => errors.push(format!("任务执行失败: {:?}", e)),
-            }
+    for result in results {
+        match result {
+            Ok((_template_name, Ok(()))) => {} // 成功，无需操作
+            Ok((template_name, Err(e))) => errors.push(format!("{}: {}", template_name, e)),
+            Err(e) => errors.push(format!("任务执行失败: {:?}", e)),
         }
+    }
 
     // 如果有错误，返回 Err 包含所有错误信息
     if errors.is_empty() {

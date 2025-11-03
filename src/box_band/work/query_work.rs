@@ -1,9 +1,9 @@
-use chrono::NaiveDateTime;
-use std::collections::HashSet;
-use futures::TryStreamExt;
-use sqlx_oldapi::{MssqlPool, Row, Error as SqlxError};
-use sqlx_oldapi::mssql::MssqlRow;
 use crate::utils::{error::MyError, sql::client};
+use futures::TryStreamExt;
+use sqlx_oldapi::mssql::MssqlRow;
+use sqlx_oldapi::types::chrono::NaiveDateTime;
+use sqlx_oldapi::{Error as SqlxError, MssqlPool, Row};
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, Default)]
 pub struct BoxBandData {
@@ -17,7 +17,7 @@ impl sqlx_oldapi::FromRow<'_, MssqlRow> for BoxBandData {
     fn from_row(row: &MssqlRow) -> Result<Self, SqlxError> {
         let create_time_dt: NaiveDateTime = row.try_get("create_time")?;
         let create_time = create_time_dt.format("%Y-%m-%d %H:%M:%S").to_string();
-        
+
         Ok(BoxBandData {
             box_no: row.try_get("box_no")?,
             pn: row.try_get("pn")?,
@@ -35,8 +35,8 @@ pub async fn query_carton_info(carton_no: String) -> Result<Vec<BoxBandData>, My
 }
 
 async fn get_carton_infos(carton_no: String) -> Result<Vec<BoxBandData>, MyError> {
-    let pool: &MssqlPool = &client().await?; 
-    let sql_text = 
+    let pool: &MssqlPool = &client().await?;
+    let sql_text =
         "SELECT a.Pack_no AS box_no, a.pn AS pn, b.CartonNo AS carton_no, a.CreateTime AS create_time
             FROM [mes_Factory].[dbo].[MaterialPackSn] a
             INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
@@ -52,29 +52,29 @@ async fn get_carton_infos(carton_no: String) -> Result<Vec<BoxBandData>, MyError
     // 3. 循环处理数据流
     while let Some(data) = rows.try_next().await.map_err(MyError::from)? {
         if boxs.insert(data.box_no.clone()) {
-             results.push(data);
+            results.push(data);
         }
     }
-    
+
     if results.is_empty() {
         return Err(MyError::Zdyknown("未查询到相关信息!!!".to_string()));
     }
-    
+
     Ok(results)
 }
 async fn check_binded(carton_no: String) -> Result<(), MyError> {
-    let pool: &MssqlPool = &client().await?; 
+    let pool: &MssqlPool = &client().await?;
     let sql_text = format!(
         "SELECT TOP 1 carton_No
-            FROM [mes_Factory].[dbo].[jz_carton_bind] 
+            FROM [mes_Factory].[dbo].[jz_carton_bind]
             WHERE carton_No = '{}' AND status = '0'",
         carton_no
     );
-    
+
     let row = sqlx_oldapi::query(&sql_text)
-        .fetch_optional(pool) 
+        .fetch_optional(pool)
         .await
-        .map_err(MyError::from)?; 
+        .map_err(MyError::from)?;
     if row.is_some() {
         return Err(MyError::Zdyknown(format!(
             "箱号: {} 已经绑定过。",

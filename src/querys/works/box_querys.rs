@@ -3,16 +3,15 @@ use crate::{
     structs::{Data, Datas, PackData},
     utils::{error::MyError, sql::client},
 };
-use chrono::NaiveDateTime;
 use futures::{
     TryStreamExt as _,
     stream::{StreamExt as _, iter},
 };
 use sqlx_oldapi::mssql::MssqlRow;
+use sqlx_oldapi::types::chrono::NaiveDateTime;
 use sqlx_oldapi::{Error as SqlxError, MssqlPool, Row, query, query_as};
 use std::collections::{HashMap, HashSet};
 use tracing::info;
-
 #[derive(Debug)]
 struct QueryRow {
     pub sn: String,
@@ -34,6 +33,7 @@ impl sqlx_oldapi::FromRow<'_, MssqlRow> for QueryRow {
     }
 }
 
+#[allow(unused_assignments)]
 pub async fn get_box_datas(
     box_no: String,
     use_time: bool,

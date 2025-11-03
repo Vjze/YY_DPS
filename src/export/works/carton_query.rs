@@ -6,11 +6,11 @@ use crate::{
         sql::{client, get_tables},
     },
 };
-use chrono::NaiveDateTime;
 use futures::{
     TryStreamExt as _,
     stream::{StreamExt as _, iter},
 };
+use sqlx_oldapi::types::chrono::NaiveDateTime;
 use sqlx_oldapi::{MssqlPool, Row as _};
 use std::collections::{HashMap, HashSet}; // 引入 HashSet
 use tokio::{
@@ -487,20 +487,19 @@ pub async fn execute_query(sql_text_s: &str, pool: &MssqlPool) -> Result<Vec<Dat
  * - 优化: 使用 ROW_NUMBER() 在 SQL 端对每个 SN 按 TestDate 排序，只取最新 (rn = 1)
  */
 pub async fn build_query_sql(sn_list: &str, pool: &MssqlPool) -> anyhow::Result<String, MyError> {
-    
     // 1. 定义最终结果集中的所有列 (全部小写，用于 Rust 映射)
     let final_columns = "sn,ith,po,vf,im,rs,se,sen,res,icc,vbr,kink,imkink,testdate,idark,result,tester,iop,i_xtalk,mdpid,yypn";
 
     // 2. 定义第一个表的 SELECT 映射 (MAC_10GBOSADATA)
     let select_10 = format!(
         // 注意：将所有类型不确定的列（如 TestDate）强制转换为统一类型，并设置统一别名（小写）
-        "SELECT 
-            SN AS sn, Ith AS ith, 
-            Pf AS po, Vop AS vf, Im AS im, Rs AS rs, 
-            Se AS se, Sen AS sen, Res AS res, ICC AS icc, Vbr AS vbr, 
-            Kink AS kink, imkink AS imkink, 
+        "SELECT
+            SN AS sn, Ith AS ith,
+            Pf AS po, Vop AS vf, Im AS im, Rs AS rs,
+            Se AS se, Sen AS sen, Res AS res, ICC AS icc, Vbr AS vbr,
+            Kink AS kink, imkink AS imkink,
             CAST(TestDate AS DATETIME2(0)) AS testdate, /* 强制类型转换 */
-            Idark AS idark, Result AS result, ProductBill AS tester, 
+            Idark AS idark, Result AS result, ProductBill AS tester,
             iop AS iop, ixtalk AS i_xtalk, MDPId AS mdpid, testtype AS yypn
         FROM [BOSAautotest_Data].[dbo].[MAC_10GBOSADATA]"
     );
@@ -508,14 +507,14 @@ pub async fn build_query_sql(sn_list: &str, pool: &MssqlPool) -> anyhow::Result<
     // 3. 定义后续表的 SELECT 映射 (MAC_xxx)
     let select_other_template = format!(
         // 注意：使用 CAST(NULL AS TYPE) 占位缺失的列，并统一相似的列名
-        "UNION ALL SELECT 
-            SN AS sn, Ith AS ith, 
-            Po AS po, Vf AS vf, Im AS im, Rs AS rs, 
+        "UNION ALL SELECT
+            SN AS sn, Ith AS ith,
+            Po AS po, Vf AS vf, Im AS im, Rs AS rs,
             Pslop AS se, /* Pslop 映射到 se */
-            Sen AS sen, Res AS res, ICC AS icc, Vbr AS vbr, 
-            Kink_I AS kink, kinkim_i AS imkink, 
+            Sen AS sen, Res AS res, ICC AS icc, Vbr AS vbr,
+            Kink_I AS kink, kinkim_i AS imkink,
             CAST(TestDate AS DATETIME2(0)) AS testdate, /* 强制类型转换 */
-            Idark AS idark, Result AS result, ProductBill AS tester, 
+            Idark AS idark, Result AS result, ProductBill AS tester,
             io AS iop, /* io 映射到 iop */
             xtalk AS i_xtalk, /* xtalk 映射到 i_xtalk */
             Te AS mdpid, /* Te 映射到 mdpid */
@@ -524,9 +523,9 @@ pub async fn build_query_sql(sn_list: &str, pool: &MssqlPool) -> anyhow::Result<
     );
 
     let mut sql_text = String::from(&select_10);
-    
+
     let tables = get_tables(pool).await?; // 假设 get_tables 成功返回表名
-    
+
     for table_name in tables {
         // 使用 format! 插入表名到模板中
         let s = select_other_template.replace("{}", &table_name);
@@ -534,7 +533,7 @@ pub async fn build_query_sql(sn_list: &str, pool: &MssqlPool) -> anyhow::Result<
     }
 
     // 4. 构建最终查询
-    
+
     // 使用统一的列名来构建外部 SELECT
     let base_query = format!(
         "SELECT {final_columns}, ROW_NUMBER() OVER(PARTITION BY sn ORDER BY testdate DESC) as rn FROM ({sql_text}) AllData",
@@ -544,7 +543,7 @@ pub async fn build_query_sql(sn_list: &str, pool: &MssqlPool) -> anyhow::Result<
 
     let query_ty = if sn_list.is_empty() {
         // 在 WHERE 子句中，使用小写别名
-        "WHERE result = 'OK'".to_string() 
+        "WHERE result = 'OK'".to_string()
     } else {
         // 在 WHERE 子句中，使用小写别名
         format!("WHERE sn IN ({}) AND result = 'OK'", sn_list)
@@ -558,4 +557,3 @@ pub async fn build_query_sql(sn_list: &str, pool: &MssqlPool) -> anyhow::Result<
         query_ty = query_ty
     ))
 }
-
