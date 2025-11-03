@@ -4,7 +4,10 @@ use crate::{
     utils::{error::MyError, sql::client},
 };
 use chrono::NaiveDateTime;
-use futures::stream::TryStreamExt;
+use futures::{
+    TryStreamExt as _,
+    stream::{StreamExt as _, iter},
+};
 use sqlx_oldapi::mssql::MssqlRow;
 use sqlx_oldapi::{Error as SqlxError, MssqlPool, Row, query, query_as};
 use std::collections::{HashMap, HashSet};
@@ -127,21 +130,58 @@ pub async fn get_box_datas(
         });
         seen_sns.insert(sn);
     }
-    let sns = all_datas
+    info!("一共:{}条数据.", all_datas.len());
+    let sn_placeholders = all_datas
         .iter()
-        .map(|d| format!("'{}'", d.sn_data.sn))
-        .collect::<Vec<String>>()
-        .join(",");
-    let sn_datas = get_sn_info(sns).await?;
-    let carton_data = get_carton_data(&box_no).await;
-    let all = all_datas.into_iter().map(|mut d| {
-        if carton_data.is_some() {
-            let carton_data_map = carton_data.as_ref().unwrap();
-            d.carton_data.carton_no = carton_data_map.get("carton_no").unwrap().to_string();
-        }
+        .map(|s| format!("'{}'", s.sn_data.sn))
+        .collect::<Vec<String>>();
+    let sn_list_chunks = sn_placeholders
+        .chunks(1400) // SQL Server IN 子句限制约 2100, 900 是个安全数
+        .map(|chunk| chunk.join(", "))
+        .collect::<Vec<String>>();
+    // let sn_datas = get_sn_info(sns).await?;
+    let mut sn_datas = vec![];
+    if sn_list_chunks.is_empty() {
+        // 如果基础数据为空 (虽然前面有检查, 但这里做个保险)
+        info!("基础数据为空, 无需查询测试数据");
+    } else if sn_list_chunks.len() == 1 {
+        // 只有 1 块 (最常见的情况), 正常执行
+        info!("开始查询 {} 个SN的测试数据", sn_placeholders.len());
+        sn_datas = get_sn_info(&sn_list_chunks[0]).await?;
+        // let sql_text_s = build_query_sql(&sn_list_chunks[0], pool).await?;
+        // datas = execute_query(&sql_text_s, pool).await?;
+    } else {
+        // (优化) 并发执行多个 Chunks
+        info!(
+            "SN总数 {} 超过900，将执行 {} 个并行查询",
+            sn_placeholders.len(),
+            sn_list_chunks.len()
+        );
 
-        d
-    }).collect::<Vec<Datas>>();
+        let mut tasks = iter(sn_list_chunks)
+            .map(|sn_list_chunk| tokio::spawn(async move { get_sn_info(&sn_list_chunk).await }))
+            .buffer_unordered(5); // 限制 5 个并发 SQL 查询
+
+        while let Some(result) = tasks.next().await {
+            match result {
+                Ok(Ok(res_chunk)) => sn_datas.extend(res_chunk),
+                Ok(Err(e)) => info!("一个测试数据块查询失败: {:?}", e),
+                Err(e) => info!("Tokio 任务失败: {:?}", e),
+            }
+        }
+    }
+    let carton_data = get_carton_data(&box_no).await;
+    let all = all_datas
+        .into_iter()
+        .map(|mut d| {
+            if carton_data.is_some() {
+                let carton_data_map = carton_data.as_ref().unwrap();
+                d.carton_data.carton_no = carton_data_map.get("carton_no").unwrap().to_string();
+            }
+
+            d
+        })
+        .collect::<Vec<Datas>>();
     let mut all = all
         .into_iter()
         .map(|mut d| {
@@ -209,7 +249,7 @@ pub async fn get_box_datas(
     Ok(all)
 }
 
-async fn get_sn_info(sns: String) -> anyhow::Result<Vec<Data>, MyError> {
+async fn get_sn_info(sns: &str) -> anyhow::Result<Vec<Data>, MyError> {
     let pool = &client().await?;
     let sql_text = build_query_sql(&sns, pool).await?;
     let mut rows = query_as::<sqlx_oldapi::Mssql, Data>(&sql_text).fetch(pool);
@@ -240,7 +280,7 @@ async fn get_sn_info(sns: String) -> anyhow::Result<Vec<Data>, MyError> {
     }
     Ok(datas)
 }
-async fn get_carton_data(box_no: &str) -> Option<HashMap<String,String>> {
+async fn get_carton_data(box_no: &str) -> Option<HashMap<String, String>> {
     let pool = &client().await.unwrap();
     let sql_text = format!(
         "SELECT TOP 1 CartonNo FROM [mes_Factory].[dbo].[packing_carton] WHERE Packing_no = '{}'",
@@ -249,7 +289,8 @@ async fn get_carton_data(box_no: &str) -> Option<HashMap<String,String>> {
 
     let row = query(&sql_text)
         .fetch_optional(pool) // 💥 关键修改：使用 fetch_optional
-        .await.unwrap();
+        .await
+        .unwrap();
     if row.is_none() {
         return None;
     }

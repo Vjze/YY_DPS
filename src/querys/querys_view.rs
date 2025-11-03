@@ -380,7 +380,7 @@ pub struct QueryScreen {
     #[rust(None)] // 默认初始化为 None
     pub datas_query_processor: Option<Arc<dyn DatasQuery>>,
     #[rust(Runtime::new().unwrap())]
-        pub rt: Runtime,
+    pub rt: Runtime,
 }
 #[derive(Clone, Debug, Default)]
 pub struct QueryAction {
@@ -423,11 +423,14 @@ impl WidgetMatchEvent for QueryScreen {
         let devices = self.view.drop_down(id!(devices_selector));
         let res = self.view.drop_down(id!(result_selector));
         let processor = self.datas_query_processor.as_ref().unwrap().clone();
+        let qty_label = self.view.label(id!(qty_label));
         let rt = self.rt.handle().clone();
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<QueryAction>() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     store.datas_store.datas = data_action.data.clone();
+                    let qty = format!("总数量: {} PCS", data_action.data.len());
+                    qty_label.set_text(cx, &qty);
                 }
             }
         }
@@ -544,17 +547,27 @@ impl WidgetMatchEvent for QueryScreen {
                 }
             }
         }
-        if use_date.active(cx) {
-            self.view.widget(id!(date_view)).set_visible(cx, true);
+
+        if let Some(true) = use_date.changed(actions) {
+            // 只有当状态从 false 变为 true (即开关刚被打开) 时，才会执行这里
+
+            // 此时设置默认时间
             let date = Local::now().date_naive();
             let start_time = date.format("%Y-%m-%d 00:00:00").to_string();
             let end_time = date.format("%Y-%m-%d 23:59:59").to_string();
             start_time_input.set_text(cx, &start_time);
             end_time_input.set_text(cx, &end_time);
+
+        // 如果您想在开关从 true 变为 false (关闭) 时清空输入框:
+        } else if let Some(false) = use_date.changed(actions) {
+            // start_time_input.set_text(cx, "");
+            // end_time_input.set_text(cx, "");
+        }
+        if use_date.active(cx) {
+            self.view.widget(id!(date_view)).set_visible(cx, true);
         } else {
             self.view.widget(id!(date_view)).set_visible(cx, false);
         }
-
         if type_select.selected_label() != "Sn" {
             self.view.widget(id!(is_sn_query)).set_visible(cx, false);
         } else {
