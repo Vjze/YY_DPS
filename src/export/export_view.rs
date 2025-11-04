@@ -11,7 +11,7 @@ live_design! {
     use crate::shared::styles::*;
     use crate::shared::modal::*;
     use crate::shared::widgets::*;
-    use crate::widgets::table::InfosTable;
+    use crate::export::export_table::ExTable;
     FirstRow = <View> {
         width: Fill,
         height: Fit,
@@ -140,7 +140,7 @@ live_design! {
             padding: 15,
             spacing: 10,
             <FirstRow> {}
-            <InfosTable> {}
+            <ExTable> {}
         }
     }
 }
@@ -168,7 +168,7 @@ impl Widget for ExportScreen {
             self.view
                 .drop_down(ids!(type_selector))
                 .set_labels(cx, store.setting_store.types.clone());
-            if store.datas_store.datas.is_empty() {
+            if store.datas_store.export_datas.is_empty() {
                 self.view.button(ids!(export_btn)).set_disabled(cx, true);
             } else {
                 self.view.button(ids!(export_btn)).set_disabled(cx, false);
@@ -194,7 +194,7 @@ impl WidgetMatchEvent for ExportScreen {
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<ExportAction>() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    store.datas_store.datas = data_action.data.clone();
+                    store.datas_store.export_datas = data_action.data.clone();
                     qty_label.set_text(cx, &format!("总数量: {} PCS", data_action.data.len()));
                 }
             }
@@ -225,9 +225,9 @@ impl WidgetMatchEvent for ExportScreen {
         if export_btn.clicked(actions) {
             let processor = self.export_processor.as_ref().unwrap().clone();
             if let Some(store) = scope.data.get_mut::<Store>() {
-                if !store.datas_store.datas.is_empty() {
+                if !store.datas_store.export_datas.is_empty() {
                     let type_name = type_name.clone().selected_label();
-                    let data = store.datas_store.datas.clone();
+                    let data = store.datas_store.export_datas.clone();
                     rt.spawn(async move {
                         let res = processor.export(type_name, data).await;
                         match res {

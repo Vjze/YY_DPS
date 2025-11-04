@@ -1,10 +1,12 @@
 use async_trait::async_trait;
 use makepad_widgets::Cx;
 use std::{collections::HashMap, sync::Arc};
-
+pub mod row;
+pub mod table;
 use crate::{
     querys::works::{
-        box_querys::get_box_datas, carton_querys::get_carton_datas, export2excel::sn_export, sn_query::sn_query_datas
+        box_querys::get_box_datas, carton_querys::get_carton_datas, export2excel::sn_export,
+        sn_query::sn_query_datas,
     },
     utils::error::MyError,
 };
@@ -12,6 +14,8 @@ pub mod querys_view;
 pub mod works;
 pub fn live_design(cx: &mut Cx) {
     querys_view::live_design(cx);
+    row::live_design(cx);
+    table::live_design(cx);
 }
 
 #[async_trait]
@@ -43,7 +47,10 @@ pub trait DatasQuery: Send + Sync {
         test_devices: String,
         worker: String,
     ) -> Result<Vec<HashMap<String, String>>, MyError>;
-    async fn data_export(&self, datas: Vec<HashMap<String, String>>) -> anyhow::Result<String, MyError>;
+    async fn data_export(
+        &self,
+        datas: Vec<HashMap<String, String>>,
+    ) -> anyhow::Result<String, MyError>;
 }
 
 pub struct DatasQueryer;
@@ -93,7 +100,10 @@ impl DatasQuery for DatasQueryer {
         )
         .await
     }
-    async fn data_export(&self, datas: Vec<HashMap<String, String>>) -> anyhow::Result<String, MyError> {
+    async fn data_export(
+        &self,
+        datas: Vec<HashMap<String, String>>,
+    ) -> anyhow::Result<String, MyError> {
         sn_export(datas).await
     }
 }

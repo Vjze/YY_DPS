@@ -14,7 +14,7 @@ live_design! {
     use crate::shared::styles::*;
     use crate::shared::modal::*;
     use crate::shared::widgets::*;
-    use crate::widgets::table::InfosTable;
+    use crate::querys::table::InfosTable;
     FirstRow = <View> {
         width: Fill,
         height: Fit,
@@ -394,7 +394,7 @@ impl LiveHook for QueryScreen {
 impl Widget for QueryScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
-            if store.datas_store.datas.is_empty() {
+            if store.datas_store.query_datas.is_empty() {
                 self.view.button(ids!(export_btn)).set_disabled(cx, true);
             } else {
                 self.view.button(ids!(export_btn)).set_disabled(cx, false);
@@ -428,7 +428,7 @@ impl WidgetMatchEvent for QueryScreen {
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<QueryAction>() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    store.datas_store.datas = data_action.data.clone();
+                    store.datas_store.query_datas = data_action.data.clone();
                     let qty = format!("总数量: {} PCS", data_action.data.len());
                     qty_label.set_text(cx, &qty);
                 }
@@ -527,8 +527,8 @@ impl WidgetMatchEvent for QueryScreen {
         if export_btn.clicked(actions) {
             let processor = self.datas_query_processor.as_ref().unwrap().clone();
             if let Some(store) = scope.data.get::<Store>() {
-                if !store.datas_store.datas.is_empty() {
-                    let data = store.datas_store.datas.clone();
+                if !store.datas_store.query_datas.is_empty() {
+                    let data = store.datas_store.query_datas.clone();
                     rt.spawn(async move {
                         let res = processor.data_export(data).await;
                         match res {

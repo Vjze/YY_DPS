@@ -7,9 +7,8 @@ live_design!(
     use link::theme::*;
     use link::shaders::*;
     use link::widgets::*;
-
-    use crate::shared::widgets::*;
     use crate::shared::styles::*;
+    use crate::shared::widgets::*;
 
     pub AddTemplateNameModal = {{AddTemplateNameModal}} {
         width: Fit,

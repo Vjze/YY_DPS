@@ -1,6 +1,6 @@
+use crate::store::Store;
 use makepad_widgets::*;
 use std::collections::HashMap;
-use crate::store::Store;
 
 live_design! {
     use link::theme::*;
@@ -8,8 +8,8 @@ live_design! {
     use link::widgets::*;
     use crate::shared::styles::*;
     use crate::shared::widgets::*;
-    use crate::widgets::row::*;
-    RowHeaderLabel = <View> {
+    use crate::export::export_row::*;
+    ExRowHeaderLabel = <View> {
         // width: 100,
         height: Fit
         align: {x: 0.5, y: 0.5  }
@@ -23,7 +23,7 @@ live_design! {
             }
         }
     }
-    HeaderRow = <View> {
+    ExHeaderRow = <View> {
         align: {x: 0.0, y: 0.5}
         width: Fill
         height: Fit,
@@ -35,32 +35,32 @@ live_design! {
             }
         }
 
-        <RowHeaderLabel> {width: Fill {
+        <ExRowHeaderLabel> {width: Fill {
                                 weight: 2.0
                             }, label = {text: "箱号"} }
-        <RowHeaderLabel> {width: Fill {
+        <ExRowHeaderLabel> {width: Fill {
                                 weight: 2.0
-                            }, label = {text: "盒号"} }      
-        <RowHeaderLabel> {width: Fill {
+                            }, label = {text: "盒号"} }
+        <ExRowHeaderLabel> {width: Fill {
                                 weight: 2.0
                             }, label = {text: "Sn"} }
-        <RowHeaderLabel> {width: Fill {
+        <ExRowHeaderLabel> {width: Fill {
                                 weight: 0.8
                             }, label = {text: "Ith"} }
-        <RowHeaderLabel> {width: Fill {
+        <ExRowHeaderLabel> {width: Fill {
                                 weight: 0.8
                             }, label = {text: "Po"} }
-        <RowHeaderLabel> {width: Fill {
+        <ExRowHeaderLabel> {width: Fill {
                                 weight: 0.8
                             }, label = {text: "Se"} }
-        <RowHeaderLabel> {width: Fill {
+        <ExRowHeaderLabel> {width: Fill {
                                 weight: 0.8
                             }, label = {text: "Sen"} }
-        <RowHeaderLabel> {width: Fill {
+        <ExRowHeaderLabel> {width: Fill {
                                 weight: 2.0
                             }, label = {text: "测试时间"} }
     }
-    pub InfosTable = {{InfosTable}} <RoundedShadowView> {
+    pub ExTable = {{ExTable}} <RoundedShadowView> {
             width: Fill,
             height: Fill,
             show_bg: true
@@ -72,13 +72,13 @@ live_design! {
                 shadow_offset: vec2(0.0,-1.5)
             }
             flow: Down,
-            HeaderRow = <HeaderRow> {
+            ExHeaderRow = <ExHeaderRow> {
                 cursor: Default
             }
             list = <PortalList> {
                 drag_scrolling: false
 
-                ItemRow = <DataRow> {
+                ExItemRow = <ExDataRow> {
                     cursor: Default
                 }
             }
@@ -88,38 +88,39 @@ live_design! {
 }
 
 #[derive(Live, LiveHook, Widget)]
-pub struct InfosTable {
+pub struct ExTable {
     #[deref]
     view: View,
-    #[rust]
-    data: Vec<HashMap<String, String>>,
 }
 
-impl Widget for InfosTable {
+impl Widget for ExTable {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        if let Some(props) = scope.data.get::<Store>() {
-            if !props.datas_store.datas.is_empty() {
-                self.data = props.datas_store.datas.clone();
-            }
-
-        }
+        // if let Some(props) = scope.data.get::<Store>() {
+        //     if !props.datas_store.datas.is_empty() {
+        //         self.data = props.datas_store.datas.clone();
+        //     }
+        // }
         self.view.handle_event(cx, event, scope);
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
-        let entries_count = self.data.clone().len();
-        let last_item_id = if entries_count > 0 { entries_count } else { 0 };
+        // let entries_count = self.data.clone().len();
+        // let last_item_id = if entries_count > 0 { entries_count } else { 0 };
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
-            if let Some(mut list) = item.as_portal_list().borrow_mut() {
-                list.set_item_range(cx, 0, last_item_id);
-                while let Some(item_id) = list.next_visible_item(cx) {
-                    if item_id < last_item_id {
-                        let template = live_id!(ItemRow);
-                        let item = list.item(cx, item_id, template);
+            if let Some(store) = scope.data.get::<Store>() {
+                let entries_count = store.datas_store.export_datas.clone().len();
+                let last_item_id = if entries_count > 0 { entries_count } else { 0 };
+                if let Some(mut list) = item.as_portal_list().borrow_mut() {
+                    list.set_item_range(cx, 0, last_item_id);
+                    while let Some(item_id) = list.next_visible_item(cx) {
+                        if item_id < last_item_id {
+                            let template = live_id!(ExItemRow);
+                            let item = list.item(cx, item_id, template);
 
-                        let mut file_data = self.data[item_id].clone();
-                        let mut scope = Scope::with_data(&mut file_data);
-                        item.draw_all(cx, &mut scope);
+                            let mut file_data = store.datas_store.export_datas[item_id].clone();
+                            let mut scope = Scope::with_data(&mut file_data);
+                            item.draw_all(cx, &mut scope);
+                        }
                     }
                 }
             }
@@ -127,6 +128,6 @@ impl Widget for InfosTable {
         DrawStep::done()
     }
 }
-impl WidgetMatchEvent for InfosTable {
+impl WidgetMatchEvent for ExTable {
     fn handle_actions(&mut self, _cx: &mut Cx, _e: &Actions, _scope: &mut Scope) {}
 }

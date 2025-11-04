@@ -11,9 +11,8 @@ live_design! {
     use link::theme::*;
     use link::shaders::*;
     use link::widgets::*;
-
-    use crate::shared::widgets::*;
     use crate::shared::styles::*;
+    use crate::shared::widgets::*;
     use crate::settings::type_add_template_modal::AddTemplateNameModal;
     EXCEL_ICON = dep("crate://self/resources/images/excel.png");
 
