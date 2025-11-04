@@ -1,7 +1,9 @@
+cargo-features = ["codegen-backend"]
 [package]
 name = "yy_dps"
 version = "0.1.0"
 edition = "2024"
+
 
 [dependencies]
 # makepad-widgets ={ git = "https://github.com/makepad/makepad",branch = "dev"} 
@@ -34,6 +36,7 @@ rust_xlsxwriter = "0.90"
 crossbeam-queue = "0.3.8"
 calamine = "0.31"
 async-trait = "0.1"
+
 
 [package.metadata.packager]
 product_name = "yy_dps"
@@ -86,9 +89,15 @@ appdata_paths = [
     "$APPDATA/$PUBLISHER/$PRODUCTNAME",
     "$LOCALAPPDATA/$PRODUCTNAME",
 ]
+
 [profile.release]
 opt-level = "s" 
 lto = true
 panic = "abort" 
 strip = true
 codegen-units = 1
+
+
+
+[profile.dev]
+codegen-backend = "cranelift"

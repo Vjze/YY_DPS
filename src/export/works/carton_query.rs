@@ -129,7 +129,7 @@ pub async fn carton_query_datas(
 
     // 4. 获取测试数据 (与原逻辑相同, 包括并行处理 > 1000 SNs)
     let sn_list_chunks = sn_placeholders
-        .chunks(1400) // SQL Server IN 子句限制约 2100, 900 是个安全数
+        .chunks(1000) // SQL Server IN 子句限制约 2100, 900 是个安全数
         .map(|chunk| chunk.join(", "))
         .collect::<Vec<String>>();
 
