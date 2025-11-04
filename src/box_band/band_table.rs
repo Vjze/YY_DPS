@@ -147,24 +147,24 @@ impl Widget for BandDataRow {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if let Some(data) = scope.data.get::<BoxBandData>() {
             let carton_nos = data.carton_no.clone();
-            let label = self.label(id!(h_wrapper.carton_no.label));
+            let label = self.label(ids!(h_wrapper.carton_no.label));
             label.set_text(cx, &carton_nos);
 
             let box_nos = data.box_no.clone();
-            let label = self.label(id!(old_box_no.label));
+            let label = self.label(ids!(old_box_no.label));
             label.set_text(cx, &box_nos.to_string());
 
             let nwe_box_nos = data.new_box_no.clone();
-            let label = self.label(id!(new_box_no.label));
+            let label = self.label(ids!(new_box_no.label));
             label.set_text(cx, &nwe_box_nos);
 
             let pns = data.pn.clone();
-            let label = self.label(id!(pn.label));
+            let label = self.label(ids!(pn.label));
             label.set_text(cx, &pns);
 
 
             let bandtimes = data.create_time.clone();
-            let label = self.label(id!(bandtime.label));
+            let label = self.label(ids!(bandtime.label));
             label.set_text(cx, &bandtimes);
         };
 

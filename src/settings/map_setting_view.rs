@@ -184,7 +184,7 @@ impl Widget for MapView {
         if let Some(store) = scope.data.get_mut::<Store>() {
             if !store.setting_store.templates.is_empty() {
                 self.view
-                    .drop_down(id!(template_selector))
+                    .drop_down(ids!(template_selector))
                     .set_labels(cx, store.setting_store.templates.clone());
             };
         }
@@ -199,10 +199,10 @@ impl Widget for MapView {
 
 impl WidgetMatchEvent for MapView {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let select = self.view.drop_down(id!(template_selector));
-        let update_btn = self.view.button(id!(update_template_btn));
-        let delete_btn = self.view.button(id!(delete_template_btn));
-        let clear_btn = self.view.button(id!(clear_template_btn));
+        let select = self.view.drop_down(ids!(template_selector));
+        let update_btn = self.view.button(ids!(update_template_btn));
+        let delete_btn = self.view.button(ids!(delete_template_btn));
+        let clear_btn = self.view.button(ids!(clear_template_btn));
         if let Some(value) = select.changed_label(actions) {
             let rt = self.rt.handle().clone();
             let _guard = rt.enter();
@@ -241,7 +241,7 @@ impl WidgetMatchEvent for MapView {
             };
         }
         if delete_btn.clicked(actions) {
-            self.modal(id!(delete_modal)).open(cx);
+            self.modal(ids!(delete_modal)).open(cx);
         }
         if clear_btn.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
@@ -250,7 +250,7 @@ impl WidgetMatchEvent for MapView {
         }
         for action in actions {
             if let Some(DeleteModalAction::Close) = action.downcast_ref() {
-                self.modal(id!(delete_modal)).close(cx);
+                self.modal(ids!(delete_modal)).close(cx);
             }
             if let Some(DeleteModalAction::Action) = action.downcast_ref() {
                 let template_name = select.text().clone();

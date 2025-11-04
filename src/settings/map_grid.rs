@@ -134,9 +134,9 @@ impl Widget for MapRow {
                         let key = &keys[global_idx]; // 获取正确全局索引的 key
                         // 使用行内索引 i 来创建项
                         let item = list.item(cx, i, live_id!(MapItem));
-                        let widget_id = item.drop_down(id!(map_selector)).widget_uid();
-                        let map_name = item.label(id!(map_name));
-                        let map_selector = item.drop_down(id!(map_selector));
+                        let widget_id = item.drop_down(ids!(map_selector)).widget_uid();
+                        let map_name = item.label(ids!(map_name));
+                        let map_selector = item.drop_down(ids!(map_selector));
                         let store_value = values.get(key).clone().unwrap();
                         self.ids.insert(widget_id, key.clone());
                         map_name.set_text(cx, &key);
@@ -159,9 +159,9 @@ impl Widget for MapRow {
 }
 impl WidgetMatchEvent for MapRow {
     fn handle_actions(&mut self, _cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let list_widget = self.view.portal_list(id!(map_row));
+        let list_widget = self.view.portal_list(ids!(map_row));
         for (_, item_widget) in list_widget.items_with_actions(actions) {
-            let map_selector = item_widget.drop_down(id!(map_selector));
+            let map_selector = item_widget.drop_down(ids!(map_selector));
             if let Some(selected) = map_selector.changed_label(actions) {
                 let id = map_selector.widget_uid();
                 if let Some(i) = self.ids.get(&id) {

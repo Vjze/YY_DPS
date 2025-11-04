@@ -68,39 +68,39 @@ impl Widget for ImportRow {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if let Some(data) = scope.data.get::<ImportDBDatas>() {
             let sns = data.sn.clone();
-            let label = self.label(id!(sn.label));
+            let label = self.label(ids!(sn.label));
             label.set_text(cx, &sns);
 
             let condition_unit = data.condition_unit.clone();
-            let label = self.label(id!(condition_unit.label));
+            let label = self.label(ids!(condition_unit.label));
             label.set_text(cx, &condition_unit);
 
             let iths = data.ith.clone();
-            let label = self.label(id!(ith.label));
+            let label = self.label(ids!(ith.label));
             label.set_text(cx, &iths);
 
             let ses = data.se.clone();
-            let label = self.label(id!(se.label));
+            let label = self.label(ids!(se.label));
             label.set_text(cx, &ses);
 
             let pos = data.po.clone();
-            let label = self.label(id!(po.label));
+            let label = self.label(ids!(po.label));
             label.set_text(cx, &pos);
 
             let vfs = data.vf.clone();
-            let label = self.label(id!(vf.label));
+            let label = self.label(ids!(vf.label));
             label.set_text(cx, &vfs);
 
             let ims = data.im.clone();
-            let label = self.label(id!(im.label));
+            let label = self.label(ids!(im.label));
             label.set_text(cx, &ims);
 
             let sens = data.sen.clone();
-            let label = self.label(id!(sen.label));
+            let label = self.label(ids!(sen.label));
             label.set_text(cx, &sens);
 
             let iccs = data.icc.clone();
-            let label = self.label(id!(icc.label));
+            let label = self.label(ids!(icc.label));
             label.set_text(cx, &iccs);
         };
         self.view.draw_walk(cx, scope, walk)

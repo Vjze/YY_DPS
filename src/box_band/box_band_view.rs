@@ -229,11 +229,11 @@ impl Widget for BoxBandView {
 
 impl WidgetMatchEvent for BoxBandView {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let query_btn = self.view.button(id!(query_btn));
-        let band_btn = self.view.button(id!(band_btn));
-        let carton_input = self.view.text_input(id!(carton_input));
-        let boxs_num = self.view.label(id!(boxs_num));
-        let new_box_input = self.view.text_input(id!(new_box_no_input));
+        let query_btn = self.view.button(ids!(query_btn));
+        let band_btn = self.view.button(ids!(band_btn));
+        let carton_input = self.view.text_input(ids!(carton_input));
+        let boxs_num = self.view.label(ids!(boxs_num));
+        let new_box_input = self.view.text_input(ids!(new_box_no_input));
         
         let rt = self.rt.handle().clone();for action in actions {
             if let Some(data_action) = action.downcast_ref::<BoxBandAction>() {

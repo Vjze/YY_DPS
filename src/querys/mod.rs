@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use makepad_widgets::Cx;
 use std::{collections::HashMap, sync::Arc};
-
+pub mod row;
+pub mod tabel;
 use crate::{
     querys::works::{
         box_querys::get_box_datas, carton_querys::get_carton_datas, export2excel::sn_export, sn_query::sn_query_datas
@@ -12,6 +13,8 @@ pub mod querys_view;
 pub mod works;
 pub fn live_design(cx: &mut Cx) {
     querys_view::live_design(cx);
+    row::live_design(cx);
+    tabel::live_design(cx);
 }
 
 #[async_trait]

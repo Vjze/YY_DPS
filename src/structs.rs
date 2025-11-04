@@ -18,7 +18,7 @@ pub struct Data {
     pub res: String,
     pub icc: String,
     pub idark: String,
-    pub testtime: String,
+    pub testdate: String,
     pub result: String,
     pub tester: String,
     pub i_xtalk: String,

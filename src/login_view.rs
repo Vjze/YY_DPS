@@ -163,10 +163,10 @@ impl Widget for LoginScreen {
 
 impl WidgetMatchEvent for LoginScreen {
     fn handle_actions(&mut self, _cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let user_name = self.view.text_input(id!(user_name));
-        let user_password = self.view.text_input(id!(use_password));
-        let free_btn = self.view.button(id!(free_btn));
-        let login_btn = self.view.button(id!(login_btn));
+        let user_name = self.view.text_input(ids!(user_name));
+        let user_password = self.view.text_input(ids!(use_password));
+        let free_btn = self.view.button(ids!(free_btn));
+        let login_btn = self.view.button(ids!(login_btn));
         if login_btn.clicked(actions) || user_password.returned(actions).is_some() {
             if user_name.text().is_empty() {
                 Cx::post_action(MyError::LoginError(format!("用户名不能为空!!!")));

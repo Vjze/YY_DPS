@@ -30,7 +30,7 @@ fn format_data(data: Vec<Data>) -> Vec<HashMap<String, String>> {
             map.insert("vbr".to_string(), d.vbr);
             map.insert("kink".to_string(), d.kink);
             map.insert("imkink".to_string(), d.imkink);
-            map.insert("testtime".to_string(), d.testtime);
+            map.insert("testdate".to_string(), d.testdate);
             map.insert("tester".to_string(), d.tester);
             map.insert("iop".to_string(), d.iop);
             map.insert("idark".to_string(), d.idark);
@@ -246,7 +246,7 @@ pub async fn execute_query_sn(
             vbr: row.get::<&str, _>(10).unwrap_or("0.00").to_string(),
             kink: kink.to_string(),
             imkink: imkink.to_string(),
-            testtime: row
+            testdate: row
                 .get::<NaiveDateTime, _>(13)
                 .unwrap()
                 .format("%Y-%m-%d %H:%M:%S")

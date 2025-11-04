@@ -213,7 +213,7 @@ pub async fn carton_query_datas(
             map.insert("res".to_string(), d.sn_data.res);
             map.insert("icc".to_string(), d.sn_data.icc);
             map.insert("idark".to_string(), d.sn_data.idark);
-            map.insert("testtime".to_string(), d.sn_data.testtime);
+            map.insert("testdate".to_string(), d.sn_data.testdate);
             map.insert("result".to_string(), d.sn_data.result);
             map.insert("tester".to_string(), d.sn_data.tester);
             map.insert("i_xtalk".to_string(), d.sn_data.i_xtalk);
@@ -423,7 +423,7 @@ pub async fn execute_query(
             vbr: row.get::<&str, _>(10).unwrap_or("0.00").to_string(),
             kink: kink.to_string(),
             imkink: imkink.to_string(),
-            testtime: row
+            testdate: row
                 .get::<NaiveDateTime, _>(13)
                 .unwrap()
                 .format("%Y-%m-%d %H:%M:%S")

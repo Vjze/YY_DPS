@@ -162,7 +162,7 @@ impl Widget for ErrorDialog {
 }
 impl WidgetMatchEvent for ErrorDialog {
     fn handle_actions(&mut self, _cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        let accept_button = self.button(id!(accept_button));
+        let accept_button = self.button(ids!(accept_button));
         let accept_button_clicked = accept_button.clicked(actions);
         if accept_button_clicked {
             Cx::post_action(ErrprModalAction::Close);
@@ -171,7 +171,7 @@ impl WidgetMatchEvent for ErrorDialog {
 }
 impl ErrorDialog {
     fn initialize_with_data(&mut self, cx: &mut Cx, error_text: String) {
-        self.label(id!(prompt)).set_text(cx, &error_text);
+        self.label(ids!(prompt)).set_text(cx, &error_text);
     }
 }
 

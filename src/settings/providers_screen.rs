@@ -96,9 +96,9 @@ impl Widget for ProvidersScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         // if let Some(store) = scope.data.get_mut::<Store>(){
         //     if store.logined {
-        //         self.view.modal(id!(login_view)).close(cx);
+        //         self.view.modal(ids!(login_view)).close(cx);
         //     }else{
-        //         self.view.modal(id!(login_view)).open(cx);
+        //         self.view.modal(ids!(login_view)).open(cx);
         //     }
         // }
         self.view.handle_event(cx, event, scope);
@@ -112,7 +112,7 @@ impl Widget for ProvidersScreen {
 
 impl WidgetMatchEvent for ProvidersScreen {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        let stack_navigation = self.stack_navigation(id!(navigation));
+        let stack_navigation = self.stack_navigation(ids!(navigation));
         stack_navigation.handle_stack_view_actions(cx, actions);
 
         for action in actions {
@@ -126,44 +126,44 @@ impl WidgetMatchEvent for ProvidersScreen {
             match view {
                 "类型设置" => {
                     self.view
-                        .widget(id!(setting_view))
-                        .widget(id!(type_frame))
+                        .widget(ids!(setting_view))
+                        .widget(ids!(type_frame))
                         .set_visible(cx, true);
                     self.view
-                        .widget(id!(setting_view))
-                        .widget(id!(template_frame))
+                        .widget(ids!(setting_view))
+                        .widget(ids!(template_frame))
                         .set_visible(cx, false);
                     self.view
-                        .widget(id!(setting_view))
-                        .widget(id!(map_frame))
+                        .widget(ids!(setting_view))
+                        .widget(ids!(map_frame))
                         .set_visible(cx, false);
                 }
                 "模板设置" => {
                     self.view
-                        .widget(id!(setting_view))
-                        .widget(id!(type_frame))
+                        .widget(ids!(setting_view))
+                        .widget(ids!(type_frame))
                         .set_visible(cx, false);
                     self.view
-                        .widget(id!(setting_view))
-                        .widget(id!(template_frame))
+                        .widget(ids!(setting_view))
+                        .widget(ids!(template_frame))
                         .set_visible(cx, true);
                     self.view
-                        .widget(id!(setting_view))
-                        .widget(id!(map_frame))
+                        .widget(ids!(setting_view))
+                        .widget(ids!(map_frame))
                         .set_visible(cx, false);
                 }
                 _ => {
                     self.view
-                        .widget(id!(setting_view))
-                        .widget(id!(type_frame))
+                        .widget(ids!(setting_view))
+                        .widget(ids!(type_frame))
                         .set_visible(cx, false);
                     self.view
-                        .widget(id!(setting_view))
-                        .widget(id!(template_frame))
+                        .widget(ids!(setting_view))
+                        .widget(ids!(template_frame))
                         .set_visible(cx, false);
                     self.view
-                        .widget(id!(setting_view))
-                        .widget(id!(map_frame))
+                        .widget(ids!(setting_view))
+                        .widget(ids!(map_frame))
                         .set_visible(cx, true);
                 }
             }

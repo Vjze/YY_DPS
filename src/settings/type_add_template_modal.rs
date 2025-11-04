@@ -240,7 +240,7 @@ impl Widget for AddTemplateNameModal {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
             if store.setting_store.templates.len() > 0 {
-                let dropdown = self.view.drop_down(id!(template_select));
+                let dropdown = self.view.drop_down(ids!(template_select));
                 let templates_all = store.setting_store.templates.clone();
                 let template_haved = store.setting_store.type_infos.0.clone();
                 let templates_set: HashSet<_> = templates_all.iter().collect();
@@ -271,17 +271,17 @@ impl Widget for AddTemplateNameModal {
 }
 impl WidgetMatchEvent for AddTemplateNameModal {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        let accept_button = self.button(id!(accept_button));
-        let cancel_button = self.button(id!(cancel_button));
-        let template_select = self.drop_down(id!(template_select));
+        let accept_button = self.button(ids!(accept_button));
+        let cancel_button = self.button(ids!(cancel_button));
+        let template_select = self.drop_down(ids!(template_select));
         if cancel_button.clicked(actions) {
             Cx::post_action(TemplateNameModalAction::Close);
         }
         if accept_button.clicked(actions) {
             if template_select.selected_label().is_empty() {
-                self.label(id!(error)).set_text(cx, "选择框不能为空!!");
+                self.label(ids!(error)).set_text(cx, "选择框不能为空!!");
             } else if template_select.selected_label().contains(" (已存在)") {
-                self.label(id!(error))
+                self.label(ids!(error))
                     .set_text(cx, "模板已存在该型号里面,无法进行重复添加!!");
             } else {
                 let template_name = template_select.selected_label();

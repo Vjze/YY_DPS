@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
-use crate::{export::Exportable, store::Store};
+use crate::{export::Exportable, store::Store, widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification}};
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -12,7 +12,7 @@ live_design! {
     use crate::shared::styles::*;
     use crate::shared::modal::*;
     use crate::shared::widgets::*;
-    use crate::widgets::table::InfosTable;
+    use crate::export::export_tabel::*;
     FirstRow = <View> {
         width: Fill,
         height: Fit,
@@ -141,7 +141,7 @@ live_design! {
             padding: 15,
             spacing: 10,
             <FirstRow> {}
-            <InfosTable> {}
+            <ExTable> {}
         }
     }
 }
@@ -167,12 +167,12 @@ impl Widget for ExportScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
             self.view
-                .drop_down(id!(type_selector))
+                .drop_down(ids!(type_selector))
                 .set_labels(cx, store.setting_store.types.clone());
-            if store.datas_store.datas.is_empty(){
-                self.view.button(id!(export_btn)).set_disabled(cx, true);
+            if store.datas_store.export_datas.is_empty(){
+                self.view.button(ids!(export_btn)).set_disabled(cx, true);
             } else {
-                self.view.button(id!(export_btn)).set_disabled(cx, false);
+                self.view.button(ids!(export_btn)).set_disabled(cx, false);
             }
         }
         self.widget_match_event(cx, event, scope);
@@ -186,18 +186,23 @@ impl Widget for ExportScreen {
 
 impl WidgetMatchEvent for ExportScreen {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let input = self.view.text_input(id!(carton_input));
-        let query_btn = self.view.button(id!(query_btn));
-        let export_btn = self.view.button(id!(export_btn));
-        let type_name = self.view.drop_down(id!(type_selector));
-        let qty_label = self.label(id!(qty_label));
+        let input = self.view.text_input(ids!(carton_input));
+        let query_btn = self.view.button(ids!(query_btn));
+        let export_btn = self.view.button(ids!(export_btn));
+        let type_name = self.view.drop_down(ids!(type_selector));
+        let qty_label = self.label(ids!(qty_label));
         let rt = self.rt.handle().clone();
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<ExportAction>() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    store.datas_store.datas = data_action.data.clone();
+                    store.datas_store.export_datas = data_action.data.clone();
                     let qty = format!("总数量: {} PCS",data_action.data.len());
                     qty_label.set_text(cx, &qty);
+                    enqueue_popup_notification(PopupItem {
+                        kind: PopupKind::Success,
+                        auto_dismissal_duration: Some(2.5),
+                        message: "查询完成，可以进行导出.".to_string(),
+                    });
                 }
             }
         }
@@ -208,6 +213,10 @@ impl WidgetMatchEvent for ExportScreen {
         }
 
         if query_btn.clicked(actions) {
+            if let Some(store) = scope.data.get_mut::<Store>() {
+                store.datas_store.export_datas.clear();
+                qty_label.set_text(cx, "总数量: 0 PCS");
+            }
             let processor = self.export_processor.as_ref().unwrap().clone();
             let carton = input.text().clone();
             let is_multi = query_btn.text() == "批量查询";
@@ -228,9 +237,9 @@ impl WidgetMatchEvent for ExportScreen {
         if export_btn.clicked(actions) {
             let processor = self.export_processor.as_ref().unwrap().clone();
             if let Some(store) = scope.data.get_mut::<Store>() {
-                if !store.datas_store.datas.is_empty() {
+                if !store.datas_store.export_datas.is_empty() {
                     let type_name = type_name.clone().selected_label();
-                    let data = store.datas_store.datas.clone();
+                    let data = store.datas_store.export_datas.clone();
                     rt.spawn(async move {
                         let res = processor.export(type_name, data).await;
                         match res {

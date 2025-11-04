@@ -13,7 +13,8 @@ use crate::{
 
 #[derive(Debug, Default, Clone)]
 pub struct DatasStore {
-    pub datas:Vec<HashMap<String, String>>,
+    pub export_datas: Vec<HashMap<String, String>>,
+    pub query_datas: Vec<HashMap<String, String>>,
 }
 
 #[derive(Debug, Default, Clone)]

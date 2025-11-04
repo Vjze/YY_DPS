@@ -111,11 +111,11 @@ impl Widget for FixedRow {
                         let key = &keys[global_idx]; // 获取正确全局索引的 key
                         // 使用行内索引 i 来创建项
                         let item = list.item(cx, i, live_id!(FixedItem));
-                        let widget_id = item.text_input(id!(fixed_input)).widget_uid();
-                        let fixed_name = item.label(id!(fixed_name));
+                        let widget_id = item.text_input(ids!(fixed_input)).widget_uid();
+                        let fixed_name = item.label(ids!(fixed_name));
                         self.ids.insert(widget_id, key.clone());
                         fixed_name.set_text(cx, &key);
-                        let fixed_input = item.text_input(id!(fixed_input));
+                        let fixed_input = item.text_input(ids!(fixed_input));
                         let store_value = values.get(&key.clone())
                             .map(|v| v.to_string())
                             .unwrap_or_default();
@@ -136,9 +136,9 @@ impl Widget for FixedRow {
 }
 impl WidgetMatchEvent for FixedRow {
     fn handle_actions(&mut self, _cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let list_widget = self.view.portal_list(id!(fixed_row));
+        let list_widget = self.view.portal_list(ids!(fixed_row));
         for (_, item_widget) in list_widget.items_with_actions(actions) {
-            let text_input = item_widget.text_input(id!(fixed_input));
+            let text_input = item_widget.text_input(ids!(fixed_input));
             if let Some(input) = text_input.changed(actions) {
                 let id = text_input.widget_uid();
                 if let Some(i) = self.ids.get(&id) {

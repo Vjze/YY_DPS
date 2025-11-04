@@ -145,7 +145,7 @@ impl Widget for Providers {
 
                         // hide the separator for the first item
                         if item_id == 0 {
-                            item.view(id!(separator)).set_visible(cx, false);
+                            item.view(ids!(separator)).set_visible(cx, false);
                         }
 
                         let provider = all_providers[item_id];
@@ -194,7 +194,7 @@ impl Widget for ProviderItem {
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         // Update the label
-        self.label(id!(provider_name_label))
+        self.label(ids!(provider_name_label))
             .set_text(cx, &self.provider);
 
         self.view.draw_walk(cx, scope, walk)
@@ -203,7 +203,7 @@ impl Widget for ProviderItem {
 
 impl WidgetMatchEvent for ProviderItem {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        let was_item_clicked = self.view(id!(main_view)).finger_up(actions).is_some();
+        let was_item_clicked = self.view(ids!(main_view)).finger_up(actions).is_some();
         if was_item_clicked {
             cx.action(ConnectionSettingsAction::ProviderSelected(
                 self.provider.clone(),
@@ -219,10 +219,10 @@ impl ProviderItemRef {
         };
         inner.provider = provider.clone();
 
-        inner.view(id!(image_wrapper)).set_visible(cx, false);
+        inner.view(ids!(image_wrapper)).set_visible(cx, false);
 
         // Show the label
-        let label_view = inner.view(id!(label_wrapper));
+        let label_view = inner.view(ids!(label_wrapper));
         label_view.set_visible(cx, true);
 
         // Get first character of the provider name
@@ -233,7 +233,7 @@ impl ProviderItemRef {
             .unwrap_or_default();
 
         label_view
-            .label(id!(initial_label))
+            .label(ids!(initial_label))
             .set_text(cx, &first_char);
         // }
 

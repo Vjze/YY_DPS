@@ -9,7 +9,7 @@ use std::collections::{HashMap, HashSet};
 use tiberius::Query;
 use tracing::info;
 
-// 采用参数绑定重构后的函数
+#[allow(unused_assignments)]
 pub async fn get_box_datas(
     box_no: String,
     use_time: bool,
@@ -187,7 +187,7 @@ pub async fn get_box_datas(
             map.insert("res".to_string(), d.sn_data.res);
             map.insert("icc".to_string(), d.sn_data.icc);
             map.insert("idark".to_string(), d.sn_data.idark);
-            map.insert("testtime".to_string(), d.sn_data.testtime);
+            map.insert("testdate".to_string(), d.sn_data.testdate);
             map.insert("result".to_string(), d.sn_data.result);
             map.insert("tester".to_string(), d.sn_data.tester);
             map.insert("i_xtalk".to_string(), d.sn_data.i_xtalk);
@@ -244,7 +244,7 @@ async fn get_sn_info(sns: String) -> anyhow::Result<Vec<Data>, MyError> {
             vbr: row.get::<&str, _>(10).unwrap_or("0.00").to_string(),
             kink: kink.to_string(),
             imkink: imkink.to_string(),
-            testtime: row
+            testdate: row
                 .get::<NaiveDateTime, _>(13)
                 .unwrap()
                 .format("%Y-%m-%d %H:%M:%S")
@@ -259,7 +259,7 @@ async fn get_sn_info(sns: String) -> anyhow::Result<Vec<Data>, MyError> {
         };
         // 只保留最新的测试数据
         if let Some(existing_data) = sn_map.get(&sn) {
-            if existing_data.testtime < data.testtime {
+            if existing_data.testdate < data.testdate {
                 sn_map.insert(sn.clone(), data);
             }
         } else {

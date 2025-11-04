@@ -129,8 +129,8 @@ impl Widget for TableRow {
                     for i in 0..2 {
                         let global_idx = first_idx + i;
                         let item = list.item(cx, i, live_id!(TableItem));
-                        let tabel_key_input = item.text_input(id!(tabel_key));
-                        let table_value_input = item.text_input(id!(table_value));
+                        let tabel_key_input = item.text_input(ids!(tabel_key));
+                        let table_value_input = item.text_input(ids!(table_value));
                         let key_id = tabel_key_input.widget_uid();
                         let value_id = table_value_input.widget_uid();
 
@@ -178,12 +178,12 @@ impl Widget for TableRow {
         //                     if let Some(props) = scope.props.get::<TableRowProps>() {
         //                         let row_idx = props.props;
         //                         let first_idx = row_idx * 2;
-        //                         let list_widget = self.view.portal_list(id!(table_row));
+        //                         let list_widget = self.view.portal_list(ids!(table_row));
         //                         for i in 0..2 {
         //                             let global_idx = first_idx + i;
         //                             let item = list_widget.item(cx, i, live_id!(TableItem));
-        //                             let tabel_key_input = item.text_input(id!(tabel_key));
-        //                             let table_value_input = item.text_input(id!(table_value));
+        //                             let tabel_key_input = item.text_input(ids!(tabel_key));
+        //                             let table_value_input = item.text_input(ids!(table_value));
         //                             let key_id = tabel_key_input.widget_uid();
         //                             let value_id = table_value_input.widget_uid();
 
@@ -217,10 +217,10 @@ impl Widget for TableRow {
 }
 impl WidgetMatchEvent for TableRow {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let list_widget = self.view.portal_list(id!(table_row));
+        let list_widget = self.view.portal_list(ids!(table_row));
         for (_, item_widget) in list_widget.items_with_actions(actions) {
-            let tabel_key_input = item_widget.text_input(id!(tabel_key));
-            let table_value_input = item_widget.text_input(id!(table_value));
+            let tabel_key_input = item_widget.text_input(ids!(tabel_key));
+            let table_value_input = item_widget.text_input(ids!(table_value));
 
             if let Some(new_key) = tabel_key_input.changed(actions) {
                 let id = tabel_key_input.widget_uid();
@@ -310,7 +310,7 @@ impl Widget for TableGrid {
         //                     let state = scope.data.get_mut::<Store>().unwrap();
         //                     let len = 2;
         //                     for row_idx in 0..len {
-        //                         let row = self.view.portal_list(id!(table_grid)).item(
+        //                         let row = self.view.portal_list(ids!(table_grid)).item(
         //                             cx,
         //                             row_idx,
         //                             live_id!(TableRow),
