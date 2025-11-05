@@ -1,10 +1,12 @@
 use std::collections::{HashMap, HashSet}; // 引入 HashSet
 
 use crate::{
-    configs::type_config::{Infos, get_type_infos}, structs::{BandData, CartonData, Data, Datas, PackData}, utils::{
+    configs::type_config::{Infos, get_type_infos},
+    structs::{BandData, CartonData, Data, Datas, PackData},
+    utils::{
         error::MyError,
         sql::{client, get_tables},
-    }
+    },
 };
 use bb8_tiberius::ConnectionManager;
 use chrono::NaiveDateTime;
@@ -12,9 +14,10 @@ use futures::{
     TryStreamExt as _,
     stream::{StreamExt as _, iter},
 };
+use tiberius_mappers::TryFromRow as _;
 use tokio::{
     fs,
-    io::{AsyncBufReadExt as _, BufReader}
+    io::{AsyncBufReadExt as _, BufReader},
 };
 use tracing::info;
 
@@ -213,7 +216,7 @@ pub async fn carton_query_datas(
             map.insert("res".to_string(), d.sn_data.res);
             map.insert("icc".to_string(), d.sn_data.icc);
             map.insert("idark".to_string(), d.sn_data.idark);
-            map.insert("testdate".to_string(), d.sn_data.testdate);
+            map.insert("testdate".to_string(), d.sn_data.testdate.format("%Y-%m-%d %H:%M:%S").to_string());
             map.insert("result".to_string(), d.sn_data.result);
             map.insert("tester".to_string(), d.sn_data.tester);
             map.insert("i_xtalk".to_string(), d.sn_data.i_xtalk);
@@ -237,7 +240,7 @@ async fn get_base_data_unified(
     // --- 1. (最终修复 CTE) 查找最新批次的 CreateTime 窗口 ---
     let cte = "WITH LatestBatchTime AS (
         -- 查找该箱号的绝对最新 CreateTime (T_max)
-        SELECT TOP 1 CreateTime AS MaxTime 
+        SELECT TOP 1 CreateTime AS MaxTime
         FROM [mes_Factory].[dbo].[packing_carton]
         WHERE CartonNo = @P1 AND PnOptionID = '-100'
         ORDER BY CreateTime DESC
@@ -279,7 +282,7 @@ async fn get_base_data_unified(
             "a.sn", "a.Pack_no", "a.pn", "a.creator", "a.createtime", "a.Pack_no", "b.CartonNo", "a.Pack_no",
         )
     };
-    
+
     // --- 3. 基础 SELECT 字段 (保持不变) ---
     let mut select_list = vec![
         format!("{} AS sn", sn_field),
@@ -293,7 +296,11 @@ async fn get_base_data_unified(
 
     // --- 4. PCH (批次号) 逻辑 (保持不变) ---
     if infos.is_have_pch {
-        let join_key = if infos.carton_pch { pch_join_key_carton } else { pch_join_key_box };
+        let join_key = if infos.carton_pch {
+            pch_join_key_carton
+        } else {
+            pch_join_key_box
+        };
         join_list.push(format!(
             "OUTER APPLY (SELECT TOP 1 c.parameter FROM [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c WHERE c.LABEL_KEY = {} ORDER BY c.CreateTime DESC) AS pch_log",
             join_key
@@ -307,7 +314,10 @@ async fn get_base_data_unified(
 
     // --- 5. Band (绑定) 逻辑 (保持不变) ---
     if infos.jz_band {
-        join_list.push(format!("LEFT JOIN [mes_Factory].[dbo].[QA_snRelation] qr ON {} = qr.sn", sn_field));
+        join_list.push(format!(
+            "LEFT JOIN [mes_Factory].[dbo].[QA_snRelation] qr ON {} = qr.sn",
+            sn_field
+        ));
         select_list.push("qr.SN_ShipMent AS b_sn".to_string());
         select_list.push(format!("{} AS w_sn", sn_field));
         select_list.push("qr.userno AS band_worker".to_string());
@@ -326,14 +336,13 @@ async fn get_base_data_unified(
         // 注意: 我们仍然保留了 b.CartonNo = @P1 AND b.PnOptionID = '-100' 作为最终 WHERE 条件
         // 因为 CTE TOP 1 无法保证只选择了 @P1 的 CartonNo（虽然在 CTE 里已过滤）
         "{0} SELECT {1} {2} {3} WHERE b.CartonNo = @P1 AND b.PnOptionID = '-100' ORDER BY b.Packing_no desc, {4} asc",
-        cte, 
-        select_clause, from_clause, join_clause, order_by_pack_no
+        cte, select_clause, from_clause, join_clause, order_by_pack_no
     );
 
     info!("执行统一 SQL 查询 (已最终优化): {}", sql);
     let mut client = pool.get().await.unwrap();
     // CartonNo 的值 @P1 现在被用于 CTE 内部
-    let stream = client.query(&sql, &[&carton]).await.unwrap(); 
+    let stream = client.query(&sql, &[&carton]).await.unwrap();
 
     // --- 7. 解析循环 (保持不变) ---
     let mut all_datas = Vec::new();
@@ -343,9 +352,13 @@ async fn get_base_data_unified(
     while let Ok(Some(row)) = rows.try_next().await {
         let sn = match row.get::<&str, _>("sn") {
             Some(s) => s.to_string(),
-            None => { continue; }
+            None => {
+                continue;
+            }
         };
-        if seen_sns.contains(&sn) { continue; }
+        if seen_sns.contains(&sn) {
+            continue;
+        }
 
         let year = row.get::<&str, _>("ExtractedYear").unwrap_or_default();
         let week = row.get::<&str, _>("ExtractedWeek").unwrap_or_default();
@@ -359,27 +372,58 @@ async fn get_base_data_unified(
         let carton_data = CartonData {
             carton_no: carton.clone(),
             yypn: row.get::<&str, _>("yypn").unwrap_or_default().to_string(),
-            carton_worker: row.get::<&str, _>("carton_worker").unwrap_or_default().to_string(),
-            carton_packtime: row.get::<NaiveDateTime, _>("carton_time_dt").unwrap().format("%Y-%m-%d %H:%M:%S").to_string(),
+            carton_worker: row
+                .get::<&str, _>("carton_worker")
+                .unwrap_or_default()
+                .to_string(),
+            carton_packtime: row
+                .get::<NaiveDateTime, _>("carton_time_dt")
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string(),
             pch,
         };
         let pack_data = PackData {
             box_no: row.get::<&str, _>("box_no").unwrap_or_default().to_string(),
-            pack_worker: row.get::<&str, _>("pack_worker").unwrap_or_default().to_string(),
-            pack_packtime: row.get::<NaiveDateTime, _>("pack_time_dt").unwrap().format("%Y-%m-%d %H:%M:%S").to_string(),
+            pack_worker: row
+                .get::<&str, _>("pack_worker")
+                .unwrap_or_default()
+                .to_string(),
+            pack_packtime: row
+                .get::<NaiveDateTime, _>("pack_time_dt")
+                .unwrap()
+                .format("%Y-%m-%d %H:%M:%S")
+                .to_string(),
         };
         let band_data = BandData {
             w_sn: sn.clone(),
             b_sn: row.get::<&str, _>("b_sn").unwrap_or_default().to_string(),
-            band_time: row.get::<&str, _>("band_time").unwrap_or_default().to_string(),
-            band_worker: row.get::<&str, _>("band_worker").unwrap_or_default().to_string(),
+            band_time: row
+                .get::<&str, _>("band_time")
+                .unwrap_or_default()
+                .to_string(),
+            band_worker: row
+                .get::<&str, _>("band_worker")
+                .unwrap_or_default()
+                .to_string(),
         };
-        let sn_data = Data { sn: sn.clone(), ..Default::default() };
+        let sn_data = Data {
+            sn: sn.clone(),
+            ..Default::default()
+        };
 
-        all_datas.push(Datas { carton_data, pack_data, sn_data, band_data });
+        all_datas.push(Datas {
+            carton_data,
+            pack_data,
+            sn_data,
+            band_data,
+        });
         seen_sns.insert(sn);
     }
-    info!("统一查询处理完毕 (已最终优化)，共 {} 条唯一SN数据", all_datas.len());
+    info!(
+        "统一查询处理完毕 (已最终优化)，共 {} 条唯一SN数据",
+        all_datas.len()
+    );
     Ok(all_datas)
 }
 
@@ -398,46 +442,10 @@ pub async fn execute_query(
     let mut row_count = 0;
 
     while let Ok(Some(row)) = rows.try_next().await {
+        let data = Data::try_from_row(row).map_err(|e| {
+            MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e))
+        })?;
         row_count += 1;
-        let sn = row.get::<&str, _>(0).unwrap().to_string();
-        let kink = row.get::<&str, _>(11).unwrap_or_default();
-        let imkink = row.get::<&str, _>(12).unwrap_or_default();
-        let mdpid = if row.get::<&str, _>(19).unwrap_or_default() == "0" {
-            "".to_string()
-        } else {
-            row.get::<&str, _>(19).unwrap_or_default().to_string()
-        };
-        let yypn = row.get::<&str, _>(20).unwrap_or_default().to_string();
-
-        let data = Data {
-            sn: sn.clone(),
-            ith: row.get::<&str, _>(1).unwrap_or_default().to_string(),
-            vf: row.get::<&str, _>(3).unwrap_or_default().to_string(),
-            im: row.get::<&str, _>(4).unwrap_or_default().to_string(),
-            po: row.get::<&str, _>(2).unwrap_or_default().to_string(),
-            rs: row.get::<&str, _>(5).unwrap_or_default().to_string(),
-            se: row.get::<&str, _>(6).unwrap_or_default().to_string(),
-            sen: row.get::<&str, _>(7).unwrap_or_default().to_string(),
-            res: row.get::<&str, _>(8).unwrap_or_default().to_string(),
-            icc: row.get::<&str, _>(9).unwrap_or_default().to_string(),
-            vbr: row.get::<&str, _>(10).unwrap_or("0.00").to_string(),
-            kink: kink.to_string(),
-            imkink: imkink.to_string(),
-            testdate: row
-                .get::<NaiveDateTime, _>(13)
-                .unwrap()
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string(),
-            tester: row.get::<&str, _>(16).unwrap_or_default().to_string(),
-            iop: row.get::<&str, _>(17).unwrap_or_default().to_string(),
-            idark: row.get::<&str, _>(14).unwrap_or_default().to_string(),
-            result: row.get::<&str, _>(15).unwrap_or_default().to_string(),
-            i_xtalk: row.get::<&str, _>(18).unwrap_or_default().to_string(),
-            mdpid,
-            yypn,
-        };
-
-        // 直接添加，无需检查
         datas.push(data);
     }
 
@@ -452,80 +460,77 @@ pub async fn execute_query(
     Ok(datas)
 }
 
-/**
- * @description: (已修改) 构建测试数据查询 SQL
- * - 优化: 使用 ROW_NUMBER() 在 SQL 端对每个 SN 按 TestDate 排序，只取最新 (rn = 1)
- */
 pub async fn build_query_sql(
     sn_list: &str,
     pool: &bb8::Pool<ConnectionManager>,
 ) -> anyhow::Result<String, MyError> {
-    // 定义字段
-    let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
-    let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
-    let sql_10 = format!(
-        "SELECT {0} FROM [BOSAautotest_Data].[dbo].[MAC_10GBOSADATA] ",
-        testtype
+    // 1. 定义最终结果集中的所有列 (全部小写，用于 Rust 映射)
+    let final_columns = "sn,ith,po,vf,im,rs,se,sen,res,icc,vbr,kink,imkink,testdate,idark,result,tester,iop,i_xtalk,mdpid,yypn";
+
+    // 2. 定义第一个表的 SELECT 映射 (MAC_10GBOSADATA)
+    let select_10 = format!(
+        // 注意：将所有类型不确定的列（如 TestDate）强制转换为统一类型，并设置统一别名（小写）
+        "SELECT
+            SN AS sn, Ith AS ith,
+            Pf AS po, Vop AS vf, Im AS im, Rs AS rs,
+            Se AS se, Sen AS sen, Res AS res, ICC AS icc, Vbr AS vbr,
+            Kink AS kink, imkink AS imkink,
+            CAST(TestDate AS DATETIME2(0)) AS testdate, /* 强制类型转换 */
+            Idark AS idark, Result AS result, ProductBill AS tester,
+            iop AS iop, ixtalk AS i_xtalk, MDPId AS mdpid, testtype AS yypn
+        FROM [BOSAautotest_Data].[dbo].[MAC_10GBOSADATA]"
     );
-    let mut sql_text = String::from(&sql_10);
-    let tables = get_tables(pool).await?;
-    for i in tables {
-        let s = format!("UNION ALL SELECT {} FROM {} ", testtype_12, i);
+
+    // 3. 定义后续表的 SELECT 映射 (MAC_xxx)
+    let select_other_template = format!(
+        // 注意：使用 CAST(NULL AS TYPE) 占位缺失的列，并统一相似的列名
+        "UNION ALL SELECT
+            SN AS sn, Ith AS ith,
+            Po AS po, Vf AS vf, Im AS im, Rs AS rs,
+            Pslop AS se, /* Pslop 映射到 se */
+            Sen AS sen, Res AS res, ICC AS icc, Vbr AS vbr,
+            Kink_I AS kink, kinkim_i AS imkink,
+            CAST(TestDate AS DATETIME2(0)) AS testdate, /* 强制类型转换 */
+            Idark AS idark, Result AS result, ProductBill AS tester,
+            io AS iop, /* io 映射到 iop */
+            xtalk AS i_xtalk, /* xtalk 映射到 i_xtalk */
+            Te AS mdpid, /* Te 映射到 mdpid */
+            testtype AS yypn
+        FROM {{}} /* 占位符 for 表名 */ "
+    );
+
+    let mut sql_text = String::from(&select_10);
+
+    let tables = get_tables(pool).await?; // 假设 get_tables 成功返回表名
+
+    for table_name in tables {
+        // 使用 format! 插入表名到模板中
+        let s = select_other_template.replace("{}", &table_name);
         sql_text.push_str(&s);
     }
-    if sql_text.ends_with(" UNION ALL ") {
-        sql_text.truncate(sql_text.len() - " UNION ALL ".len());
-    }
 
-    // --- 核心优化 ---
-    // 1. 将所有 UNION ALL 的结果作为子查询 (AllData)
-    // 2. 在外层使用 ROW_NUMBER() 进行分区排序
-    // 3. 在最外层 SELECT 中筛选 rn = 1
+    // 4. 构建最终查询
+
+    // 使用统一的列名来构建外部 SELECT
     let base_query = format!(
-        "SELECT *, ROW_NUMBER() OVER(PARTITION BY SN ORDER BY TestDate DESC) as rn FROM ({}) AllData",
-        sql_text
+        "SELECT {final_columns}, ROW_NUMBER() OVER(PARTITION BY sn ORDER BY testdate DESC) as rn FROM ({sql_text}) AllData",
+        final_columns = final_columns,
+        sql_text = sql_text
     );
 
     let query_ty = if sn_list.is_empty() {
-        format!("WHERE Result = 'OK'") // 如果 SN 列表为空，这个查询意义不大，但保留原逻辑
+        // 在 WHERE 子句中，使用小写别名
+        "WHERE result = 'OK'".to_string()
     } else {
-        format!("WHERE SN IN ({}) AND Result = 'OK'", sn_list)
+        // 在 WHERE 子句中，使用小写别名
+        format!("WHERE sn IN ({}) AND result = 'OK'", sn_list)
     };
 
     // 最终 SQL: 从已排序和编号的 (tmp) 结果中只选择 rn = 1 的行
     Ok(format!(
-        "SELECT * FROM ({}) tmp {} AND tmp.rn = 1",
-        base_query, query_ty
+        "SELECT {final_columns} FROM ({base_query}) tmp {query_ty} AND tmp.rn = 1",
+        final_columns = final_columns,
+        base_query = base_query,
+        query_ty = query_ty
     ))
 }
-
-// pub async fn build_query_sql(
-//     sn_list: &str,
-//     pool: &bb8::Pool<ConnectionManager>,
-// ) -> anyhow::Result<String, MyError> {
-//     // 定义字段
-//     let testtype = "SN,Ith,Pf,Vop,Im,Rs,Se,Sen,Res,ICC,Vbr,Kink,imkink,TestDate,Idark,Result,ProductBill,iop,ixtalk,MDPId,testtype";
-//     let testtype_12 = "SN,Ith,Po,Vf,Im,Rs,Pslop,Sen,Res,ICC,Vbr,Kink_I,kinkim_i,TestDate,Idark,Result,ProductBill,io,xtalk,Te,testtype";
-//     let sql_10 = format!(
-//         "SELECT {0} FROM [BOSAautotest_Data].[dbo].[MAC_10GBOSADATA] ",
-//         testtype
-//     );
-//     let mut sql_text = String::from(&sql_10);
-//     let tables = get_tables(pool).await?;
-//     for i in tables {
-//         let s = format!("UNION ALL SELECT {} FROM {} ", testtype_12, i);
-//         sql_text.push_str(&s);
-//     }
-//     if sql_text.ends_with(" UNION ALL ") {
-//         sql_text.truncate(sql_text.len() - " UNION ALL ".len());
-//     }
-//     let query_ty = if sn_list.is_empty() {
-//         format!("WHERE Result = 'OK' ORDER BY TestDate DESC")
-//     } else {
-//         format!(
-//             "WHERE SN IN ({}) AND Result = 'OK' ORDER BY TestDate DESC",
-//             sn_list
-//         )
-//     };
-//     Ok(format!("SELECT * FROM ({}) tmp {}", sql_text, query_ty))
-// }

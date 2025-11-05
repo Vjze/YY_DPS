@@ -2753,6 +2753,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "tiberius-mappers"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1581a17e126254199da45b2464a2e7679eb1e2bc6ed2d6417f8895f2145a56cc"
+dependencies = [
+ "tiberius",
+ "tiberius-mappers-derive",
+]
+
+[[package]]
+name = "tiberius-mappers-derive"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6d2e307f76a9f679df2428d2d4a817ab9500fd6ded8ea8f3f6c481e72cee43a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "tiny-skia"
 version = "0.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3680,6 +3701,7 @@ dependencies = [
  "serde",
  "thiserror 2.0.17",
  "tiberius",
+ "tiberius-mappers",
  "tokio",
  "toml",
  "tracing",

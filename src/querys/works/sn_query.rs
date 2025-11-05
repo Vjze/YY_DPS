@@ -1,7 +1,6 @@
 use bb8_tiberius::ConnectionManager;
-// sn_query.rs
-use chrono::NaiveDateTime;
 use futures::stream::TryStreamExt;
+use tiberius_mappers::TryFromRow as _;
 use std::collections::HashMap;
 use tiberius::Query;
 use tracing::info;
@@ -30,7 +29,7 @@ fn format_data(data: Vec<Data>) -> Vec<HashMap<String, String>> {
             map.insert("vbr".to_string(), d.vbr);
             map.insert("kink".to_string(), d.kink);
             map.insert("imkink".to_string(), d.imkink);
-            map.insert("testdate".to_string(), d.testdate);
+            map.insert("testdate".to_string(), d.testdate.format("%Y-%m-%d %H:%M:%S").to_string());
             map.insert("tester".to_string(), d.tester);
             map.insert("iop".to_string(), d.iop);
             map.insert("idark".to_string(), d.idark);
@@ -219,47 +218,11 @@ pub async fn execute_query_sn(
     let mut row_count = 0;
     let mut rows = stream.into_row_stream();
     while let Ok(Some(row)) = rows.try_next().await {
-        info!("row: {:?}", row);
         row_count += 1;
 
-        row_count += 1;
-        let sn = row.get::<&str, _>(0).unwrap().to_string();
-        let kink = row.get::<&str, _>(11).unwrap_or_default();
-        let imkink = row.get::<&str, _>(12).unwrap_or_default();
-        let mdpid = if row.get::<&str, _>(19).unwrap_or_default() == "0" {
-            "".to_string()
-        } else {
-            row.get::<&str, _>(19).unwrap_or_default().to_string()
-        };
-        let yypn = row.get::<&str, _>(20).unwrap_or_default().to_string();
-        let data = Data {
-            sn: sn.clone(),
-            ith: row.get::<&str, _>(1).unwrap_or_default().to_string(),
-            vf: row.get::<&str, _>(3).unwrap_or_default().to_string(),
-            im: row.get::<&str, _>(4).unwrap_or_default().to_string(),
-            po: row.get::<&str, _>(2).unwrap_or_default().to_string(),
-            rs: row.get::<&str, _>(5).unwrap_or_default().to_string(),
-            se: row.get::<&str, _>(6).unwrap_or_default().to_string(),
-            sen: row.get::<&str, _>(7).unwrap_or_default().to_string(),
-            res: row.get::<&str, _>(8).unwrap_or_default().to_string(),
-            icc: row.get::<&str, _>(9).unwrap_or_default().to_string(),
-            vbr: row.get::<&str, _>(10).unwrap_or("0.00").to_string(),
-            kink: kink.to_string(),
-            imkink: imkink.to_string(),
-            testdate: row
-                .get::<NaiveDateTime, _>(13)
-                .unwrap()
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string(),
-            tester: row.get::<&str, _>(16).unwrap_or_default().to_string(),
-            iop: row.get::<&str, _>(17).unwrap_or_default().to_string(),
-            idark: row.get::<&str, _>(14).unwrap_or_default().to_string(),
-            result: row.get::<&str, _>(15).unwrap_or_default().to_string(),
-            i_xtalk: row.get::<&str, _>(18).unwrap_or_default().to_string(),
-            mdpid,
-            yypn,
-        };
-        // 这里不过滤，直接插入，因为业务逻辑是查询所有测试记录
+        let data = Data::try_from_row(row).map_err(|e| {
+            MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e))
+        })?;
         datas.push(data);
     }
 

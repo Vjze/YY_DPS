@@ -4,7 +4,8 @@ use crate::{
     utils::{error::MyError, sql::client},
 };
 use chrono::NaiveDateTime;
-use futures::TryStreamExt as _; // 引入 TryStreamExt
+use futures::TryStreamExt as _;
+use tiberius_mappers::TryFromRow as _; // 引入 TryStreamExt
 use std::collections::{HashMap, HashSet};
 use tiberius::Query;
 use tracing::info;
@@ -187,7 +188,7 @@ pub async fn get_box_datas(
             map.insert("res".to_string(), d.sn_data.res);
             map.insert("icc".to_string(), d.sn_data.icc);
             map.insert("idark".to_string(), d.sn_data.idark);
-            map.insert("testdate".to_string(), d.sn_data.testdate);
+            map.insert("testdate".to_string(), d.sn_data.testdate.format("%Y-%m-%d %H:%M:%S").to_string());
             map.insert("result".to_string(), d.sn_data.result);
             map.insert("tester".to_string(), d.sn_data.tester);
             map.insert("i_xtalk".to_string(), d.sn_data.i_xtalk);
@@ -221,42 +222,10 @@ async fn get_sn_info(sns: String) -> anyhow::Result<Vec<Data>, MyError> {
     let mut row_count = 0;
     while let Some(row) = rows.try_next().await.map_err(MyError::from)? {
         row_count += 1;
-        let sn = row.get::<&str, _>(0).unwrap().to_string();
-        let kink = row.get::<&str, _>(11).unwrap_or_default();
-        let imkink = row.get::<&str, _>(12).unwrap_or_default();
-        let mdpid = if row.get::<&str, _>(19).unwrap_or_default() == "0" {
-            "".to_string()
-        } else {
-            row.get::<&str, _>(19).unwrap_or_default().to_string()
-        };
-        let yypn = row.get::<&str, _>(20).unwrap_or_default().to_string();
-        let data = Data {
-            sn: sn.clone(),
-            ith: row.get::<&str, _>(1).unwrap_or_default().to_string(),
-            vf: row.get::<&str, _>(3).unwrap_or_default().to_string(),
-            im: row.get::<&str, _>(4).unwrap_or_default().to_string(),
-            po: row.get::<&str, _>(2).unwrap_or_default().to_string(),
-            rs: row.get::<&str, _>(5).unwrap_or_default().to_string(),
-            se: row.get::<&str, _>(6).unwrap_or_default().to_string(),
-            sen: row.get::<&str, _>(7).unwrap_or_default().to_string(),
-            res: row.get::<&str, _>(8).unwrap_or_default().to_string(),
-            icc: row.get::<&str, _>(9).unwrap_or_default().to_string(),
-            vbr: row.get::<&str, _>(10).unwrap_or("0.00").to_string(),
-            kink: kink.to_string(),
-            imkink: imkink.to_string(),
-            testdate: row
-                .get::<NaiveDateTime, _>(13)
-                .unwrap()
-                .format("%Y-%m-%d %H:%M:%S")
-                .to_string(),
-            tester: row.get::<&str, _>(16).unwrap_or_default().to_string(),
-            iop: row.get::<&str, _>(17).unwrap_or_default().to_string(),
-            idark: row.get::<&str, _>(14).unwrap_or_default().to_string(),
-            result: row.get::<&str, _>(15).unwrap_or_default().to_string(),
-            i_xtalk: row.get::<&str, _>(18).unwrap_or_default().to_string(),
-            mdpid,
-            yypn,
-        };
+        let data = Data::try_from_row(row).map_err(|e| {
+            MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e))
+        })?;
+        let sn = data.sn.clone();
         // 只保留最新的测试数据
         if let Some(existing_data) = sn_map.get(&sn) {
             if existing_data.testdate < data.testdate {

@@ -1,12 +1,11 @@
-cargo-features = ["codegen-backend"]
+# cargo-features = ["codegen-backend"]
 [package]
 name = "yy_dps"
 version = "0.1.0"
 edition = "2024"
 
-
 [dependencies]
-makepad-widgets ={ git = "https://github.com/makepad/makepad",branch = "dev"} 
+makepad-widgets ={ git = "https://github.com/makepad/makepad",branch = "dev"}
 # makepad-widgets ={ git = "https://github.com/makepad/makepad",rev = "ddcae99b691be2a7fd37e2545b5beafadfe24359"}
 toml = "0.9"
 serde = { version = "1.0.226", features = ["derive"] }
@@ -17,6 +16,7 @@ tiberius = { version = "0.12.3", features = [
     "rustls",
     "tds73"
 ], default-features = false }
+tiberius-mappers = "=0.7.0"
 anyhow = "1.0.100"
 thiserror = {version = "2.0"}
 umya-spreadsheet = "2.3.3"
@@ -90,13 +90,13 @@ appdata_paths = [
 ]
 
 [profile.release]
-opt-level = "s" 
+opt-level = "s"
 lto = true
-panic = "abort" 
+panic = "abort"
 strip = true
 codegen-units = 1
 
 
 
-[profile.dev]
-codegen-backend = "cranelift"
+# [profile.dev]
+# codegen-backend = "cranelift"
