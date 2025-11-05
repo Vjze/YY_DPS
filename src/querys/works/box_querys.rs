@@ -1,7 +1,7 @@
 use crate::{
     export::works::carton_query::build_query_sql,
     structs::{Data, Datas, PackData},
-    utils::{error::MyError, sql::client},
+    utils::{error::MyError, merge_and_format::merge_and_format_results, sql::client},
 };
 use chrono::NaiveDateTime;
 use futures::TryStreamExt as _;
@@ -145,57 +145,57 @@ pub async fn get_box_datas(
             d
         })
         .collect::<Vec<Datas>>();
-    let mut all = all
-        .into_iter()
-        .map(|mut d| {
-            let sn_datas = sn_datas
-                .iter()
-                .find(|x| x.sn == d.sn_data.sn)
-                .map(|s| s.clone())
-                .unwrap_or_default();
-            d.sn_data = sn_datas;
+    let mut all = merge_and_format_results(all, &sn_datas);
+    //     .into_iter()
+    //     .map(|mut d| {
+    //         let sn_datas = sn_datas
+    //             .iter()
+    //             .find(|x| x.sn == d.sn_data.sn)
+    //             .map(|s| s.clone())
+    //             .unwrap_or_default();
+    //         d.sn_data = sn_datas;
 
-            // 展平 Datas 为 HashMap
-            let mut map = HashMap::new();
-            // CartonData
-            map.insert("carton_no".to_string(), d.carton_data.carton_no);
-            map.insert("pch".to_string(), d.carton_data.pch);
-            map.insert("yypn".to_string(), d.carton_data.yypn);
-            map.insert("carton_worker".to_string(), d.carton_data.carton_worker);
-            map.insert("carton_packtime".to_string(), d.carton_data.carton_packtime);
-            // PackData
-            map.insert("box_no".to_string(), d.pack_data.box_no);
-            map.insert("pack_worker".to_string(), d.pack_data.pack_worker);
-            map.insert("pack_packtime".to_string(), d.pack_data.pack_packtime);
-            // BandData
-            map.insert("w_sn".to_string(), d.band_data.w_sn);
-            map.insert("b_sn".to_string(), d.band_data.b_sn);
-            map.insert("bandtime".to_string(), d.band_data.band_time);
-            map.insert("band_worker".to_string(), d.band_data.band_worker);
-            // Data
-            map.insert("sn".to_string(), d.sn_data.sn);
-            map.insert("ith".to_string(), d.sn_data.ith);
-            map.insert("vf".to_string(), d.sn_data.vf);
-            map.insert("im".to_string(), d.sn_data.im);
-            map.insert("po".to_string(), d.sn_data.po);
-            map.insert("rs".to_string(), d.sn_data.rs);
-            map.insert("se".to_string(), d.sn_data.se);
-            map.insert("iop".to_string(), d.sn_data.iop);
-            map.insert("kink".to_string(), d.sn_data.kink);
-            map.insert("imkink".to_string(), d.sn_data.imkink);
-            map.insert("sen".to_string(), d.sn_data.sen);
-            map.insert("vbr".to_string(), d.sn_data.vbr);
-            map.insert("res".to_string(), d.sn_data.res);
-            map.insert("icc".to_string(), d.sn_data.icc);
-            map.insert("idark".to_string(), d.sn_data.idark);
-            map.insert("testdate".to_string(), d.sn_data.testdate.format("%Y-%m-%d %H:%M:%S").to_string());
-            map.insert("result".to_string(), d.sn_data.result);
-            map.insert("tester".to_string(), d.sn_data.tester);
-            map.insert("i_xtalk".to_string(), d.sn_data.i_xtalk);
-            map.insert("mdpid".to_string(), d.sn_data.mdpid);
-            map
-        })
-        .collect::<Vec<HashMap<String, String>>>();
+    //         // 展平 Datas 为 HashMap
+    //         let mut map = HashMap::new();
+    //         // CartonData
+    //         map.insert("carton_no".to_string(), d.carton_data.carton_no);
+    //         map.insert("pch".to_string(), d.carton_data.pch);
+    //         map.insert("yypn".to_string(), d.carton_data.yypn);
+    //         map.insert("carton_worker".to_string(), d.carton_data.carton_worker);
+    //         map.insert("carton_packtime".to_string(), d.carton_data.carton_packtime);
+    //         // PackData
+    //         map.insert("box_no".to_string(), d.pack_data.box_no);
+    //         map.insert("pack_worker".to_string(), d.pack_data.pack_worker);
+    //         map.insert("pack_packtime".to_string(), d.pack_data.pack_packtime);
+    //         // BandData
+    //         map.insert("w_sn".to_string(), d.band_data.w_sn);
+    //         map.insert("b_sn".to_string(), d.band_data.b_sn);
+    //         map.insert("bandtime".to_string(), d.band_data.band_time);
+    //         map.insert("band_worker".to_string(), d.band_data.band_worker);
+    //         // Data
+    //         map.insert("sn".to_string(), d.sn_data.sn);
+    //         map.insert("ith".to_string(), d.sn_data.ith);
+    //         map.insert("vf".to_string(), d.sn_data.vf);
+    //         map.insert("im".to_string(), d.sn_data.im);
+    //         map.insert("po".to_string(), d.sn_data.po);
+    //         map.insert("rs".to_string(), d.sn_data.rs);
+    //         map.insert("se".to_string(), d.sn_data.se);
+    //         map.insert("iop".to_string(), d.sn_data.iop);
+    //         map.insert("kink".to_string(), d.sn_data.kink);
+    //         map.insert("imkink".to_string(), d.sn_data.imkink);
+    //         map.insert("sen".to_string(), d.sn_data.sen);
+    //         map.insert("vbr".to_string(), d.sn_data.vbr);
+    //         map.insert("res".to_string(), d.sn_data.res);
+    //         map.insert("icc".to_string(), d.sn_data.icc);
+    //         map.insert("idark".to_string(), d.sn_data.idark);
+    //         map.insert("testdate".to_string(), d.sn_data.testdate.format("%Y-%m-%d %H:%M:%S").to_string());
+    //         map.insert("result".to_string(), d.sn_data.result);
+    //         map.insert("tester".to_string(), d.sn_data.tester);
+    //         map.insert("i_xtalk".to_string(), d.sn_data.i_xtalk);
+    //         map.insert("mdpid".to_string(), d.sn_data.mdpid);
+    //         map
+    //     })
+    //     .collect::<Vec<HashMap<String, String>>>();
     if all.is_empty() {
         let query_key = match (box_no.is_empty(), pn.is_empty()) {
             (false, _) => &box_no,
