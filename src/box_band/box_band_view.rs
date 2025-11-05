@@ -2,7 +2,10 @@ use makepad_widgets::*;
 use tokio::runtime::Runtime;
 
 use crate::{
-    box_band::work::{band_work::band_work, query_work::{BoxBandData, query_carton_info}},
+    box_band::work::{
+        band_work::band_work,
+        query_work::{BoxBandData, query_carton_info},
+    },
     store::Store,
     utils::error::MyError,
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
@@ -234,8 +237,9 @@ impl WidgetMatchEvent for BoxBandView {
         let carton_input = self.view.text_input(ids!(carton_input));
         let boxs_num = self.view.label(ids!(boxs_num));
         let new_box_input = self.view.text_input(ids!(new_box_no_input));
-        
-        let rt = self.rt.handle().clone();for action in actions {
+
+        let rt = self.rt.handle().clone();
+        for action in actions {
             if let Some(data_action) = action.downcast_ref::<BoxBandAction>() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     let num = format!("一共: {} 盒", data_action.data.len());

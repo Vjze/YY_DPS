@@ -347,26 +347,6 @@ live_design! {
 
             }
         }
-        // test_btn = <Button> {
-        //     width: Fit
-        //     height: 40
-        //     padding: {left: 20, right: 20, top: 0, bottom: 0}
-        //     text: "测试"
-        //     draw_text: {
-        //         color: #000000,
-        //         text_style: {
-        //             font_size:16
-        //         }
-        //     }
-        //     draw_bg: {
-        //         uniform border_size: 1.0
-        //         uniform border_radius: 5.0
-        //         uniform color: #AFEEEE
-        //         uniform color_hover: #9370DB
-        //         uniform color_disabled: #DCDCDC
-
-        //      }
-        // }
 
         qty_label = <Label> {
             padding: {
@@ -444,6 +424,7 @@ impl WidgetMatchEvent for QueryScreen {
         let worker_input = self.view.text_input(ids!(worker_input));
         let devices = self.view.drop_down(ids!(devices_selector));
         let res = self.view.drop_down(ids!(result_selector));
+        let qty_label = self.view.label(ids!(qty_label));
         let processor = self.datas_query_processor.as_ref().unwrap().clone();
         let rt = self.rt.handle().clone();
         for action in actions {
@@ -462,6 +443,13 @@ impl WidgetMatchEvent for QueryScreen {
             {
                 Cx::post_action(MyError::AllNone);
             } else {
+                if let Some(store) = scope.data.get_mut::<Store>() {
+                    store.datas_store.query_datas.clear();
+                    qty_label.set_text(
+                        cx,
+                        &format!("总数量: {} PCS", store.datas_store.query_datas.len()),
+                    );
+                }
                 let query_input = input.text();
                 let query_type = type_select.selected_label();
                 let use_date = use_date.active(cx);
@@ -471,7 +459,6 @@ impl WidgetMatchEvent for QueryScreen {
                 let query_worker = worker_input.text();
                 let query_devices = devices.selected_label();
                 let query_result = res.selected_label();
-                println!("{}", query_type);
                 if query_type == "Sn" {
                     let sns = if query_input.is_empty() {
                         vec![]

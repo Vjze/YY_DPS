@@ -95,33 +95,29 @@ live_design! {
 pub struct BandTable {
     #[deref]
     view: View,
-    #[rust]
-    data: Vec<BoxBandData>,
 }
 
 impl Widget for BandTable {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        if let Some(props) = scope.data.get::<Store>() {
-            // info!("BandTable update data");
-            self.data = props.box_band_store.box_data.clone();
-        }
         self.view.handle_event(cx, event, scope);
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
-        let entries_count = self.data.clone().len();
-        let last_item_id = if entries_count > 0 { entries_count } else { 0 };
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
-            if let Some(mut list) = item.as_portal_list().borrow_mut() {
-                list.set_item_range(cx, 0, last_item_id);
-                while let Some(item_id) = list.next_visible_item(cx) {
-                    if item_id < last_item_id {
-                        let template = live_id!(BandDataRow);
-                        let item = list.item(cx, item_id, template);
+            if let Some(store) = scope.data.get::<Store>() {
+                let entries_count = store.box_band_store.box_data.clone().len();
+                let last_item_id = if entries_count > 0 { entries_count } else { 0 };
+                if let Some(mut list) = item.as_portal_list().borrow_mut() {
+                    list.set_item_range(cx, 0, last_item_id);
+                    while let Some(item_id) = list.next_visible_item(cx) {
+                        if item_id < last_item_id {
+                            let template = live_id!(BandDataRow);
+                            let item = list.item(cx, item_id, template);
 
-                        let mut file_data = self.data[item_id].clone();
-                        let mut scope = Scope::with_data(&mut file_data);
-                        item.draw_all(cx, &mut scope);
+                            let mut file_data = store.box_band_store.box_data[item_id].clone();
+                            let mut scope = Scope::with_data(&mut file_data);
+                            item.draw_all(cx, &mut scope);
+                        }
                     }
                 }
             }
@@ -161,7 +157,6 @@ impl Widget for BandDataRow {
             let pns = data.pn.clone();
             let label = self.label(ids!(pn.label));
             label.set_text(cx, &pns);
-
 
             let bandtimes = data.create_time.clone();
             let label = self.label(ids!(bandtime.label));

@@ -5,10 +5,7 @@ use tokio::runtime::Runtime;
 use tracing::info;
 
 use crate::{
-    data_import::{
-        DataImport,
-        work::extract_data::ImportDBDatas,
-    },
+    data_import::{DataImport, work::extract_data::ImportDBDatas},
     store::Store,
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
@@ -95,21 +92,10 @@ live_design! {
                         }
                         padding: {left: 10, top: 8}
                     }
-                    <Label> {
+                    qty_label = <Label> {
                         width: Fit,
                         height: Fit,
-                        text: "总数量:",
-                        draw_text: {
-                            color: #000000,
-                            text_style: <THEME_FONT_REGULAR> {
-                                font_size: 16
-                            }
-                        }
-                    }
-                    qty = <Label> {
-                        width: Fit,
-                        height: Fit,
-                        text: "0",
+                        text: "总数量: 0 PCS",
                         draw_text: {
                             color: #000000,
                             text_style: <THEME_FONT_REGULAR> {
@@ -180,13 +166,16 @@ impl Widget for DataImportDb {
 }
 impl WidgetMatchEvent for DataImportDb {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
+        let select_btn = self.button(ids!(select_btn));
+        let action_btn = self.button(ids!(action_btn));
+        let qty_label = self.label(ids!(qty_label));
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<DataExtractedAction>() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     let qty = data_action.data.data.len();
                     store.import_store.import_datas = data_action.data.clone();
                     info!(
-                        "Store 更新完成，导入数据量: {}",
+                        "数据提取完成，提取数据量: {}",
                         store.import_store.import_datas.data.len()
                     );
 
@@ -194,7 +183,7 @@ impl WidgetMatchEvent for DataImportDb {
                     self.view
                         .text_input(ids!(pn))
                         .set_text(cx, &store.import_store.import_datas.pn);
-                    self.view.label(ids!(qty)).set_text(cx, &qty.to_string());
+                    qty_label.set_text(cx, &format!("总数量: {} PCS", &qty));
 
                     enqueue_popup_notification(PopupItem {
                         kind: PopupKind::Success,
@@ -204,11 +193,14 @@ impl WidgetMatchEvent for DataImportDb {
                 }
             }
         }
-        let select_btn = self.button(ids!(select_btn));
-        let action_btn = self.button(ids!(action_btn));
+
         let rt = self.rt.handle().clone();
         if select_btn.clicked(actions) {
             info!("开始选择文件 (异步)");
+            if let Some(scope) = scope.data.get_mut::<Store>() {
+                scope.import_store.import_datas = DbData::default();
+                qty_label.set_text(cx, "总数量: 0 PCS");
+            }
             let procrssor = self.import_processor.as_ref().unwrap().clone();
 
             // 3. 启动异步任务，不阻塞 UI
