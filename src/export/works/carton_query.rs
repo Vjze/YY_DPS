@@ -4,7 +4,9 @@ use crate::{
     configs::type_config::{Infos, get_type_infos},
     structs::{BandData, CartonData, Data, Datas, PackData},
     utils::{
-        error::MyError, merge_and_format::merge_and_format_results, sql::{client, get_tables}
+        error::MyError,
+        merge_and_format::merge_and_format_results,
+        sql::{client, get_tables},
     },
 };
 use bb8_tiberius::ConnectionManager;
@@ -219,7 +221,7 @@ async fn get_base_data_unified(
                 "INNER JOIN LatestBatchTime lbt ON b.CreateTime <= lbt.MaxTime AND DATEDIFF(SECOND, b.CreateTime, lbt.MaxTime) < 5".to_string(), // <-- 5秒窗口
                 "INNER JOIN [mes_Factory].[dbo].[MaterialPackSn] d ON d.Pack_no = b.Packing_no".to_string(),
             ],
-            "d.sn", "a.pkg_no", "d.pn", "d.creator", "d.createtime", "d.Pack_no", "a.Pack_no", "d.Pack_no",
+            "d.sn", "a.pkg_no", "d.pn", "d.creator", "d.createtime", "d.Pack_no", "d.Pack_no", "d.Pack_no",
         )
     } else {
         // ...no_zdy... (标准盒)
@@ -253,7 +255,7 @@ async fn get_base_data_unified(
             pch_join_key_box
         };
         join_list.push(format!(
-            "OUTER APPLY (SELECT TOP 1 c.parameter FROM [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c WHERE c.LABEL_KEY = {} ORDER BY c.CreateTime DESC) AS pch_log",
+            "OUTER APPLY (SELECT TOP 1 c.parameter FROM [mes_Factory].[dbo].[packing_LABEL_PRINT_LOG] c WHERE c.LABEL_KEY = {} ORDER BY a.CreateTime DESC) AS pch_log",
             join_key
         ));
         select_list.push("SUBSTRING(pch_log.parameter, CHARINDEX('YEAR=', pch_log.parameter) + 5, CHARINDEX(';', pch_log.parameter + ';', CHARINDEX('YEAR=', pch_log.parameter)) - (CHARINDEX('YEAR=', pch_log.parameter) + 5)) AS ExtractedYear".to_string());
@@ -393,9 +395,8 @@ pub async fn execute_query(
     let mut row_count = 0;
 
     while let Ok(Some(row)) = rows.try_next().await {
-        let data = Data::try_from_row(row).map_err(|e| {
-            MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e))
-        })?;
+        let data = Data::try_from_row(row)
+            .map_err(|e| MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e)))?;
         row_count += 1;
         datas.push(data);
     }
