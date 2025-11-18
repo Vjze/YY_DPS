@@ -5,6 +5,7 @@ use makepad_widgets::Cx;
 pub mod export_view;
 pub mod works;
 use async_trait::async_trait;
+use bb8_tiberius::ConnectionManager;
 
 use crate::{
     export::works::{carton_query::do_carton_query, export2excel::write_to_excel},
@@ -23,6 +24,7 @@ pub trait Exportable: Send + Sync {
         carton: String,
         typeinfos: String,
         is_multi: bool,
+        sql_client: &bb8::Pool<ConnectionManager>,
     ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError>;
     async fn export(
         &self,
@@ -40,8 +42,9 @@ impl Exportable for Exporter {
         carton: String,
         typeinfos: String,
         is_multi: bool,
+        sql_client: &bb8::Pool<ConnectionManager>,
     ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
-        do_carton_query(carton, typeinfos, is_multi).await
+        do_carton_query(carton, typeinfos, is_multi, sql_client).await
     }
     async fn export(
         &self,

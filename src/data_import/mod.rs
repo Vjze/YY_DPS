@@ -1,15 +1,15 @@
-use async_trait::async_trait;
-use makepad_widgets::Cx;
-use std::{path::PathBuf, sync::Arc};
-
-use crate::{
-    data_import::{
-        data_import_db::DbData,
-        work::{
-            extract_data::{extract_data, ImportDBDatas}, select_file::select_file, write_data::write_data_to_db,
-        },
+use crate::data_import::{
+    data_import_db::DbData,
+    work::{
+        extract_data::{ImportDBDatas, extract_data},
+        select_file::select_file,
+        write_data::write_data_to_db,
     },
 };
+use async_trait::async_trait;
+use bb8_tiberius::ConnectionManager;
+use makepad_widgets::Cx;
+use std::{path::PathBuf, sync::Arc};
 pub mod data_import_db;
 pub mod import_row;
 pub mod import_table;
@@ -24,7 +24,8 @@ pub fn live_design(cx: &mut Cx) {
 pub trait DataImport: Send + Sync {
     async fn select_file(&self) -> anyhow::Result<PathBuf>;
     async fn extract(&self, path: &str) -> anyhow::Result<Vec<ImportDBDatas>>;
-    async fn write(&self, datas: DbData) -> anyhow::Result<()>;
+    async fn write(&self, datas: DbData, pool: &bb8::Pool<ConnectionManager>)
+    -> anyhow::Result<()>;
 }
 
 pub struct DataImporter;
@@ -37,8 +38,12 @@ impl DataImport for DataImporter {
     async fn extract(&self, path: &str) -> anyhow::Result<Vec<ImportDBDatas>> {
         extract_data(path).await
     }
-    async fn write(&self, datas: DbData) -> anyhow::Result<()> {
-        write_data_to_db(datas).await
+    async fn write(
+        &self,
+        datas: DbData,
+        pool: &bb8::Pool<ConnectionManager>,
+    ) -> anyhow::Result<()> {
+        write_data_to_db(datas, pool).await
     }
 }
 

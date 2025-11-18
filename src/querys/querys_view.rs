@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::querys::DatasQuery;
-use crate::widgets::popup_list::{enqueue_popup_notification, PopupItem, PopupKind};
+use crate::widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification};
 use crate::{store::Store, utils::error::MyError};
+use bb8_tiberius::ConnectionManager;
 use chrono::Local;
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
@@ -443,12 +444,14 @@ impl WidgetMatchEvent for QueryScreen {
             {
                 Cx::post_action(MyError::AllNone);
             } else {
+                let mut pool: Option<bb8::Pool<ConnectionManager>> = None;
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     store.datas_store.query_datas.clear();
                     qty_label.set_text(
                         cx,
                         &format!("总数量: {} PCS", store.datas_store.query_datas.len()),
                     );
+                    pool = store.pool.clone();
                 }
                 let query_input = input.text();
                 let query_type = type_select.selected_label();
@@ -476,6 +479,7 @@ impl WidgetMatchEvent for QueryScreen {
                                 query_result,
                                 query_devices,
                                 query_worker,
+                                &pool.unwrap(),
                             )
                             .await;
                         match res {
@@ -496,6 +500,7 @@ impl WidgetMatchEvent for QueryScreen {
                                 query_start_time,
                                 query_end_time,
                                 query_pn,
+                                &pool.unwrap(),
                             )
                             .await;
                         match res {
@@ -516,6 +521,7 @@ impl WidgetMatchEvent for QueryScreen {
                                 query_start_time,
                                 query_end_time,
                                 query_pn,
+                                &pool.unwrap(),
                             )
                             .await;
                         match res {

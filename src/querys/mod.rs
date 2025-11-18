@@ -1,11 +1,13 @@
 use async_trait::async_trait;
+use bb8_tiberius::ConnectionManager;
 use makepad_widgets::Cx;
 use std::{collections::HashMap, sync::Arc};
 pub mod row;
 pub mod tabel;
 use crate::{
     querys::works::{
-        box_querys::get_box_datas, carton_querys::get_carton_datas, export2excel::sn_export, sn_query::sn_query_datas
+        box_querys::get_box_datas, carton_querys::get_carton_datas, export2excel::sn_export,
+        sn_query::sn_query_datas,
     },
     utils::error::MyError,
 };
@@ -26,6 +28,7 @@ pub trait DatasQuery: Send + Sync {
         date_time_start: String,
         date_time_end: String,
         pn: String,
+        pool: &bb8::Pool<ConnectionManager>,
     ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError>;
     async fn get_carton_datas(
         &self,
@@ -34,6 +37,7 @@ pub trait DatasQuery: Send + Sync {
         date_time_start: String,
         date_time_end: String,
         pn: String,
+        pool: &bb8::Pool<ConnectionManager>,
     ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError>;
     async fn sn_query_datas(
         &self,
@@ -45,8 +49,12 @@ pub trait DatasQuery: Send + Sync {
         test_result: String,
         test_devices: String,
         worker: String,
+        pool: &bb8::Pool<ConnectionManager>,
     ) -> Result<Vec<HashMap<String, String>>, MyError>;
-    async fn data_export(&self, datas: Vec<HashMap<String, String>>) -> anyhow::Result<String, MyError>;
+    async fn data_export(
+        &self,
+        datas: Vec<HashMap<String, String>>,
+    ) -> anyhow::Result<String, MyError>;
 }
 
 pub struct DatasQueryer;
@@ -60,8 +68,9 @@ impl DatasQuery for DatasQueryer {
         date_time_start: String,
         date_time_end: String,
         pn: String,
+        pool: &bb8::Pool<ConnectionManager>,
     ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
-        get_box_datas(box_no, use_time, date_time_start, date_time_end, pn).await
+        get_box_datas(box_no, use_time, date_time_start, date_time_end, pn, pool).await
     }
     async fn get_carton_datas(
         &self,
@@ -70,8 +79,9 @@ impl DatasQuery for DatasQueryer {
         date_time_start: String,
         date_time_end: String,
         pn: String,
+        pool: &bb8::Pool<ConnectionManager>,
     ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
-        get_carton_datas(carton, use_time, date_time_start, date_time_end, pn).await
+        get_carton_datas(carton, use_time, date_time_start, date_time_end, pn, pool).await
     }
     async fn sn_query_datas(
         &self,
@@ -83,6 +93,7 @@ impl DatasQuery for DatasQueryer {
         test_result: String,
         test_devices: String,
         worker: String,
+        pool: &bb8::Pool<ConnectionManager>,
     ) -> Result<Vec<HashMap<String, String>>, MyError> {
         sn_query_datas(
             sns,
@@ -93,10 +104,14 @@ impl DatasQuery for DatasQueryer {
             test_result,
             test_devices,
             worker,
+            pool,
         )
         .await
     }
-    async fn data_export(&self, datas: Vec<HashMap<String, String>>) -> anyhow::Result<String, MyError> {
+    async fn data_export(
+        &self,
+        datas: Vec<HashMap<String, String>>,
+    ) -> anyhow::Result<String, MyError> {
         sn_export(datas).await
     }
 }

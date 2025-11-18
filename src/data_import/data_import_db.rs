@@ -255,8 +255,9 @@ impl WidgetMatchEvent for DataImportDb {
             let processor = self.import_processor.as_ref().unwrap().clone();
             if let Some(store) = scope.data.get::<Store>() {
                 let data = store.import_store.import_datas.clone();
+                let pool = store.pool.clone().unwrap();
                 let _ = rt.spawn(async move {
-                    let res = processor.write(data).await;
+                    let res = processor.write(data, &pool).await;
                     match res {
                         Ok(_) => {
                             // enqueue_popup_notification 可能是线程安全的（因为它不接受 &mut Cx）

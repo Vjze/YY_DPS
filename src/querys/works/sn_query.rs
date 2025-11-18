@@ -1,15 +1,12 @@
 use bb8_tiberius::ConnectionManager;
 use futures::stream::TryStreamExt;
-use tiberius_mappers::TryFromRow as _;
 use std::collections::HashMap;
 use tiberius::Query;
+use tiberius_mappers::TryFromRow as _;
 use tracing::info;
 // 导入新的、唯一的SQL构建函数
 use super::query_utils::build_base_union_query;
-use crate::{
-    structs::Data,
-    utils::{error::MyError, sql::client},
-};
+use crate::{structs::Data, utils::error::MyError};
 
 fn format_data(data: Vec<Data>) -> Vec<HashMap<String, String>> {
     data.into_iter()
@@ -29,7 +26,10 @@ fn format_data(data: Vec<Data>) -> Vec<HashMap<String, String>> {
             map.insert("vbr".to_string(), d.vbr);
             map.insert("kink".to_string(), d.kink);
             map.insert("imkink".to_string(), d.imkink);
-            map.insert("testdate".to_string(), d.testdate.format("%Y-%m-%d %H:%M:%S").to_string());
+            map.insert(
+                "testdate".to_string(),
+                d.testdate.format("%Y-%m-%d %H:%M:%S").to_string(),
+            );
             map.insert("tester".to_string(), d.tester);
             map.insert("iop".to_string(), d.iop);
             map.insert("idark".to_string(), d.idark);
@@ -53,6 +53,7 @@ pub async fn sn_query_datas(
     test_result: String,
     test_devices: String,
     worker: String,
+    pool: &bb8::Pool<ConnectionManager>,
 ) -> Result<Vec<HashMap<String, String>>, MyError> {
     info!(
         "开始SN查询: sns_count={}, pn={}, use_time={}, start='{}', end='{}', result='{}', device='{}', worker='{}'",
@@ -65,7 +66,6 @@ pub async fn sn_query_datas(
         test_devices,
         worker
     );
-    let pool = &client().await?;
 
     // 1. 获取基础的 UNION ALL SQL
     // 这个函数替换了 query_utils.rs 中所有 70+ 个函数
@@ -136,8 +136,8 @@ pub async fn sn_query_datas(
         format!("WHERE {}", where_clauses.join(" AND "))
     };
     let final_sql = format!(
-        "SELECT 
-        sn, ith, po, vf, im, rs, se, sen, res, icc, vbr, kink, imkink, 
+        "SELECT
+        sn, ith, po, vf, im, rs, se, sen, res, icc, vbr, kink, imkink,
         testtime, idark, result, tester, iop, i_xtalk, mdpid, yypn
     FROM (
         {}
@@ -162,7 +162,7 @@ pub async fn sn_query_datas(
     } else {
         "".to_string()
     };
-    let infos = get_box_caoton(sn).await?;
+    let infos = get_box_caoton(sn, pool).await?;
     let all_datas = if !infos.is_empty() {
         let all_datas: Vec<HashMap<String, String>> = datas
             .into_iter()
@@ -186,11 +186,13 @@ pub async fn sn_query_datas(
     info!("SN查询完成，共找到 {} 条记录", all_datas.len());
     Ok(all_datas)
 }
-async fn get_box_caoton(sn: String) -> anyhow::Result<HashMap<String, String>, MyError> {
-    let client = &client().await?;
-    let sql = "SELECT TOP 1 a.Pack_no, b.cartonno FROM [mes_Factory].[dbo].[MaterialPackSn]a 
+async fn get_box_caoton(
+    sn: String,
+    pool: &bb8::Pool<ConnectionManager>,
+) -> anyhow::Result<HashMap<String, String>, MyError> {
+    let sql = "SELECT TOP 1 a.Pack_no, b.cartonno FROM [mes_Factory].[dbo].[MaterialPackSn]a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no WHERE a.sn = @P1 AND a.PnOptionID = '-100' ORDER BY a.CreateTime DESC";
-    let pool = &mut client.get().await.unwrap();
+    let mut pool = pool.get().await.unwrap();
     let row = pool.query(sql, &[&sn]).await?;
     let data = row.into_row().await?;
     let mut infos = HashMap::new();
@@ -220,9 +222,8 @@ pub async fn execute_query_sn(
     while let Ok(Some(row)) = rows.try_next().await {
         row_count += 1;
 
-        let data = Data::try_from_row(row).map_err(|e| {
-            MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e))
-        })?;
+        let data = Data::try_from_row(row)
+            .map_err(|e| MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e)))?;
         datas.push(data);
     }
 

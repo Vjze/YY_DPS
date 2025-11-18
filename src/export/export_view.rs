@@ -3,7 +3,11 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
-use crate::{export::Exportable, store::Store, widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification}};
+use crate::{
+    export::Exportable,
+    store::Store,
+    widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
+};
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -169,7 +173,7 @@ impl Widget for ExportScreen {
             self.view
                 .drop_down(ids!(type_selector))
                 .set_labels(cx, store.setting_store.types.clone());
-            if store.datas_store.export_datas.is_empty(){
+            if store.datas_store.export_datas.is_empty() {
                 self.view.button(ids!(export_btn)).set_disabled(cx, true);
             } else {
                 self.view.button(ids!(export_btn)).set_disabled(cx, false);
@@ -196,7 +200,7 @@ impl WidgetMatchEvent for ExportScreen {
             if let Some(data_action) = action.downcast_ref::<ExportAction>() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     store.datas_store.export_datas = data_action.data.clone();
-                    let qty = format!("总数量: {} PCS",data_action.data.len());
+                    let qty = format!("总数量: {} PCS", data_action.data.len());
                     qty_label.set_text(cx, &qty);
                     enqueue_popup_notification(PopupItem {
                         kind: PopupKind::Success,
@@ -213,16 +217,20 @@ impl WidgetMatchEvent for ExportScreen {
         }
 
         if query_btn.clicked(actions) {
+            let mut pool = None;
             if let Some(store) = scope.data.get_mut::<Store>() {
                 store.datas_store.export_datas.clear();
                 qty_label.set_text(cx, "总数量: 0 PCS");
+                pool = store.pool.clone();
             }
             let processor = self.export_processor.as_ref().unwrap().clone();
             let carton = input.text().clone();
             let is_multi = query_btn.text() == "批量查询";
             let type_name = type_name.selected_label().clone();
             rt.spawn(async move {
-                let res = processor.carton_query(carton, type_name, is_multi).await;
+                let res = processor
+                    .carton_query(carton, type_name, is_multi, &pool.unwrap())
+                    .await;
 
                 match res {
                     Ok(data) => {

@@ -1,15 +1,15 @@
 use crate::{
     export::works::carton_query::build_query_sql,
     structs::{Data, Datas, PackData},
-    utils::{error::MyError, merge_and_format::merge_and_format_results, sql::client},
+    utils::{error::MyError, merge_and_format::merge_and_format_results},
 };
+use bb8_tiberius::ConnectionManager;
 use chrono::NaiveDateTime;
 use futures::TryStreamExt as _;
-use tiberius_mappers::TryFromRow as _; // 引入 TryStreamExt
 use std::collections::{HashMap, HashSet};
 use tiberius::Query;
+use tiberius_mappers::TryFromRow as _; // 引入 TryStreamExt
 use tracing::info;
-
 #[allow(unused_assignments)]
 pub async fn get_box_datas(
     box_no: String,
@@ -17,8 +17,8 @@ pub async fn get_box_datas(
     date_time_start: String,
     date_time_end: String,
     pn: String,
+    pool: &bb8::Pool<ConnectionManager>,
 ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
-    let pool = client().await?;
     let mut client = pool.get().await.unwrap();
     let mut all_datas = Vec::new();
     let mut seen_sns = HashSet::new();
@@ -132,8 +132,8 @@ pub async fn get_box_datas(
         .map(|d| format!("'{}'", d.sn_data.sn))
         .collect::<Vec<String>>()
         .join(",");
-    let sn_datas = get_sn_info(sns).await?;
-    let carton_data = get_carton_data(&box_no).await;
+    let sn_datas = get_sn_info(sns, pool).await?;
+    let carton_data = get_carton_data(&box_no, pool).await;
     let all = all_datas
         .into_iter()
         .map(|mut d| {
@@ -212,8 +212,10 @@ pub async fn get_box_datas(
     Ok(all)
 }
 
-async fn get_sn_info(sns: String) -> anyhow::Result<Vec<Data>, MyError> {
-    let pool = client().await?;
+async fn get_sn_info(
+    sns: String,
+    pool: &bb8::Pool<ConnectionManager>,
+) -> anyhow::Result<Vec<Data>, MyError> {
     let mut client = pool.get().await.unwrap();
     let sql_text = build_query_sql(&sns, &pool).await?;
     let mut rows = client.simple_query(sql_text).await?.into_row_stream();
@@ -222,9 +224,8 @@ async fn get_sn_info(sns: String) -> anyhow::Result<Vec<Data>, MyError> {
     let mut row_count = 0;
     while let Some(row) = rows.try_next().await.map_err(MyError::from)? {
         row_count += 1;
-        let data = Data::try_from_row(row).map_err(|e| {
-            MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e))
-        })?;
+        let data = Data::try_from_row(row)
+            .map_err(|e| MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e)))?;
         let sn = data.sn.clone();
         // 只保留最新的测试数据
         if let Some(existing_data) = sn_map.get(&sn) {
@@ -246,8 +247,10 @@ async fn get_sn_info(sns: String) -> anyhow::Result<Vec<Data>, MyError> {
     }
     Ok(datas)
 }
-async fn get_carton_data(box_no: &str) -> Option<HashMap<String, String>> {
-    let pool = &client().await.unwrap();
+async fn get_carton_data(
+    box_no: &str,
+    pool: &bb8::Pool<ConnectionManager>,
+) -> Option<HashMap<String, String>> {
     let sql_text = format!(
         "SELECT TOP 1 CartonNo FROM [mes_Factory].[dbo].[packing_carton] WHERE Packing_no = '{}'",
         box_no

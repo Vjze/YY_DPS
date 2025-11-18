@@ -3,11 +3,7 @@ use std::collections::{HashMap, HashSet}; // 引入 HashSet
 use crate::{
     configs::type_config::{Infos, get_type_infos},
     structs::{BandData, CartonData, Data, Datas, PackData},
-    utils::{
-        error::MyError,
-        merge_and_format::merge_and_format_results,
-        sql::{client, get_tables},
-    },
+    utils::{error::MyError, merge_and_format::merge_and_format_results, sql::get_tables},
 };
 use bb8_tiberius::ConnectionManager;
 use chrono::NaiveDateTime;
@@ -49,13 +45,14 @@ pub async fn do_carton_query(
     carton: String,
     typeinfos: String,
     is_multi: bool,
+    client: &bb8::Pool<ConnectionManager>,
 ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
     info!(
         "开始执行箱号查询: carton={}, typeinfos={}, is_multi={}",
         carton, typeinfos, is_multi
     );
-    let client = client().await?;
-    let pool = &client;
+    // let client = client().await?;
+    let pool = client;
 
     if carton.is_empty() && is_multi {
         info!("执行批量查询模式");

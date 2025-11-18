@@ -12,11 +12,11 @@ use chrono::{Local, NaiveDateTime};
 use rayon::prelude::*;
 use regex::Regex;
 use std::{collections::HashMap, sync::Arc};
+use tracing::info;
 use umya_spreadsheet::{
     Border, Font, HorizontalAlignmentValues, Style, VerticalAlignmentValues, reader::xlsx::read,
     writer::xlsx::write,
-};
-use tracing::info; // 引入 info!
+}; // 引入 info!
 
 // 单元格更新结构
 #[derive(Debug)]
@@ -30,12 +30,20 @@ pub async fn write_to_excel(
     type_name: String,
     datas: Vec<HashMap<String, String>>,
 ) -> Result<(), MyError> {
-    info!("开始执行 write_to_excel, 类型: {}, 数据量: {}", type_name, datas.len());
+    info!(
+        "开始执行 write_to_excel, 类型: {}, 数据量: {}",
+        type_name,
+        datas.len()
+    );
     let template_names: Vec<String> = get_type_infos(type_name.clone()).await?.0;
     let datas = Arc::new(datas.clone());
     let template_path = Arc::new(String::from(r"\\192.168.10.142\Excel_Templates\"));
 
-    info!("找到 {} 个关联模板: {:?}", template_names.len(), template_names);
+    info!(
+        "找到 {} 个关联模板: {:?}",
+        template_names.len(),
+        template_names
+    );
 
     // 使用 tokio::spawn 创建异步任务，处理每个模板
     let tasks: Vec<_> = template_names
@@ -131,7 +139,7 @@ pub async fn write_to_excel(
                     // 异步获取 column_name_mapping
                     let column_name_mapping =
                         Arc::new(get_template_map_config(template_name.clone()).await?);
-                    
+
                     info!("开始并行生成单元格更新...");
                     // 并行生成单元格更新（保留 rayon）
                     let cell_updates: Vec<CellUpdate> = datas
@@ -180,7 +188,7 @@ pub async fn write_to_excel(
                         })
                         .collect();
                     info!("单元格更新列表生成完毕，共 {} 个更新。", cell_updates.len());
-                    
+
                     // 构造样式一次性复用
                     let mut style = Style::default();
                     apply_cell_style(&mut style);
@@ -197,7 +205,7 @@ pub async fn write_to_excel(
                             .clone_from(&style);
                     }
                     info!("数据写入完毕.");
-                    
+
                     // 保存
                     let date = Local::now().format("%Y-%m-%d").to_string();
                     let output_path = format!("{}-{}.xlsx", template_name, date);
@@ -238,7 +246,6 @@ pub async fn write_to_excel(
         Err(MyError::Zdyknown(error))
     }
 }
-
 
 fn format_with_decimals(
     val: &str,

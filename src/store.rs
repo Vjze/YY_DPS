@@ -1,6 +1,3 @@
-use makepad_widgets::*;
-use std::collections::HashMap;
-
 use crate::{
     box_band::work::query_work::BoxBandData,
     configs::{
@@ -9,7 +6,11 @@ use crate::{
         type_config::{Infos, get_type_names},
     },
     data_import::data_import_db::DbData,
+    utils::sql::client,
 };
+use bb8_tiberius::ConnectionManager;
+use makepad_widgets::*;
+use std::collections::HashMap;
 
 #[derive(Debug, Default, Clone)]
 pub struct DatasStore {
@@ -46,6 +47,7 @@ pub struct Store {
     pub login_store: LoginStore,
     pub import_store: ImportStore,
     pub box_band_store: BoxBandStore,
+    pub pool: Option<bb8::Pool<ConnectionManager>>,
 }
 
 impl Store {
@@ -77,8 +79,16 @@ impl Store {
             all_column_name: all_column_name.clone(),
             ..Default::default()
         };
+        let pool = match client().await {
+            Ok(client) => Some(client),
+            Err(e) => {
+                Cx::post_action(e);
+                None
+            }
+        };
         Self {
             setting_store,
+            pool,
             ..Default::default()
         }
     }
