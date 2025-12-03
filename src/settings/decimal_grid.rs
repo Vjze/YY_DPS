@@ -398,8 +398,6 @@ impl Widget for TemplateInfosRow {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
-        // ★★★ 关键修改：移除这里的 cx.redraw_all() ★★★
-        // 只有在数据真正更新时（在 handle_actions 中）才调用重绘
     }
 }
 
@@ -445,13 +443,13 @@ impl WidgetMatchEvent for TemplateInfosRow {
                     data.rondan = active;
                 });
                 if active {
-                    rondan_min_input.set_disabled(cx, false);
-                    rondan_max_input.set_disabled(cx, false);
-                    rondan_size_input.set_disabled(cx, false);
+                    rondan_min_input.set_is_read_only(cx, false);
+                    rondan_max_input.set_is_read_only(cx, false);
+                    rondan_size_input.set_is_read_only(cx, false);
                 } else {
-                    rondan_min_input.set_disabled(cx, true);
-                    rondan_max_input.set_disabled(cx, true);
-                    rondan_size_input.set_disabled(cx, true);
+                    rondan_min_input.set_is_read_only(cx, true);
+                    rondan_max_input.set_is_read_only(cx, true);
+                    rondan_size_input.set_is_read_only(cx, true);
                 }
             }
 
@@ -488,38 +486,29 @@ impl WidgetMatchEvent for TemplateInfosRow {
                 // 处理 UI 逻辑
                 if selected == "数据" {
                     item_widget
-                        .view(ids!(data_select_view))
-                        .set_visible(cx, true);
-                    item_widget
                         .text_input(ids!(fixed_content))
-                        .set_disabled(cx, true);
+                        .set_is_read_only(cx, true);
                     item_widget
                         .drop_down(ids!(data_select))
                         .set_disabled(cx, false);
                 } else if selected == "固定内容" {
                     item_widget
-                        .view(ids!(data_select_view))
-                        .set_visible(cx, false);
-                    item_widget
                         .text_input(ids!(fixed_content))
-                        .set_disabled(cx, false);
+                        .set_is_read_only(cx, false);
                     item_widget
                         .drop_down(ids!(data_select))
                         .set_disabled(cx, true);
                     item_widget.drop_down(ids!(data_select)).set_text(cx, "");
                 } else {
                     item_widget
-                        .view(ids!(data_select_view))
-                        .set_visible(cx, false);
-                    item_widget
                         .text_input(ids!(fixed_content))
-                        .set_disabled(cx, true);
+                        .set_is_read_only(cx, true);
                     item_widget
                         .drop_down(ids!(data_select))
                         .set_disabled(cx, true);
                     item_widget
                         .drop_down(ids!(data_select))
-                        .set_selected_by_label("", cx);
+                        .set_text(cx, "");
                 }
             }
 
