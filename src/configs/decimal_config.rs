@@ -1,16 +1,15 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use chrono::Local;
-use regex::Regex;
-use serde::{Deserialize, Serialize};
-use tokio::fs;
-use toml::Value;
-use umya_spreadsheet::reader::xlsx::read;
-use anyhow::Result;
 use crate::{
     configs::column_map_config::add_new_template_map,
     utils::error::{MyError, MyTip},
 };
+use anyhow::Result;
+use chrono::Local;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use tokio::fs;
+use umya_spreadsheet::reader::xlsx::read;
 
 const TOML_FILE_PATH: &str = "././configs/decimal_config.toml";
 
@@ -26,18 +25,32 @@ pub struct Template {
     pub template_name: String,
     pub create_time: String,
     pub update_time: Option<String>,
-    #[serde(default)]
-    pub int: HashMap<String, toml::Value>, // 对应 [Template.int]
-    #[serde(default)]
-    pub string: HashMap<String, toml::Value>, // 对应 [Template.string]
-    #[serde(default)]
-    pub infos: HashMap<String, toml::Value>, // 对应 [Template.infos]
+    pub row: String,
+    pub infos: HashMap<String, InfoDetail>,
+    pub tables: HashMap<String, String>,
 }
-
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct DecimalConfig {
-    pub numbers: HashMap<String, i64>,
-    pub strings: HashMap<String, String>,
+pub struct InfoDetail {
+    pub rondan: bool,
+    #[serde(rename = "rondan_min")]
+    pub rondan_min: String,
+    #[serde(rename = "rondan_max")]
+    pub rondan_max: String,
+    #[serde(rename = "rondan_size")]
+    pub rondan_size: String,
+    #[serde(rename = "data_type")]
+    pub data_type: String,
+    #[serde(rename = "data_select")]
+    pub data_select: String,
+    #[serde(rename = "fixed_content")]
+    pub fixed_content: String,
+    #[serde(rename = "decimal")]
+    pub decimal: String,
+}
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct TemplateConfig {
+    pub row: String,
+    pub infos: HashMap<String, InfoDetail>,
     pub tables: HashMap<String, String>,
 }
 
@@ -55,73 +68,41 @@ pub async fn get_templates() -> Result<Vec<String>, MyError> {
     Ok(templates)
 }
 
-pub async fn get_decimal_config_value(template_name: String) -> Result<DecimalConfig, MyError> {
-    let data = load_data().await?;
+pub async fn get_decimal_config_value(template_name: String) -> Result<TemplateConfig, MyError> {
+    let data = load_data().await?; // 加载所有模板数据
     if data.is_empty() {
         return Err(MyError::UnLoadedTemplates);
     }
 
-    let mut numbers = HashMap::new();
-    let mut strings = HashMap::new();
-    let mut tables = HashMap::new();
+    // 查找匹配的模板
+    if let Some(item) = data
+        .into_iter()
+        .find(|item| item.template_name == template_name)
+    {
+        // 匹配成功，直接返回 infos 和 tables
+        let template_config = TemplateConfig {
+            row: item.row,
+            infos: item.infos,   // 直接使用 HashMap<String, InfoDetail>
+            tables: item.tables, // 直接使用 HashMap<String, String>
+        };
 
-    for item in data {
-        if item.template_name == template_name {
-            // 处理 int 字段（数字）
-            for (key, value) in item.int {
-                match value {
-                    Value::Integer(i) => {
-                        numbers.insert(key, i);
-                    }
-
-                    _ => {
-                        return Err(MyError::Zdyknown(format!(
-                            "字段 '{}' 在 int 中不是数字类型",
-                            key
-                        )));
-                    }
-                }
-            }
-            // 处理 string 字段（字符串）
-            for (key, value) in item.string {
-                if let Value::String(s) = value {
-                    strings.insert(key, s);
-                } else {
-                    return Err(MyError::Zdyknown(format!(
-                        "字段 '{}' 在 string 中不是字符串类型",
-                        key
-                    )));
-                }
-            }
-            // 处理 infos 字段（任意类型）
-            for (key, value) in item.infos {
-                if let Value::String(s) = value {
-                    tables.insert(key, s);
-                } else {
-                    return Err(MyError::Zdyknown(format!(
-                        "字段 '{}' 在 string 中不是字符串类型",
-                        key
-                    )));
-                }
-            }
-            break; // 找到匹配的模板后退出
+        // 检查是否为空，如果 infos 和 tables 都为空，则报错
+        if template_config.infos.is_empty() && template_config.tables.is_empty() {
+            return Err(MyError::None(format!(
+                "模板: {} 的 infos 和 tables 字段均为空",
+                template_name
+            )));
         }
-    }
 
-    if numbers.is_empty() && strings.is_empty() && tables.is_empty() {
-        return Err(MyError::None(format!("模板: {}", template_name)));
+        Ok(template_config)
+    } else {
+        // 未找到匹配的模板
+        Err(MyError::None(format!("模板: {}", template_name)))
     }
-
-    Ok(DecimalConfig {
-        numbers,
-        strings,
-        tables,
-    })
 }
 
 pub async fn add_new_template(
     template_name: String,
-    mut template_infos: DecimalConfig,
     rows: String,
 ) -> Result<MyTip, MyError> {
     let now = Local::now().format("%Y/%m/%d %H:%M:%S").to_string();
@@ -186,34 +167,27 @@ pub async fn add_new_template(
     } else {
         1
     };
-    let mut new_fields = HashMap::new();
+    let mut excel_column_keys = HashMap::new();
     for header in headers {
         let result = re.replace_all(&header, "");
-        new_fields.insert(result.to_string(), "".to_string());
+        excel_column_keys.insert(result.to_string(), "".to_string());
     }
-    add_new_template_map(template_name.clone(), new_fields.clone()).await?;
-    new_fields.insert("rows".to_string(), rows.to_string());
-    template_infos.strings.extend(new_fields);
+    let mut final_infos = HashMap::new(); // 使用空的 HashMap 作为默认值
+
+    for column_name in excel_column_keys.keys() {
+        // 对于每一个 Excel 列名，插入一个默认的 InfoDetail，确保配置完整
+        final_infos.entry(column_name.clone()).or_insert_with(InfoDetail::default);
+    }
+    // let mut row_map = HashMap::new();
+    // row_map.insert("rows".to_string(), rows.to_string());
     let new_item = Template {
         id: new_id,
         template_name: template_name.clone(),
         create_time: now,
         update_time: None,
-        int: template_infos
-            .numbers
-            .into_iter()
-            .map(|(k, v)| (k, Value::Integer(v as i64)))
-            .collect(),
-        string: template_infos
-            .strings
-            .into_iter()
-            .map(|(k, v)| (k, Value::String(v)))
-            .collect(),
-        infos: template_infos
-            .tables
-            .into_iter()
-            .map(|(k, v)| (k, Value::String(v)))
-            .collect(),
+        row: rows,
+        infos: final_infos,
+        tables: HashMap::new(),
     };
     data.push(new_item);
     save_data(&data).await?;
@@ -222,7 +196,7 @@ pub async fn add_new_template(
 
 pub async fn update_template(
     template_name: String,
-    template_infos: DecimalConfig,
+    template_config: TemplateConfig,
 ) -> Result<MyTip, MyError> {
     let now = Local::now().format("%Y/%m/%d %H:%M:%S").to_string();
     let mut data = load_data().await?;
@@ -232,21 +206,9 @@ pub async fn update_template(
         if item.template_name == template_name {
             found = true;
             item.update_time = Some(now.clone());
-            item.int = template_infos
-                .numbers
-                .into_iter()
-                .map(|(k, v)| (k, Value::Integer(v as i64)))
-                .collect();
-            item.string = template_infos
-                .strings
-                .into_iter()
-                .map(|(k, v)| (k, Value::String(v)))
-                .collect();
-            item.infos = template_infos
-                .tables
-                .into_iter()
-                .map(|(k, v)| (k, Value::String(v)))
-                .collect();
+            item.row = template_config.row;
+            item.infos = template_config.infos;
+            item.tables = template_config.tables;
             break;
         }
     }

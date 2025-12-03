@@ -3,107 +3,17 @@ id = 1
 template_name = "249"
 create_time = "2024/01/01 10:00:00"
 update_time = "2025/08/06 18:25:53"
-
-[Template.int]
-kink = 0
-se = 3
-ith = 2
-sen = 3
-icc = 3
-im = 0
-mdpid = 2
-vf = 0
-res = 2
-po = 2
-iop = 2
-rs = 2
-i_xtalk = 2
-imkink = 2
-idark = 2
-
-[Template.string]
-bosa_vbr1 = "0.00"
-bosa_maker1 = "111026"
-bosa_vbr3 = "0.00"
-bosa_vop = "0.00"
-bosa_vbr = "0.00"
-rows = "2"
-bosa_maker2 = "111026"
-bosa_vbr2 = "0.00"
-bosa_vop1 = "0.00"
-bosa_maker3 = "111026"
-bosa_vop2 = "0.00"
-bosa_vop3 = "0.00"
-bosa_maker = "111026"
-
+row = "2"
 [Template.infos]
+kink = {rondan = false, rondan_min = "", rondan_max = "", rondan_size = "", data_type = "数据", data_select = "kink", fixed_content = "", decimal= "2"}
+se = {rondan = false, rondan_min = "", rondan_max = "", rondan_size = "", data_type = "数据", data_select = "se", fixed_content = "", decimal= "3"}
+ith = {rondan = true, rondan_min = "0.7", rondan_max = "1.5", rondan_size = "10", data_type = "数据", data_select = "ith", fixed_content = "", decimal= "2"}
+
+bosa_vbr1 = {rondan = false, rondan_min = "", rondan_max = "", rondan_size = "", data_type = "固定内容", data_select = "", fixed_content = "2025", decimal= ""}
+
+[Template.tables]
 E3 = "EEE"
 F4 = "fff"
 E8 = "Date"
 A1 = "Test"
 
-[[Template]]
-id = 2
-template_name = "249_1"
-create_time = "2024/01/02 11:00:00"
-update_time = "2024/01/02 11:00:00"
-
-[Template.int]
-im = 0
-res = 2
-po = 2
-rs = 2
-idark = 2
-
-[Template.string]
-bosa_maker3 = "111026"
-bosa_maker1 = "111026"
-bosa_vop3 = "0.00"
-bosa_vop2 = "0.00"
-
-[Template.infos]
-E8 = "Date"
-F4 = "fff"
-
-[[Template]]
-id = 5
-template_name = "2491"
-create_time = "2025/08/06 17:17:40"
-
-[Template.int]
-rs = 2
-se = 3
-po = 2
-vf = 0
-idark = 2
-iop = 2
-mdpid = 2
-imkink = 2
-i_xtalk = 2
-kink = 0
-icc = 3
-im = 0
-ith = 2
-res = 2
-sen = 3
-
-[Template.string]
-rows = "2"
-bosa_maker3 = "111026"
-bosa_vop1 = "0.00"
-bosa_vbr1 = "0.00"
-bosa_vop2 = "0.00"
-bosa_maker = "111026"
-bosa_maker2 = "111026"
-bosa_vbr = "0.00"
-bosa_vop = "0.00"
-bosa_vbr3 = "0.00"
-bosa_vbr2 = "0.00"
-bosa_vop3 = "0.00"
-bosa_maker1 = "111026"
-
-[Template.infos]
-A1 = "Test"
-E3 = "EEE"
-E8 = "Date"
-F4 = "fff"

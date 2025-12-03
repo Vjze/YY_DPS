@@ -1,7 +1,7 @@
 use crate::{
     box_band::work::query_work::BoxBandData,
     configs::{
-        decimal_config::{DecimalConfig, get_templates},
+        decimal_config::{TemplateConfig, get_templates},
         get_all_column_name::load_all_column_names,
         type_config::{Infos, get_type_names},
     },
@@ -25,7 +25,7 @@ pub struct SettingStore {
     pub templates: Vec<String>,
     pub all_column_name: Vec<String>,
     pub type_infos: (Vec<String>, Infos),
-    pub template_infos: DecimalConfig,
+    pub template_infos: TemplateConfig,
     pub map_infos: HashMap<String, String>,
 }
 #[derive(Debug, Default, Clone)]

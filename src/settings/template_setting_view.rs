@@ -3,7 +3,7 @@ use tokio::runtime::Runtime;
 
 use crate::{
     configs::decimal_config::{
-        DecimalConfig, add_new_template, delete_template, get_decimal_config_value, update_template,
+        TemplateConfig, add_new_template, delete_template, get_decimal_config_value, update_template,
     },
     settings::{add_template_modal::TemplateModalAction, delete_modal::DeleteModalAction},
     store::Store,
@@ -17,8 +17,8 @@ live_design! {
 
     use crate::shared::widgets::*;
     use crate::shared::styles::*;
-    use crate::settings::decimal_grid::DecimalGrid;
-    use crate::settings::fixed_content_grid::FixedGrid;
+    use crate::settings::decimal_grid::TemplateInfosRow;
+    // use crate::settings::fixed_content_grid::FixedGrid;
     use crate::settings::tabel_grid::TableGrid;
     use crate::settings::add_template_modal::AddTemplateModal;
     use crate::settings::delete_modal::DeleteModal;
@@ -146,7 +146,7 @@ live_design! {
                         }
                     }
                 }
-                <ScrollYView> {
+                <View> {
                     width: Fill,
                     height: Fit,
                     spacing: 15,
@@ -166,42 +166,26 @@ live_design! {
                                 color: #000
                             }
                         }
-                        <DecimalGrid> {}
+                        <TemplateInfosRow> {}
                     }
-                    <View> {
-                        height: 280,
-                        width: Fill,
-                        flow: Down,
-                        spacing: 10,
-                        align: {x: 0.5}
-                        <Label> {
-                            text: "固定内容配置:"
-                            draw_text: {
-                                text_style: <THEME_FONT_BOLD>{
-                                    font_size: 16
-                                }
-                                color: #000
-                            }
-                        }
-                        <FixedGrid> {}
-                    }
-                    <View> {
-                        height: 150,
-                        width: Fill,
-                        flow: Down,
-                        spacing: 10,
-                        align: {x: 0.5}
-                        <Label> {
-                            text: "表格内容配置:"
-                            draw_text: {
-                                text_style: <THEME_FONT_BOLD>{
-                                    font_size: 16
-                                }
-                                color: #000
-                            }
-                        }
-                        <TableGrid> {}
-                    }
+                    
+                    // <View> {
+                    //     height: 150,
+                    //     width: Fill,
+                    //     flow: Down,
+                    //     spacing: 10,
+                    //     align: {x: 0.5}
+                    //     <Label> {
+                    //         text: "表格内容配置:"
+                    //         draw_text: {
+                    //             text_style: <THEME_FONT_BOLD>{
+                    //                 font_size: 16
+                    //             }
+                    //             color: #000
+                    //         }
+                    //     }
+                    //     <TableGrid> {}
+                    // }
 
 
                 <View> {
@@ -306,7 +290,7 @@ impl WidgetMatchEvent for TemplateView {
                     Ok(res) => res,
                     Err(e) => {
                         Cx::post_action(e);
-                        DecimalConfig::default()
+                        TemplateConfig::default()
                     }
                 }
             });
@@ -345,7 +329,7 @@ impl WidgetMatchEvent for TemplateView {
         }
         if clear_btn.clicked(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.setting_store.template_infos = DecimalConfig::default();
+                store.setting_store.template_infos = TemplateConfig::default();
                 input.set_text(cx, "");
             }
         }
@@ -356,11 +340,11 @@ impl WidgetMatchEvent for TemplateView {
             if let Some(TemplateModalAction::Action(rows)) = action.downcast_ref() {
                 let template_name = input.text().clone();
                 let rt = self.rt.handle().clone();
-                if let Some(store) = scope.data.get_mut::<Store>() {
-                    let template_infos = store.setting_store.template_infos.clone();
+                // if let Some(store) = scope.data.get_mut::<Store>() {
+                    // let template_infos = store.setting_store.template_infos.clone();
                     let _guard = rt.enter();
                     rt.block_on(async move {
-                        match add_new_template(template_name, template_infos, rows.clone()).await {
+                        match add_new_template(template_name,rows.clone()).await {
                             Ok(res) => {
                                 Cx::post_action(res);
                                 Store::init().await;
@@ -370,7 +354,7 @@ impl WidgetMatchEvent for TemplateView {
                             }
                         }
                     });
-                };
+                // };
             }
             if let Some(DeleteModalAction::Close) = action.downcast_ref() {
                 self.modal(ids!(delete_modal)).close(cx);

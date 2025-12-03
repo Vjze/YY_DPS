@@ -75,7 +75,7 @@ pub async fn write_to_excel(
                         // 如果工作表为空，直接返回空表头
                         headers = Default::default();
                     }
-                    let rows = if let Some(value) = decimal_config.strings.get("rows") {
+                    let rows = if let Some(value) = decimal_config.row.get("rows") {
                         value.to_string()
                     } else {
                         "1".to_string() // 默认值

@@ -132,7 +132,7 @@ impl Widget for Providers {
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
-        let all_providers = vec!["类型设置", "模板设置", "映射设置"];
+        let all_providers = vec!["类型设置", "模板设置"];
         let entries_count = all_providers.len();
 
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {

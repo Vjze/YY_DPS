@@ -14,8 +14,8 @@ live_design! {
     use crate::settings::providers::Providers;
     use crate::settings::type_setting_view::TypeView;
     use crate::settings::template_setting_view::TemplateView;
-    use crate::settings::map_setting_view::MapView;
-    use crate::widgets::login_view::LoginView;
+    // use crate::settings::map_setting_view::MapView;
+    // use crate::widgets::login_view::LoginView;
 
     HorizontalSeparator = <RoundedView> {
         width: 2, height: Fill
@@ -41,7 +41,7 @@ live_design! {
 
         type_frame = <TypeView> {visible: true}
         template_frame = <TemplateView> {visible: false}
-        map_frame = <MapView> {visible: false}
+        // map_frame = <MapView> {visible: false}
     }
 
     pub ProvidersScreen = {{ProvidersScreen}} {
@@ -94,13 +94,7 @@ pub struct ProvidersScreen {
 
 impl Widget for ProvidersScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        // if let Some(store) = scope.data.get_mut::<Store>(){
-        //     if store.logined {
-        //         self.view.modal(ids!(login_view)).close(cx);
-        //     }else{
-        //         self.view.modal(ids!(login_view)).open(cx);
-        //     }
-        // }
+
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
     }
@@ -133,24 +127,10 @@ impl WidgetMatchEvent for ProvidersScreen {
                         .widget(ids!(setting_view))
                         .widget(ids!(template_frame))
                         .set_visible(cx, false);
-                    self.view
-                        .widget(ids!(setting_view))
-                        .widget(ids!(map_frame))
-                        .set_visible(cx, false);
-                }
-                "模板设置" => {
-                    self.view
-                        .widget(ids!(setting_view))
-                        .widget(ids!(type_frame))
-                        .set_visible(cx, false);
-                    self.view
-                        .widget(ids!(setting_view))
-                        .widget(ids!(template_frame))
-                        .set_visible(cx, true);
-                    self.view
-                        .widget(ids!(setting_view))
-                        .widget(ids!(map_frame))
-                        .set_visible(cx, false);
+                    // self.view
+                    //     .widget(ids!(setting_view))
+                    //     .widget(ids!(map_frame))
+                    //     .set_visible(cx, false);
                 }
                 _ => {
                     self.view
@@ -160,12 +140,26 @@ impl WidgetMatchEvent for ProvidersScreen {
                     self.view
                         .widget(ids!(setting_view))
                         .widget(ids!(template_frame))
-                        .set_visible(cx, false);
-                    self.view
-                        .widget(ids!(setting_view))
-                        .widget(ids!(map_frame))
                         .set_visible(cx, true);
+                    // self.view
+                    //     .widget(ids!(setting_view))
+                    //     .widget(ids!(map_frame))
+                    //     .set_visible(cx, false);
                 }
+                // _ => {
+                //     self.view
+                //         .widget(ids!(setting_view))
+                //         .widget(ids!(type_frame))
+                //         .set_visible(cx, false);
+                //     self.view
+                //         .widget(ids!(setting_view))
+                //         .widget(ids!(template_frame))
+                //         .set_visible(cx, false);
+                //     self.view
+                //         .widget(ids!(setting_view))
+                //         .widget(ids!(map_frame))
+                //         .set_visible(cx, true);
+                // }
             }
         }
     }
