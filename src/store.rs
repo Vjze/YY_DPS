@@ -7,6 +7,7 @@ use crate::{
     },
     data_import::data_import_db::DbData,
     utils::sql::client,
+    widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
 use bb8_tiberius::ConnectionManager;
 use makepad_widgets::*;
@@ -80,7 +81,14 @@ impl Store {
             ..Default::default()
         };
         let pool = match client().await {
-            Ok(client) => Some(client),
+            Ok(client) => {
+                enqueue_popup_notification(PopupItem {
+                    kind: PopupKind::Success,
+                    auto_dismissal_duration: Some(5.0),
+                    message: "数据库连接成功".to_string(),
+                });
+                Some(client)
+            }
             Err(e) => {
                 Cx::post_action(e);
                 None

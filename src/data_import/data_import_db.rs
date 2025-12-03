@@ -275,6 +275,12 @@ impl WidgetMatchEvent for DataImportDb {
                 });
             }
         }
+        if self.view.button(ids!(test_btn)).clicked(actions) {
+            self.view.popup_notification(ids!(t)).open(cx);
+            self.view
+                .popup_notification(ids!(t))
+                .set_text(cx, "ceshi tanchuang ");
+        }
         cx.redraw_all();
     }
 }
