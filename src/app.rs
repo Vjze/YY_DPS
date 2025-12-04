@@ -1,4 +1,3 @@
-
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
 
@@ -200,6 +199,7 @@ pub struct App {
 impl LiveRegister for App {
     fn live_register(cx: &mut Cx) {
         makepad_widgets::live_design(cx);
+        cx.link(id!(theme), id!(theme_desktop_light));
         crate::shared::live_design(cx);
         crate::export::live_design(cx);
         crate::settings::live_design(cx);

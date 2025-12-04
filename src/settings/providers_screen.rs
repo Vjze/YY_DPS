@@ -52,7 +52,7 @@ live_design! {
             width: Fit, height: Fill
             flow: Down
             
-            padding: {left: 30, top: 20}
+            padding: 15
             <Label> {
                 draw_text:{
                     text_style: <BOLD_FONT>{font_size: 25}

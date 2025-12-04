@@ -41,7 +41,7 @@ live_design! {
             flow: Down, spacing: 20
 
             <View> {
-                    width: Fill, height: Fit,
+                    width: Fill, height: Fill {weight: 0.8},
                     spacing:15,
                     template_input = <MolyTextInput> {
                         empty_text: "新增模板必须输入名称...."
@@ -146,13 +146,13 @@ live_design! {
                         }
                     }
                 }
-                <View> {
-                    width: Fill,
-                    height: Fit,
-                    spacing: 15,
-                    flow: Down,
+                // <View> {
+                //     width: Fill,
+                //     height: Fit,
+                //     spacing: 15,
+                //     flow: Down,
                     <View> {
-                        height: 180,
+                        height: Fill {weight: 6.5},
                         width: Fill,
                         flow: Down,
                         spacing: 10,
@@ -169,30 +169,30 @@ live_design! {
                         <TemplateInfosRow> {}
                     }
                     
-                    // <View> {
-                    //     height: 150,
-                    //     width: Fill,
-                    //     flow: Down,
-                    //     spacing: 10,
-                    //     align: {x: 0.5}
-                    //     <Label> {
-                    //         text: "表格内容配置:"
-                    //         draw_text: {
-                    //             text_style: <THEME_FONT_BOLD>{
-                    //                 font_size: 16
-                    //             }
-                    //             color: #000
-                    //         }
-                    //     }
-                    //     <TableGrid> {}
-                    // }
+                    <View> {
+                        height: Fill {weight: 2.0}
+                        width: Fill,
+                        flow: Down,
+                        spacing: 10,
+                        align: {x: 0.5}
+                        <Label> {
+                            text: "表格内容配置:"
+                            draw_text: {
+                                text_style: <THEME_FONT_BOLD>{
+                                    font_size: 16
+                                }
+                                color: #000
+                            }
+                        }
+                        <TableGrid> {}
+                    }
 
 
                 <View> {
                     spacing: 10,
                     align: {x: 0.5, y: 1.0}
                     width: Fill,
-                    height: Fit
+                    height: Fill {weight: 0.8}
                     update_template_btn = <Button> {
                         width: 120, height: 40,
                         text: "模板更新",
@@ -229,7 +229,7 @@ live_design! {
                     }
                 }
             }
-        }
+        // }
         add_modal = <Modal> {
             content: {
                 <AddTemplateModal> {}

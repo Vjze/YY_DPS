@@ -34,7 +34,7 @@ live_design! {
                         color: #000
                     }
                 }
-                roudan_bool = <CheckBox> {
+                roudan_bool = <MySwitch> {
                     width: Fill { weight: 0.5}
                     text: "启用随机"
                     draw_text: {
@@ -59,7 +59,7 @@ live_design! {
                     }
                     roudan_min_input = <MolyTextInput> {
                         empty_text: "..."
-                        width: Fit, height: 40
+                        width: Fill { weight: 0.5}, height: 40
                         padding: 10,
                         draw_text: {
                             text_style: <REGULAR_FONT>{
@@ -83,7 +83,7 @@ live_design! {
                     }
                     roudan_max_input = <MolyTextInput> {
                         empty_text: "..."
-                        width: Fit, height: 40
+                        width: Fill { weight: 0.5}, height: 40
                         padding: 10,
                         draw_text: {
                             text_style: <REGULAR_FONT>{
@@ -107,7 +107,7 @@ live_design! {
                     }
                     roudan_size_input = <MolyTextInput> {
                         empty_text: "..."
-                        width: Fit, height: 40
+                        width: Fill { weight: 0.5}, height: 40
                         padding: 10,
                         draw_text: {
                             text_style: <REGULAR_FONT>{
@@ -158,7 +158,7 @@ live_design! {
                     }
 
                         data_select = <DropDown> {
-                            width: Fill { weight: 1.0},height:40,
+                            width: Fill { weight: 0.7},height:40,
                             padding: {top:12,left:15}
                             draw_text: {
                                 uniform color: #000
@@ -284,19 +284,17 @@ impl Widget for TemplateInfosRow {
                         .collect::<Vec<String>>();
                     keys.sort();
                     let len = state.setting_store.template_infos.infos.len();
-                    list.set_item_range(cx, 0, len);
+                    list.set_item_range(cx, 0, len + 1);
                     if state.setting_store.template_infos.infos.is_empty() {
+                        // list.set_item_range(cx, 0, 1);
                         continue;
                     }
                     while let Some(item_id) = list.next_visible_item(cx) {
-                        let template = match item_id {
-                            0 => live_id!(TopSpace),
-                            _ => live_id!(Post),
-                        };
+                        // let data_index = item_id - 1;
                         if item_id >= len {
                             continue;
                         }
-                        let item = list.item(cx, item_id, template);
+                        let item = list.item(cx, item_id, live_id!(Post));
                         let infos = state.setting_store.template_infos.infos.clone();
                         let title = keys[item_id].clone();
 
@@ -318,9 +316,12 @@ impl Widget for TemplateInfosRow {
                             // 绑定随机视图可见性及内容
                             if rondan_bool {
                                 // item.view(ids!(roudan_view)).set_visible(cx, true);
-                                item.text_input(ids!(rondan_min_input)).set_disabled(cx, false);
-                                item.text_input(ids!(rondan_max_input)).set_disabled(cx, false);
-                                item.text_input(ids!(rondan_size_input)).set_disabled(cx, false);
+                                item.text_input(ids!(rondan_min_input))
+                                    .set_disabled(cx, false);
+                                item.text_input(ids!(rondan_max_input))
+                                    .set_disabled(cx, false);
+                                item.text_input(ids!(rondan_size_input))
+                                    .set_disabled(cx, false);
                                 item.text_input(ids!(roudan_min_input))
                                     .set_text(cx, &info.rondan_min);
                                 self.ids.insert(
@@ -342,9 +343,12 @@ impl Widget for TemplateInfosRow {
                                     title.clone(),
                                 );
                             } else {
-                                item.text_input(ids!(rondan_min_input)).set_disabled(cx, true);
-                                item.text_input(ids!(rondan_max_input)).set_disabled(cx, true);
-                                item.text_input(ids!(rondan_size_input)).set_disabled(cx, true);
+                                item.text_input(ids!(rondan_min_input))
+                                    .set_disabled(cx, true);
+                                item.text_input(ids!(rondan_max_input))
+                                    .set_disabled(cx, true);
+                                item.text_input(ids!(rondan_size_input))
+                                    .set_disabled(cx, true);
                             }
 
                             // 绑定数据类型
@@ -362,6 +366,8 @@ impl Widget for TemplateInfosRow {
                                 item.drop_down(ids!(data_select)).set_labels(cx, labels);
                                 item.drop_down(ids!(data_select))
                                     .set_selected_by_label(&info.data_select, cx);
+                                item.text_input(ids!(fixed_content))
+                                    .set_is_read_only(cx, true);
                                 self.ids.insert(
                                     item.drop_down(ids!(data_select)).widget_uid(),
                                     title.clone(),
@@ -439,9 +445,7 @@ impl WidgetMatchEvent for TemplateInfosRow {
             // ------------------ 启用随机 (roudan_bool) ------------------
             if let Some(active) = rondan_bool.changed(actions) {
                 info!("启用随机按钮点击，当前状态：{}", active);
-                update_data(cx, rondan_bool.widget_uid(), &mut |data| {
-                    data.rondan = active;
-                });
+                
                 if active {
                     rondan_min_input.set_is_read_only(cx, false);
                     rondan_max_input.set_is_read_only(cx, false);
@@ -451,6 +455,10 @@ impl WidgetMatchEvent for TemplateInfosRow {
                     rondan_max_input.set_is_read_only(cx, true);
                     rondan_size_input.set_is_read_only(cx, true);
                 }
+                // rondan_bool.set_active(cx, active);
+                update_data(cx, rondan_bool.widget_uid(), &mut |data| {
+                    data.rondan = active;
+                });
             }
 
             // ------------------ 随机下限 (rondan_min_input) ------------------
@@ -506,9 +514,7 @@ impl WidgetMatchEvent for TemplateInfosRow {
                     item_widget
                         .drop_down(ids!(data_select))
                         .set_disabled(cx, true);
-                    item_widget
-                        .drop_down(ids!(data_select))
-                        .set_text(cx, "");
+                    item_widget.drop_down(ids!(data_select)).set_text(cx, "");
                 }
             }
 

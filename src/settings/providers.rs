@@ -17,50 +17,19 @@ live_design! {
         draw_bg: {
             border_radius: 5
         }
-        padding: {left: 50}
-        align: {x: 0.0, y: 0.5}
+        // padding: {left: 50}
+        align: {x: 0.5, y: 0.5}
 
         main_view = <View> {
             cursor: Hand
-            align: {x: 0.0, y: 0.5}
+            align: {x: 0.5, y: 0.5}
             spacing: 20
-            flow: Right
-
-            // provider_icon = <View> {
-            //     width: Fit, height: Fit
-            //     image_wrapper = <View> {
-            //         width: Fit, height: Fit
-            //         provider_icon_image = <Image> {
-            //             width: 25, height: 25
-            //         }
-            //         visible: true
-            //     }
-
-            //     label_wrapper = <RoundedView> {
-            //         width: 25, height: 25
-            //         visible: false
-            //         show_bg: true
-            //         draw_bg: {
-            //             color: #344054
-            //             border_radius: 6
-            //         }
-            //         align: {x: 0.5, y: 0.5}
-
-            //         initial_label = <Label> {
-            //             draw_text:{
-            //                 text_style: <BOLD_FONT>{font_size: 12}
-            //                 color: #f
-            //             }
-            //         }
-            //     }
-            // }
-
 
             <View> {
                 flow: Right
                 width: Fill, height: Fill
                 spacing: 20
-                align: {x: 0.0, y: 0.5}
+                align: {x: 0.5, y: 0.5}
 
                 provider_name_label = <Label> {
                     draw_text:{
@@ -69,7 +38,6 @@ live_design! {
                     }
                 }
 
-                filler = <View> { width: Fill, height: Fill }
             }
 
         }
@@ -79,25 +47,13 @@ live_design! {
 
 
     pub Providers = {{Providers}} {
-                width: 200, height: Fill
+                width: 150, height: Fill
                 flow: Down, spacing: 10
                 padding: {left: 10, right: 10}
                 providers_list = <PortalList> {
                     width: Fill, height: Fill
                     provider_item = <ProviderItem> {}
                 }
-
-                // provider_icons: [
-                //     (ICON_OPENAI),
-                //     (ICON_GEMINI),
-                //     (ICON_SILICONFLOW),
-                //     (ICON_OPENROUTER),
-                //     (ICON_MOLYSERVER),
-                // ]
-
-
-
-
     }
 }
 
@@ -218,24 +174,6 @@ impl ProviderItemRef {
             return;
         };
         inner.provider = provider.clone();
-
-        inner.view(ids!(image_wrapper)).set_visible(cx, false);
-
-        // Show the label
-        let label_view = inner.view(ids!(label_wrapper));
-        label_view.set_visible(cx, true);
-
-        // Get first character of the provider name
-        let first_char = provider
-            .chars()
-            .next()
-            .map(|c| c.to_uppercase().to_string())
-            .unwrap_or_default();
-
-        label_view
-            .label(ids!(initial_label))
-            .set_text(cx, &first_char);
-        // }
 
         if is_selected && cx.display_context.is_desktop() {
             inner.view.apply_over(
