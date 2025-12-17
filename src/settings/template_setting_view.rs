@@ -1,5 +1,6 @@
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
+use tracing::info;
 
 use crate::{
     configs::decimal_config::{
@@ -286,6 +287,7 @@ impl WidgetMatchEvent for TemplateView {
             let _guard = rt.enter();
             let decimal_infos = rt.block_on(async move {
                 let res = get_decimal_config_value(type_name).await;
+                info!("加载模板配置结果 {:?}",res);
                 match res {
                     Ok(res) => res,
                     Err(e) => {

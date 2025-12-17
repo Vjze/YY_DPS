@@ -2,18 +2,471 @@
 id = 1
 template_name = "249"
 create_time = "2024/01/01 10:00:00"
-update_time = "2025/08/06 18:25:53"
+update_time = "2025/12/15 23:15:25"
 row = "2"
-[Template.infos]
-kink = {rondan = false, rondan_min = "", rondan_max = "", rondan_size = "", data_type = "数据", data_select = "kink", fixed_content = "", decimal= "2"}
-se = {rondan = false, rondan_min = "", rondan_max = "", rondan_size = "", data_type = "数据", data_select = "se", fixed_content = "", decimal= "3"}
-ith = {rondan = true, rondan_min = "0.7", rondan_max = "1.5", rondan_size = "10", data_type = "数据", data_select = "ith", fixed_content = "", decimal= "2"}
 
-bosa_vbr1 = {rondan = false, rondan_min = "", rondan_max = "", rondan_size = "", data_type = "固定内容", data_select = "", fixed_content = "2025", decimal= ""}
+[Template.infos.ith]
+roudan = false
+roudan_min = "0.7"
+roudan_max = "1.5"
+roudan_size = "10"
+data_type = "固定内容"
+data_select = "ith"
+fixed_content = "20"
+decimal = "2"
+
+[Template.infos.se]
+roudan = true
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = "数据"
+data_select = "se"
+fixed_content = ""
+decimal = "3"
+
+[Template.infos.kink]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = "数据"
+data_select = "kink"
+fixed_content = ""
+decimal = "2"
+
+[Template.infos.bosa_vbr1]
+roudan = true
+roudan_min = "1"
+roudan_max = "2"
+roudan_size = "1"
+data_type = "数据"
+data_select = "sen"
+fixed_content = "2025"
+decimal = ""
 
 [Template.tables]
-E3 = "EEE"
+A12 = "Test"
 F4 = "fff"
 E8 = "Date"
-A1 = "Test"
+E3 = "EEE"
 
+[[Template]]
+id = 2
+template_name = "585"
+create_time = "2025/12/10 20:27:27"
+update_time = "2025/12/10 20:36:21"
+row = "1"
+
+[Template.infos."Vbr(V)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."产品品号(必填)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."测试人"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."afterTC-Ith(mA)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos.T-RS]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."beforeTC-SE(W/A)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."beforeTC-Vf(V)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos.Barcode]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos.BlisterSN]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos.T-PKINK]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."T-水平角度"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."beforeTC-Im(uA)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."外向交货单行号"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."工单单号(必填)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."afterTC-Po(mW)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."afterTC-SE(W/A)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."beforeTC-Ith(mA)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."T-垂直角度"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."测试时间"]
+roudan = true
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."发货时间"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos.PN]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos.M]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos.SN]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."ID(nA)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."R(A/W)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."Icc(mA)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."beforeTC-Po(mW)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."afterTC-Im(uA)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."包装箱号"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."外向交货单号"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos.OuterBox]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."工位"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."deltaP（dB）"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."MN(必填)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos.T-ImKINK]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."客户品号"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."Vbr模块调测推荐值"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."外包商代码"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."Sen（dBm）"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."型号（必填）"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.infos."afterTC-Vf(V)"]
+roudan = false
+roudan_min = ""
+roudan_max = ""
+roudan_size = ""
+data_type = ""
+data_select = ""
+fixed_content = ""
+decimal = ""
+
+[Template.tables]
+A1 = ""

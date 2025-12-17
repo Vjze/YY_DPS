@@ -9,6 +9,7 @@ use chrono::Local;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
+use tracing::info;
 use umya_spreadsheet::reader::xlsx::read;
 
 const TOML_FILE_PATH: &str = "././configs/decimal_config.toml";
@@ -31,13 +32,13 @@ pub struct Template {
 }
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct InfoDetail {
-    pub rondan: bool,
-    #[serde(rename = "rondan_min")]
-    pub rondan_min: String,
-    #[serde(rename = "rondan_max")]
-    pub rondan_max: String,
-    #[serde(rename = "rondan_size")]
-    pub rondan_size: String,
+    pub roudan: bool,
+    #[serde(rename = "roudan_min")]
+    pub roudan_min: String,
+    #[serde(rename = "roudan_max")]
+    pub roudan_max: String,
+    #[serde(rename = "roudan_size")]
+    pub roudan_size: String,
     #[serde(rename = "data_type")]
     pub data_type: String,
     #[serde(rename = "data_select")]
