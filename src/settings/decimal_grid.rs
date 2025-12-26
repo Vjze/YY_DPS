@@ -57,7 +57,7 @@ live_design! {
                             color: #000
                         }
                     }
-                    roudan_min_input = <MolyTextInput> {
+                    roudan_min_input = <TextInput> {
                         empty_text: "..."
                         width: Fill { weight: 0.5}, height: 40
                         padding: 10,
@@ -81,7 +81,7 @@ live_design! {
                             color: #000
                         }
                     }
-                    roudan_max_input = <MolyTextInput> {
+                    roudan_max_input = <TextInput> {
                         empty_text: "..."
                         width: Fill { weight: 0.5}, height: 40
                         padding: 10,
@@ -105,7 +105,7 @@ live_design! {
                             color: #000
                         }
                     }
-                    roudan_size_input = <MolyTextInput> {
+                    roudan_size_input = <TextInput> {
                         empty_text: "..."
                         width: Fill { weight: 0.5}, height: 40
                         padding: 10,
@@ -191,7 +191,7 @@ live_design! {
                         }
                     }
 
-                    fixed_content = <MolyTextInput> {
+                    fixed_content = <TextInput> {
                         empty_text: "..."
                         width: Fill {weight: 0.8}, height: 40,
                         padding: 10,
@@ -216,7 +216,7 @@ live_design! {
                             color: #000
                         }
                     }
-                decimal_input = <MolyTextInput> {
+                decimal_input = <TextInput> {
                     empty_text: "..."
                     width: Fit, height: 40,
                     padding: 10,
@@ -258,111 +258,117 @@ impl Widget for TemplateInfosRow {
         let mut keys = infos.keys().cloned().collect::<Vec<String>>();
         keys.sort();
         let len = state.setting_store.template_infos.infos.len();
+        let len = if len > 0 { len } else { 0 };
         let labels = state.setting_store.all_column_name.clone();
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(mut list) = item.as_portal_list().borrow_mut() {
                 // if let Some(state) = scope.data.get_mut::<Store>() {
 
-                list.set_item_range(cx, 0, len + 1);
+                list.set_item_range(cx, 0, len);
                 // if state.setting_store.template_infos.infos.is_empty() {
                 //     continue;
                 // }
                 while let Some(item_id) = list.next_visible_item(cx) {
-                    if item_id >= len {
-                        continue;
-                    }
-                    let item = list.item(cx, item_id, live_id!(Post));
+                    if item_id < len {
+                        // if item_id >= len {
+                        //     continue;
+                        // }
+                        let item = list.item(cx, item_id, live_id!(Post));
 
-                    let title = keys[item_id].clone();
+                        let title = keys[item_id].clone();
 
-                    if let Some(info) = infos.get(&title) {
-                        if title == "ith" {
-                            info!("info {:?}", info);
+                        if let Some(info) = infos.get(&title) {
+                            if title == "ith" {
+                                info!("info {:?}", info);
+                            }
+
+                            let roudan = info.roudan;
+
+                            item.label(ids!(title)).set_text(cx, &title);
+
+                            item.check_box(ids!(roudan_bool)).set_active(cx, roudan);
+                            self.ids.insert(
+                                item.check_box(ids!(roudan_bool)).widget_uid(),
+                                title.clone(),
+                            );
+
+                            if roudan {
+                                item.text_input(ids!(roudan_min_input))
+                                    .set_disabled(cx, false);
+                                item.text_input(ids!(roudan_max_input))
+                                    .set_disabled(cx, false);
+                                item.text_input(ids!(roudan_size_input))
+                                    .set_disabled(cx, false);
+                                item.text_input(ids!(roudan_min_input))
+                                    .set_text(cx, &info.roudan_min);
+                                self.ids.insert(
+                                    item.text_input(ids!(roudan_min_input)).widget_uid(),
+                                    title.clone(),
+                                );
+
+                                item.text_input(ids!(roudan_max_input))
+                                    .set_text(cx, &info.roudan_max);
+                                self.ids.insert(
+                                    item.text_input(ids!(roudan_max_input)).widget_uid(),
+                                    title.clone(),
+                                );
+
+                                item.text_input(ids!(roudan_size_input))
+                                    .set_text(cx, &info.roudan_size);
+                                self.ids.insert(
+                                    item.text_input(ids!(roudan_size_input)).widget_uid(),
+                                    title.clone(),
+                                );
+                            } else {
+                                item.text_input(ids!(roudan_min_input))
+                                    .set_disabled(cx, true);
+                                item.text_input(ids!(roudan_max_input))
+                                    .set_disabled(cx, true);
+                                item.text_input(ids!(roudan_size_input))
+                                    .set_disabled(cx, true);
+                            }
+
+                            item.drop_down(ids!(data_type))
+                                .set_selected_by_label(&info.data_type, cx);
+                            self.ids.insert(
+                                item.drop_down(ids!(data_type)).widget_uid(),
+                                title.clone(),
+                            );
+
+                            if item.drop_down(ids!(data_type)).selected_label() == "数据" {
+                                item.drop_down(ids!(data_select)).set_disabled(cx, false);
+
+                                item.drop_down(ids!(data_select))
+                                    .set_labels(cx, labels.clone());
+                                item.drop_down(ids!(data_select))
+                                    .set_selected_by_label(&info.data_select, cx);
+                                item.text_input(ids!(fixed_content)).set_disabled(cx, true);
+                                self.ids.insert(
+                                    item.drop_down(ids!(data_select)).widget_uid(),
+                                    title.clone(),
+                                );
+                            } else {
+                                item.drop_down(ids!(data_select)).set_disabled(cx, true);
+                            }
+
+                            item.text_input(ids!(fixed_content))
+                                .set_text(cx, &info.fixed_content);
+                            self.ids.insert(
+                                item.text_input(ids!(fixed_content)).widget_uid(),
+                                title.clone(),
+                            );
+
+                            item.text_input(ids!(decimal_input))
+                                .set_text(cx, &info.decimal);
+                            self.ids.insert(
+                                item.text_input(ids!(decimal_input)).widget_uid(),
+                                title.clone(),
+                            );
+                            item.draw_all(cx, scope);
                         }
                         
-                        let roudan = info.roudan;
-
-                        item.label(ids!(title)).set_text(cx, &title);
-
-                        item.check_box(ids!(roudan_bool)).set_active(cx, roudan);
-                        self.ids.insert(
-                            item.check_box(ids!(roudan_bool)).widget_uid(),
-                            title.clone(),
-                        );
-
-                        if roudan {
-                            item.text_input(ids!(roudan_min_input))
-                                .set_disabled(cx, false);
-                            item.text_input(ids!(roudan_max_input))
-                                .set_disabled(cx, false);
-                            item.text_input(ids!(roudan_size_input))
-                                .set_disabled(cx, false);
-                            item.text_input(ids!(roudan_min_input))
-                                .set_text(cx, &info.roudan_min);
-                            self.ids.insert(
-                                item.text_input(ids!(roudan_min_input)).widget_uid(),
-                                title.clone(),
-                            );
-
-                            item.text_input(ids!(roudan_max_input))
-                                .set_text(cx, &info.roudan_max);
-                            self.ids.insert(
-                                item.text_input(ids!(roudan_max_input)).widget_uid(),
-                                title.clone(),
-                            );
-
-                            item.text_input(ids!(roudan_size_input))
-                                .set_text(cx, &info.roudan_size);
-                            self.ids.insert(
-                                item.text_input(ids!(roudan_size_input)).widget_uid(),
-                                title.clone(),
-                            );
-                        } else {
-                            item.text_input(ids!(roudan_min_input))
-                                .set_disabled(cx, true);
-                            item.text_input(ids!(roudan_max_input))
-                                .set_disabled(cx, true);
-                            item.text_input(ids!(roudan_size_input))
-                                .set_disabled(cx, true);
-                        }
-
-                        item.drop_down(ids!(data_type))
-                            .set_selected_by_label(&info.data_type, cx);
-                        self.ids
-                            .insert(item.drop_down(ids!(data_type)).widget_uid(), title.clone());
-
-                        if item.drop_down(ids!(data_type)).selected_label() == "数据" {
-                            item.drop_down(ids!(data_select)).set_disabled(cx, false);
-                            
-                            item.drop_down(ids!(data_select)).set_labels(cx, labels.clone());
-                            item.drop_down(ids!(data_select))
-                                .set_selected_by_label(&info.data_select, cx);
-                            item.text_input(ids!(fixed_content)).set_disabled(cx, true);
-                            self.ids.insert(
-                                item.drop_down(ids!(data_select)).widget_uid(),
-                                title.clone(),
-                            );
-                        } else {
-                            item.drop_down(ids!(data_select)).set_disabled(cx, true);
-                        }
-
-                        item.text_input(ids!(fixed_content))
-                            .set_text(cx, &info.fixed_content);
-                        self.ids.insert(
-                            item.text_input(ids!(fixed_content)).widget_uid(),
-                            title.clone(),
-                        );
-
-                        item.text_input(ids!(decimal_input))
-                            .set_text(cx, &info.decimal);
-                        self.ids.insert(
-                            item.text_input(ids!(decimal_input)).widget_uid(),
-                            title.clone(),
-                        );
-                        item.draw_all(cx, scope);
+                        // item.draw_all(cx, &mut Scope::empty());
                     }
-
-                    // item.draw_all(cx, &mut Scope::empty());
                 }
                 // }
             }

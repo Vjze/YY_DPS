@@ -354,6 +354,12 @@ struct TypeView {
 
 impl Widget for TypeView {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        
+        self.view.handle_event(cx, event, scope);
+        self.widget_match_event(cx, event, scope);
+    }
+
+    fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if let Some(store) = scope.data.get_mut::<Store>() {
             if !store.setting_store.types.is_empty() {
                 self.view
@@ -370,11 +376,6 @@ impl Widget for TypeView {
                     .set_visible(cx, false);
             }
         }
-        self.view.handle_event(cx, event, scope);
-        self.widget_match_event(cx, event, scope);
-    }
-
-    fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         self.view.draw_walk(cx, scope, walk)
     }
 }

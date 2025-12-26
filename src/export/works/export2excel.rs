@@ -63,7 +63,7 @@ pub async fn write_to_excel(
                         .map_err(|e| MyError::Zdyknown(format!("无法读取模板文件: {}", e)))?;
                     info!("模板文件读取成功.");
                     let sheet = book
-                        .get_sheet_by_name_mut("Sheet1")
+                        .get_sheet_mut(&0)
                         .ok_or(MyError::Zdyknown("找不到 Sheet1".to_string()))?;
                     let re = Regex::new(r"\r\n|\n|\r").unwrap();
                     // 提取表头
@@ -204,6 +204,14 @@ pub async fn write_to_excel(
                             .get_style_mut((update.col, update.row))
                             .clone_from(&style);
                     }
+                    // 开启工作表保护
+                    // 默认情况下，开启保护后所有未显式“解锁”的单元格都无法编辑
+                    sheet
+                        .get_sheet_protection_mut()
+                        .set_password("test") // 设置保护密码
+                        .set_sheet(true) // 开启保护
+                        .set_objects(true) // 保护对象
+                        .set_scenarios(true);
                     info!("数据写入完毕.");
 
                     // 保存

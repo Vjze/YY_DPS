@@ -169,6 +169,12 @@ impl LiveHook for ExportScreen {
 }
 impl Widget for ExportScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        
+        self.widget_match_event(cx, event, scope);
+        self.view.handle_event(cx, event, scope);
+    }
+
+    fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if let Some(store) = scope.data.get::<Store>() {
             self.view
                 .drop_down(ids!(type_selector))
@@ -179,11 +185,6 @@ impl Widget for ExportScreen {
                 self.view.button(ids!(export_btn)).set_disabled(cx, false);
             }
         }
-        self.widget_match_event(cx, event, scope);
-        self.view.handle_event(cx, event, scope);
-    }
-
-    fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         self.view.draw_walk(cx, scope, walk)
     }
 }

@@ -122,33 +122,35 @@ live_design! {
     }
 
     App = {{App}} {
-        ui: <Window> {
-            window: {inner_size: vec2(1600, 900), title: "DPS"},
-            pass: {clear_color: #FFFFFF00}
-            caption_bar = {
-                    caption_label = {
-                        label = {
-                            margin: {left: 65},
-                            align: {x: 0.5},
-                            text: "DPS",
-                            draw_text: {color: #000000}
+        ui: <Root> {
+            main_window = <Window> {
+                window: {inner_size: vec2(1600, 900), title: "DPS"},
+                pass: {clear_color: #FFFFFF00}
+                caption_bar = {
+                        caption_label = {
+                            label = {
+                                margin: {left: 65},
+                                align: {x: 0.5},
+                                text: "DPS",
+                                draw_text: {color: #000000}
+                            }
                         }
-                    }
-                    windows_buttons = {
-                        min   = { draw_bg: {color: #0, color_hover: #9, color_down: #3} }
-                        max   = { draw_bg: {color: #0, color_hover: #9, color_down: #3} }
-                        close = { draw_bg: {color: #0, color_hover: #E81123, color_down: #FF0015} }
-                    }
-                    draw_bg: {color: #F3F3F3},
-            }
-            body = {
-                flow: Overlay
-                width: Fill,
-                height: Fill,
-                padding: 0
+                        windows_buttons = {
+                            min   = { draw_bg: {color: #0, color_hover: #9, color_down: #3} }
+                            max   = { draw_bg: {color: #0, color_hover: #9, color_down: #3} }
+                            close = { draw_bg: {color: #0, color_hover: #E81123, color_down: #FF0015} }
+                        }
+                        draw_bg: {color: #F3F3F3},
+                }
+                body = {
+                    flow: Overlay
+                    width: Fill,
+                    height: Fill,
+                    padding: 0
 
 
-                root = {{MyRoot}} {
+                // root = {{MyRoot}} {
+                root = <View> {
                     width: Fill,
                     height: Fill,
                     show_bg: true,
@@ -177,7 +179,7 @@ live_design! {
                 }
 
             }
-
+        }
 
         }
 

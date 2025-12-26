@@ -256,18 +256,17 @@ struct TemplateView {
 
 impl Widget for TemplateView {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        if let Some(store) = scope.data.get_mut::<Store>() {
-            if !store.setting_store.templates.is_empty() {
-                self.view
-                    .drop_down(ids!(template_selector))
-                    .set_labels(cx, store.setting_store.templates.clone());
-            };
-        }
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
+        let store = scope.data.get::<Store>().unwrap();
+        if !store.setting_store.templates.is_empty() {
+            self.view
+                .drop_down(ids!(template_selector))
+                .set_labels(cx, store.setting_store.templates.clone());
+        };
         self.view.draw_walk(cx, scope, walk)
     }
 }

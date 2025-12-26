@@ -162,57 +162,6 @@ impl Widget for TableRow {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
-        // if let Event::Trigger(trigger_event) = event {
-        //     for (_area, triggers) in &trigger_event.triggers {
-        //         for trigger in triggers {
-        //             if trigger.id == live_id!(update_decimal_inputs) {
-        //                 if let Some(state) = scope.data.get_mut::<Store>() {
-        //                     let mut keys = state
-        //                         .template_infos
-        //                         .tables
-        //                         .iter()
-        //                         .map(|(key, _)| key.clone())
-        //                         .collect::<Vec<_>>();
-        //                     keys.sort();
-        //                     let keys_len = keys.len();
-        //                     if let Some(props) = scope.props.get::<TableRowProps>() {
-        //                         let row_idx = props.props;
-        //                         let first_idx = row_idx * 2;
-        //                         let list_widget = self.view.portal_list(ids!(table_row));
-        //                         for i in 0..2 {
-        //                             let global_idx = first_idx + i;
-        //                             let item = list_widget.item(cx, i, live_id!(TableItem));
-        //                             let tabel_key_input = item.text_input(ids!(tabel_key));
-        //                             let table_value_input = item.text_input(ids!(table_value));
-        //                             let key_id = tabel_key_input.widget_uid();
-        //                             let value_id = table_value_input.widget_uid();
-
-        //                             if global_idx < keys_len {
-        //                                 let key = &keys[global_idx];
-        //                                 let store_value = state
-        //                                     .template_infos
-        //                                     .tables
-        //                                     .get(&key.clone())
-        //                                     .map(|v| v.to_string())
-        //                                     .unwrap_or_default();
-        //                                 tabel_key_input.set_text(cx, &key);
-        //                                 table_value_input.set_text(cx, &store_value);
-        //                                 self.key_ids.insert(key_id, key.clone());
-        //                                 self.value_ids.insert(value_id, store_value);
-        //                             } else {
-        //                                 tabel_key_input.set_text(cx, "");
-        //                                 table_value_input.set_text(cx, "");
-        //                                 self.key_ids.insert(key_id, String::new());
-        //                                 self.value_ids.insert(value_id, String::new());
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
-        cx.redraw_all();
     }
 }
 impl WidgetMatchEvent for TableRow {

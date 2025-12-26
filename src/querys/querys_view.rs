@@ -396,18 +396,19 @@ impl LiveHook for QueryScreen {
 }
 impl Widget for QueryScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        if let Some(store) = scope.data.get::<Store>() {
+       
+        self.widget_match_event(cx, event, scope);
+        self.view.handle_event(cx, event, scope);
+    }
+
+    fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
+         if let Some(store) = scope.data.get::<Store>() {
             if store.datas_store.query_datas.is_empty() {
                 self.view.button(ids!(export_btn)).set_disabled(cx, true);
             } else {
                 self.view.button(ids!(export_btn)).set_disabled(cx, false);
             }
         }
-        self.widget_match_event(cx, event, scope);
-        self.view.handle_event(cx, event, scope);
-    }
-
-    fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         self.view.draw_walk(cx, scope, walk)
     }
 }
