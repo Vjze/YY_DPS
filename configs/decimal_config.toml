@@ -4,6 +4,7 @@ template_name = "249"
 create_time = "2024/01/01 10:00:00"
 update_time = "2025/12/15 23:15:25"
 row = "2"
+unit = "Mw"
 
 [Template.infos.ith]
 roudan = false
@@ -57,6 +58,7 @@ template_name = "585"
 create_time = "2025/12/10 20:27:27"
 update_time = "2025/12/10 20:36:21"
 row = "1"
+unit = "Mw"
 
 [Template.infos."Vbr(V)"]
 roudan = false

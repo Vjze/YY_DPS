@@ -211,7 +211,7 @@ async fn get_base_data_unified(
     ) = if infos.zdy_box {
         // ...with_zdy... (自定义盒)
         (
-            "FROM [mes_Factory].[dbo].[jz_carton_bind] a".to_string(),
+            "FROM [mes_Factory].[dbo].[jz_box_bind] a".to_string(),
             vec![
                 "INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.box_no = b.Packing_no".to_string(),
                 // 关键修改: JOIN 最新批次 (LatestBatchTime) 并使用时间窗口过滤

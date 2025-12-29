@@ -3,7 +3,7 @@
 use super::excel_utils::{before_im_num, before_ith_num, before_po, before_vf_num, calculate_tc};
 use crate::{
     configs::{
-        column_map_config::get_template_map_config, decimal_config::get_decimal_config_value,
+        decimal_config::{InfoDetail, TemplateConfig, get_decimal_config_value},
         type_config::get_type_infos,
     },
     utils::error::MyError,
@@ -75,10 +75,15 @@ pub async fn write_to_excel(
                         // 如果工作表为空，直接返回空表头
                         headers = Default::default();
                     }
-                    let rows = if let Some(value) = decimal_config.row.get("rows") {
-                        value.to_string()
+                    // let rows = if let Some(value) = decimal_config.row.get("rows") {
+                    //     value.to_string()
+                    // } else {
+                    //     "1".to_string() // 默认值
+                    // };
+                    let rows = if decimal_config.row.clone().is_empty() {
+                        "1".to_string()
                     } else {
-                        "1".to_string() // 默认值
+                        decimal_config.row.clone()
                     };
                     info!("配置的表头行数: {}", rows);
                     let header_rows_to_scan = if rows == "1" {
@@ -137,9 +142,9 @@ pub async fn write_to_excel(
                     let last_row = sheet.get_highest_row();
                     let decimal_config = Arc::new(decimal_config);
                     // 异步获取 column_name_mapping
-                    let column_name_mapping =
-                        Arc::new(get_template_map_config(template_name.clone()).await?);
-
+                    // let column_name_mapping =
+                    //     Arc::new(get_template_map_config(template_name.clone()).await?);
+                    // let column_name_mapping = decimal_config.infos;
                     info!("开始并行生成单元格更新...");
                     // 并行生成单元格更新（保留 rayon）
                     let cell_updates: Vec<CellUpdate> = datas
@@ -152,8 +157,8 @@ pub async fn write_to_excel(
                                 .enumerate()
                                 .map({
                                     let config = decimal_config.clone();
-                                    let column_mapping = column_name_mapping.clone();
-                                    let unit = config.numbers.get("unit").unwrap().to_string();
+                                    // let column_mapping = column_name_mapping.clone();
+                                    let unit = config.unit.clone();
                                     let unit =
                                         unit.to_string().replace("\\\"", "").replace("\"", "");
                                     // let deviceinfo_id = deviceinfo_id.clone();
@@ -162,7 +167,8 @@ pub async fn write_to_excel(
                                         let row_value_header = calculate_row_value(
                                             header.to_string(),
                                             row_data,
-                                            column_mapping.clone(),
+                                            config.clone(),
+                                            // column_mapping.clone(),
                                             // &unit,
                                         );
                                         let new_header = row_value_header.1;
@@ -176,8 +182,7 @@ pub async fn write_to_excel(
                                         };
                                         let (value, _decimals) = format_with_decimals(
                                             &row_value,
-                                            config.clone().numbers.get(&new_header),
-                                            config.clone().strings.get(&new_header),
+                                            config.clone().infos.clone(),
                                             &unit,
                                             &new_header,
                                         );
@@ -257,154 +262,175 @@ pub async fn write_to_excel(
 
 fn format_with_decimals(
     val: &str,
-    numble_config: Option<&i64>,
-    string_config: Option<&String>,
+    // numble_config: Option<&i64>,
+    // string_config: Option<&String>,
+    infos: HashMap<String, InfoDetail>,
     unit: &str,
     header: &str,
 ) -> (String, Option<usize>) {
     // 优先处理 numble_config
-    if let Some(n) = numble_config {
-        // 检查 val 是否可以解析为 f64
-        if let Ok(mut num) = val.parse::<f64>() {
-            let decimals = *n as usize;
+    if let Some(info) = infos.get(header) {
+        if info.data_type == "数据" {
+            if let Ok(mut num) = val.parse::<f64>() {
+                // let decimals = *n as usize;
+                let decimals = info.decimal.parse::<usize>().unwrap();
 
-            // 根据单位转换
-            if unit == "mW" && header == "po" || header == "beforeTC-Po(mW)" {
-                num /= 1000.0;
-            }
+                // 根据单位转换
+                if unit == "mW" && header == "po" || header == "beforeTC-Po(mW)" {
+                    num /= 1000.0;
+                }
 
-            let factor = 10_f64.powi(decimals as i32);
-            let temp_num = num * factor;
+                let factor = 10_f64.powi(decimals as i32);
+                let temp_num = num * factor;
 
-            // 自定义四舍五入逻辑
-            let rounded_num = if (temp_num.fract() - 0.5).abs() < f64::EPSILON {
-                temp_num.trunc() / factor
-            } else {
-                temp_num.round() / factor
-            };
+                // 自定义四舍五入逻辑
+                let rounded_num = if (temp_num.fract() - 0.5).abs() < f64::EPSILON {
+                    temp_num.trunc() / factor
+                } else {
+                    temp_num.round() / factor
+                };
 
-            let formatted_string = format!("{:.decimals$}", rounded_num, decimals = decimals);
-            return (formatted_string, Some(decimals));
-        }
-    }
-
-    // 如果 numble_config 为 None 或 val 无法解析，则检查 string_config
-    if let Some(s) = string_config {
-        if !s.is_empty() {
-            if s.clone() != "mw" && s.clone() != "uw" {
-                return (s.to_string(), None);
+                let formatted_string = format!("{:.decimals$}", rounded_num, decimals = decimals);
+                return (formatted_string, Some(decimals));
             } else {
                 return (val.to_string(), None);
             }
+        } else if info.data_type == "固定文本" {
+            return (info.fixed_content.clone(), None);
+        } else {
+            return ("".to_string(), None);
         }
+    } else {
+        return (val.to_string(), None);
     }
-
-    // 如果两个配置都为 None，则返回原始值
-    (val.to_string(), None)
 }
 
 // 计算 row_value 的独立函数
 fn calculate_row_value(
-    mut header: String,
+    excel_header: String,
     row_data: &HashMap<String, String>,
-    column_mapping: Arc<HashMap<String, String>>,
+    config: Arc<TemplateConfig>,
+    // column_mapping: Arc<HashMap<String, String>>,
 ) -> (String, String) {
     // 优先处理 column_name_mapping
-    if let Some(col_mapping) = column_mapping.get(&header) {
-        if !col_mapping.is_empty() {
-            if col_mapping != "none" {
-                header = col_mapping.to_string();
+    // if let Some(col_mapping) = column_mapping.get(&header) {
+    //     if !col_mapping.is_empty() {
+    //         if col_mapping != "none" {
+    //             header = col_mapping.to_string();
+    //         }
+    //     }
+    // }
+    let header = config
+        .infos
+        .get(&excel_header)
+        .map_or(excel_header.clone(), |info| {
+            if info.data_type == "数据" {
+                info.data_select.clone()
+            } else {
+                excel_header.clone()
             }
+        });
+    let fixed_text = config
+        .infos
+        .get(&excel_header)
+        .map_or("".to_string(), |info| {
+            if info.data_type == "固定文本" {
+                info.fixed_content.clone()
+            } else {
+                "".to_string()
+            }
+        });
+    if fixed_text.is_empty() {
+        let normalized_header = header;
+        if normalized_header == "beforeTC-Ith(mA)" {
+            let before_ith = before_ith_num(
+                row_data
+                    .get("ith")
+                    .unwrap_or(&"".to_string())
+                    .parse::<f64>()
+                    .unwrap_or(0.0),
+            );
+            let b_ith = format!("{:.2}", before_ith);
+            (b_ith, normalized_header.clone())
+        } else if normalized_header == "beforeTC-Im(uA)" {
+            let before_im = before_im_num(
+                row_data
+                    .get("im")
+                    .unwrap_or(&"".to_string())
+                    .parse::<f64>()
+                    .unwrap_or(0.0),
+            );
+            let b_im = format!("{:.2}", before_im);
+            (b_im, normalized_header.clone())
+        } else if normalized_header == "beforeTC-Po(mW)" {
+            let po = before_po(
+                row_data
+                    .get("po")
+                    .unwrap_or(&"".to_string())
+                    .parse::<f64>()
+                    .unwrap_or(0.0),
+            );
+            let before_po = format!("{:.2}", po);
+            (before_po, normalized_header.clone())
+        } else if normalized_header == "po" {
+            let po = row_data
+                .get("po")
+                .unwrap_or(&"".to_string())
+                .parse::<f32>()
+                .unwrap();
+            (po.to_string(), normalized_header.clone())
+        } else if normalized_header == "beforeTC-Vf(V)" {
+            let before_vf = before_vf_num(
+                row_data
+                    .get("vf")
+                    .unwrap_or(&"".to_string())
+                    .parse::<f64>()
+                    .unwrap_or(0.0),
+            );
+            let b_vf = format!("{:.2}", before_vf);
+            (b_vf, normalized_header.clone())
+        } else if normalized_header == "beforeTC-SE(W/A)" {
+            let po = before_po(
+                row_data
+                    .get("po")
+                    .unwrap_or(&"".to_string())
+                    .parse::<f64>()
+                    .unwrap_or(0.0),
+            );
+            let po = po / 1000.0;
+            let before_se = po / 20.0;
+            let b_se = format!("{:.3}", before_se);
+            (b_se, normalized_header.clone())
+        } else if normalized_header == "deltaP（dB）" {
+            let po = row_data
+                .get("po")
+                .unwrap_or(&"".to_string())
+                .parse::<f64>()
+                .unwrap_or(0.0)
+                / 1000.0;
+            let before_po = before_po(po);
+            let tc = calculate_tc(po, before_po).to_string();
+            (tc, normalized_header.clone())
+        } else if normalized_header == "testtime" {
+            let date = row_data
+                .get("testtime")
+                .unwrap_or(&"".to_string())
+                .to_string();
+            let datetime = NaiveDateTime::parse_from_str(&date, "%Y-%m-%d %H:%M:%S").unwrap();
+
+            let date = datetime.date().to_string();
+            (date, normalized_header.clone())
+        } else {
+            (
+                row_data
+                    .get(&normalized_header)
+                    .unwrap_or(&"".to_string())
+                    .to_string(),
+                normalized_header.clone(),
+            )
         }
-    }
-
-    let normalized_header = header;
-    if normalized_header == "beforeTC-Ith(mA)" {
-        let before_ith = before_ith_num(
-            row_data
-                .get("ith")
-                .unwrap_or(&"".to_string())
-                .parse::<f64>()
-                .unwrap_or(0.0),
-        );
-        let b_ith = format!("{:.2}", before_ith);
-        (b_ith, normalized_header.clone())
-    } else if normalized_header == "beforeTC-Im(uA)" {
-        let before_im = before_im_num(
-            row_data
-                .get("im")
-                .unwrap_or(&"".to_string())
-                .parse::<f64>()
-                .unwrap_or(0.0),
-        );
-        let b_im = format!("{:.2}", before_im);
-        (b_im, normalized_header.clone())
-    } else if normalized_header == "beforeTC-Po(mW)" {
-        let po = before_po(
-            row_data
-                .get("po")
-                .unwrap_or(&"".to_string())
-                .parse::<f64>()
-                .unwrap_or(0.0),
-        );
-        let before_po = format!("{:.2}", po);
-        (before_po, normalized_header.clone())
-    } else if normalized_header == "po" {
-        let po = row_data
-            .get("po")
-            .unwrap_or(&"".to_string())
-            .parse::<f32>()
-            .unwrap();
-        (po.to_string(), normalized_header.clone())
-    } else if normalized_header == "beforeTC-Vf(V)" {
-        let before_vf = before_vf_num(
-            row_data
-                .get("vf")
-                .unwrap_or(&"".to_string())
-                .parse::<f64>()
-                .unwrap_or(0.0),
-        );
-        let b_vf = format!("{:.2}", before_vf);
-        (b_vf, normalized_header.clone())
-    } else if normalized_header == "beforeTC-SE(W/A)" {
-        let po = before_po(
-            row_data
-                .get("po")
-                .unwrap_or(&"".to_string())
-                .parse::<f64>()
-                .unwrap_or(0.0),
-        );
-        let po = po / 1000.0;
-        let before_se = po / 20.0;
-        let b_se = format!("{:.3}", before_se);
-        (b_se, normalized_header.clone())
-    } else if normalized_header == "deltaP（dB）" {
-        let po = row_data
-            .get("po")
-            .unwrap_or(&"".to_string())
-            .parse::<f64>()
-            .unwrap_or(0.0)
-            / 1000.0;
-        let before_po = before_po(po);
-        let tc = calculate_tc(po, before_po).to_string();
-        (tc, normalized_header.clone())
-    } else if normalized_header == "testtime" {
-        let date = row_data
-            .get("testtime")
-            .unwrap_or(&"".to_string())
-            .to_string();
-        let datetime = NaiveDateTime::parse_from_str(&date, "%Y-%m-%d %H:%M:%S").unwrap();
-
-        let date = datetime.date().to_string();
-        (date, normalized_header.clone())
     } else {
-        (
-            row_data
-                .get(&normalized_header)
-                .unwrap_or(&"".to_string())
-                .to_string(),
-            normalized_header.clone(),
-        )
+        (fixed_text, excel_header.clone())
     }
 }
 

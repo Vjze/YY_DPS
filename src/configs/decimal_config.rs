@@ -27,6 +27,7 @@ pub struct Template {
     pub create_time: String,
     pub update_time: Option<String>,
     pub row: String,
+    pub unit: String,
     pub infos: HashMap<String, InfoDetail>,
     pub tables: HashMap<String, String>,
 }
@@ -51,6 +52,7 @@ pub struct InfoDetail {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TemplateConfig {
     pub row: String,
+    pub unit: String,
     pub infos: HashMap<String, InfoDetail>,
     pub tables: HashMap<String, String>,
 }
@@ -83,6 +85,7 @@ pub async fn get_decimal_config_value(template_name: String) -> Result<TemplateC
         // 匹配成功，直接返回 infos 和 tables
         let template_config = TemplateConfig {
             row: item.row,
+            unit: item.unit,
             infos: item.infos,   // 直接使用 HashMap<String, InfoDetail>
             tables: item.tables, // 直接使用 HashMap<String, String>
         };
@@ -179,6 +182,7 @@ pub async fn add_new_template(
         // 对于每一个 Excel 列名，插入一个默认的 InfoDetail，确保配置完整
         final_infos.entry(column_name.clone()).or_insert_with(InfoDetail::default);
     }
+    let unit = "Mw".to_string();
     // let mut row_map = HashMap::new();
     // row_map.insert("rows".to_string(), rows.to_string());
     let new_item = Template {
@@ -187,6 +191,7 @@ pub async fn add_new_template(
         create_time: now,
         update_time: None,
         row: rows,
+        unit,
         infos: final_infos,
         tables: HashMap::new(),
     };
@@ -208,6 +213,7 @@ pub async fn update_template(
             found = true;
             item.update_time = Some(now.clone());
             item.row = template_config.row;
+            item.unit = template_config.unit;
             item.infos = template_config.infos;
             item.tables = template_config.tables;
             break;

@@ -70,7 +70,7 @@ async fn check_binded(carton_no: String) -> Result<(), MyError> {
     let pool = &client;
     let sql_text = format!(
         "select *
-            from [mes_Factory].[dbo].[jz_carton_bind] 
+            from [mes_Factory].[dbo].[jz_box_bind] 
             where carton_No = '{}' and status = '0'",
         carton_no
     );

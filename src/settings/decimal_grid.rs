@@ -25,7 +25,7 @@ live_design! {
                 align: {y: 0.5}
                 spacing: 10,
                 title = <Label> {
-                    width: Fill { weight: 0.3}
+                    width: Fill { weight: 0.7}
                     text: "..."
                     draw_text: {
                         text_style: <REGULAR_FONT>{
@@ -123,7 +123,7 @@ live_design! {
                 }
                 data_type = <DropDown> {
                         width: Fill { weight: 0.5},height:40
-                        labels:["数据","固定内容","留空"],
+                        labels:["数据","固定文本","留空"],
                         padding: {top:12,left:15}
                         draw_text: {
                             uniform color: #000
@@ -349,6 +349,7 @@ impl Widget for TemplateInfosRow {
                                 );
                             } else {
                                 item.drop_down(ids!(data_select)).set_disabled(cx, true);
+                                item.text_input(ids!(fixed_content)).set_disabled(cx, false);
                             }
 
                             item.text_input(ids!(fixed_content))

@@ -38,8 +38,8 @@ pub async fn band_box(box_data: &BoxBandData) -> Result<(), MyError> {
     let pool = &client;
     let datetime = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     let sql_text = format!(
-        "INSERT INTO [mes_Factory].[dbo].[jz_carton_bind] (carton_No, pkg_No, box_No, [module], p_No, status, bindtime) VALUES (
-     @p1, @p2, @p3, @p4, @p5, @p6, @p7
+        "INSERT INTO [mes_Factory].[dbo].[jz_box_bind] (carton_No, pkg_No, box_No, [module], p_No, status, createtime) VALUES (
+    @p1, @p2, @p3, @p4, @p5, @p6, @p7
 );"
     );
     let mut pool = pool.get().await.unwrap();
