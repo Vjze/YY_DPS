@@ -1,3 +1,4 @@
+
 use rand_distr::{Distribution as _, Normal};
 pub fn before_vf_num(vf: f64) -> f64 {
     let stddev = vf * 0.005;
@@ -63,28 +64,25 @@ pub fn before_im_num(im: f64) -> f64 {
 }
 
 pub fn before_po(base_value: f64) -> f64 {
-    // 基准值的标准差，基准值的5%作为标准差
-    let stddev = base_value * 0.05;
+    // 1. 设置一个更小的波动百分比
+    let stddev_percent = 0.05; // 5% 波动
+    let stddev = base_value * stddev_percent;
 
-    // 创建正态分布
-    let normal_dist = Normal::new(base_value, stddev).unwrap();
+    // 定义固定的上下限
+    const MIN_LIMIT: f64 = 1450.0;
+    const MAX_LIMIT: f64 = 3350.0;
+    
+    // 2. 简化正态分布创建逻辑
+    // Normal::new() 仅在 std_dev < 0 时才会 panic/返回 Err，
+    // std_dev = 0 是允许的（生成常数分布）
+    let normal_dist = Normal::new(base_value, stddev.abs()).unwrap();
 
-    // 获取正态分布随机值
+    // 3. 获取正态分布随机值
     let mut rng = rand::rng();
-    let mut result = normal_dist.sample(&mut rng);
+    let result = normal_dist.sample(&mut rng);
 
-    if result > 3.35 {
-        result *= 0.85; // 超过3.35，下调15%
-    } else if result < 1.5 {
-        result *= 1.15; // 小于1.5，上调15%
-    }
-    // 最后再进行检查，避免结果超出范围
-    if result < (base_value - 0.5) {
-        result = base_value - 0.5;
-    } else if result > (base_value + 0.5) {
-        result = base_value + 0.5;
-    }
-    result
+    // 4. 使用 clamp() 函数进行边界限制，这是 Rust 处理上下限的惯用方式
+    result.clamp(MIN_LIMIT, MAX_LIMIT)
 }
 pub fn before_po_303(base_value: f64) -> f64 {
     // 基准值的标准差，基准值的5%作为标准差
@@ -110,9 +108,9 @@ pub fn before_po_303(base_value: f64) -> f64 {
     }
     result
 }
-pub fn calculate_tc(pf_initial: f64, pf_final: f64) -> f64 {
+pub fn calculate_tc(po: f64, po_before: f64) -> f64 {
     // 计算 Pf 比值
-    let pf_ratio = pf_final / pf_initial;
+    let pf_ratio = po / po_before;
 
     // 使用对数计算TC，取 10 为底的对数
     let tc = 10.0 * pf_ratio.log10();

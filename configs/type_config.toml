@@ -28,8 +28,8 @@ jz_band = true
 zdy_box = false
 
 [ConfigType.template]
-5 = "256_1"
 4 = "256"
+5 = "256_1"
 6 = "256_2"
 
 [[ConfigType]]
@@ -95,3 +95,19 @@ zdy_box = false
 
 [ConfigType.template]
 2 = "303H0002"
+
+[[ConfigType]]
+id = 7
+type_name = "585"
+create_time = "2025/12/31 20:51:37"
+update_time = "2025/12/31 20:52:47"
+
+[ConfigType.infos]
+is_have_pch = false
+carton_pch = false
+box_pch = false
+jz_band = true
+zdy_box = true
+
+[ConfigType.template]
+1 = "585"

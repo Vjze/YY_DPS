@@ -1,4 +1,5 @@
 use makepad_widgets::*;
+use tracing::info;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
@@ -244,8 +245,10 @@ impl WidgetMatchEvent for ExportScreen {
             });
         }
         if export_btn.clicked(actions) {
+            info!("开始导出数据...");
             let processor = self.export_processor.as_ref().unwrap().clone();
             if let Some(store) = scope.data.get_mut::<Store>() {
+                info!("导出数据数量: {}", store.datas_store.export_datas.len());
                 if !store.datas_store.export_datas.is_empty() {
                     let type_name = type_name.clone().selected_label();
                     let data = store.datas_store.export_datas.clone();

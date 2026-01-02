@@ -9,7 +9,7 @@ use bb8_tiberius::ConnectionManager;
 
 use crate::{
     export::works::{carton_query::do_carton_query, 
-        // export2excel::write_to_excel
+        export2excel::write_to_excel
     },
     utils::error::MyError,
 };
@@ -53,8 +53,8 @@ impl Exportable for Exporter {
         type_name: String,
         datas: Vec<HashMap<String, String>>,
     ) -> anyhow::Result<(), MyError> {
-        // write_to_excel(type_name, datas).await
-        Ok(())
+        write_to_excel(type_name, datas).await
+        // Ok(())
     }
 }
 
