@@ -26,7 +26,6 @@ live_design! {
 
     pub TemplateView = {{TemplateView}} <RoundedShadowView> {
         width: Fill, height: Fill
-        align: {x: 0.0, y: 0.0}
         padding: {left: 15, right: 15, bottom: 15, top:15}
         show_bg: true
         flow: Overlay
@@ -40,14 +39,13 @@ live_design! {
 
         content = <View> {
             flow: Down, spacing: 20
-
+            width: Fill, height: Fill,
             <View> {
-                    width: Fill, height: Fill {weight: 0.8},
+                    width: Fill, height: Fill {weight: 8.},
                     spacing:15,
                     template_input = <MolyTextInput> {
                         empty_text: "新增模板必须输入名称...."
-                        width: Fill, height: 40
-                        padding: 10,
+                        width: Fill, height: Fill
                         draw_text: {
                             text_style: <REGULAR_FONT>{
                                 font_size: 12
@@ -64,7 +62,7 @@ live_design! {
                     }
                     add_template_btn = <Button> {
                         text: "新增模板"
-                        width: 100, height: 40,
+                        width: 100, height: Fill,
                         draw_text: {
                             color: #000000,
                             text_style: {
@@ -90,9 +88,9 @@ live_design! {
                         }
                     }
                     template_selector = <DropDown> {
-                        width: 200,height:40
+                        width: 200,height:Fill
                         labels:["template_1","template_2","template_3"],
-                        padding: {top:12,left:15}
+                        // padding: {top:12,left:15}
                         draw_text: {
                             uniform color: #000
                             uniform color_down: #000
@@ -130,7 +128,7 @@ live_design! {
                         }
                     }
                     clear_template_btn = <Button> {
-                        width: 120, height: 40,
+                        width: 120, height: Fill,
                         text: "数据清空",
                         draw_text: {
                             text_style: <THEME_FONT_BOLD>{
@@ -147,31 +145,78 @@ live_design! {
                         }
                     }
                 }
-                // <View> {
-                //     width: Fill,
-                //     height: Fit,
-                //     spacing: 15,
-                //     flow: Down,
-                    <View> {
-                        height: Fill {weight: 6.5},
-                        width: Fill,
-                        flow: Down,
-                        spacing: 10,
-                        align: {x: 0.5}
-                        <Label> {
-                            text: "小数点配置:"
-                            draw_text: {
-                                text_style: <THEME_FONT_BOLD>{
-                                    font_size: 16
+                        <View> {
+                            height: Fill {weight: 6.},
+                            width: Fill,
+                            spacing: 10,
+                            <Label> {
+                                text: "模板数据配置:"
+                                draw_text: {
+                                    text_style: <THEME_FONT_BOLD>{
+                                        font_size: 16
+                                    }
+                                    color: #000
                                 }
-                                color: #000
                             }
+                                <View> {
+                                    spacing: 10,
+                                    align: {x: 1.0, y: 0.5}
+                                    <Label> {
+                                        text: "表格列名行数:"
+                                        draw_text: {
+                                            text_style: {
+                                                font_size: 14
+                                            }
+                                            color: #000
+                                        }
+                                    }
+                                    table_rows = <TextInput> {
+                                        empty_text: "..."
+                                        width: Fit {min: 60.0}, 
+                                        height: 40
+                                        padding: 10,
+                                        draw_text: {
+                                            text_style: {
+                                                font_size: 12
+                                            }
+                                            color: #000
+                                        }
+                                        draw_bg: {
+                                            uniform border_radius: 5.0
+                                            uniform border_size: 1.0
+                                        }
+                                    }
+                                    <Label> {
+                                        text: "Po单位:"
+                                        draw_text: {
+                                            text_style: {
+                                                font_size: 14
+                                            }
+                                            color: #000
+                                        }
+                                    }
+                                    unit_input = <TextInput> {
+                                        width: 80, height: 30,
+                                        padding: 6,
+                                        draw_text: {
+                                            text_style: {
+                                                font_size: 14
+                                            }
+                                            color: #000
+                                        }
+                                        draw_bg: {
+                                            uniform border_radius: 2.0
+                                            uniform border_size: 1.0
+                                        }
+                                    }
+                                }
+                            
                         }
                         <TemplateInfosRow> {}
-                    }
+                    
                     
                     <View> {
-                        height: Fill {weight: 2.0}
+                        height: Fill {weight: 30.0}
                         width: Fill,
                         flow: Down,
                         spacing: 10,
@@ -193,7 +238,7 @@ live_design! {
                     spacing: 10,
                     align: {x: 0.5, y: 1.0}
                     width: Fill,
-                    height: Fill {weight: 0.8}
+                    height: Fill {weight: 10.}
                     update_template_btn = <Button> {
                         width: 120, height: 40,
                         text: "模板更新",
@@ -229,8 +274,8 @@ live_design! {
                         }
                     }
                 }
-            }
-        // }
+        }
+        // 
         add_modal = <Modal> {
             content: {
                 <AddTemplateModal> {}
@@ -241,8 +286,8 @@ live_design! {
                 <DeleteModal> {}
             }
         }
+    
     }
-
 }
 
 // TODO: Rename into TemplateView
@@ -267,6 +312,14 @@ impl Widget for TemplateView {
                 .drop_down(ids!(template_selector))
                 .set_labels(cx, store.setting_store.templates.clone());
         };
+        let rows = store.setting_store.template_infos.row.clone();
+        let unit = store.setting_store.template_infos.unit.clone();
+        self.view
+            .text_input(ids!(table_rows))
+            .set_text(cx, &rows);
+        self.view
+            .text_input(ids!(unit_input))
+            .set_text(cx, &unit);
         self.view.draw_walk(cx, scope, walk)
     }
 }

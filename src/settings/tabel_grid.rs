@@ -75,6 +75,7 @@ live_design! {
     }
     TableRow = {{TableRow}} {
         table_row = <PortalList> {
+            width: Fill,
             height: Fit,
             flow: Right,
             spacing:20,
@@ -86,6 +87,7 @@ live_design! {
     pub TableGrid = {{TableGrid}} {
         table_grid = <PortalList> {
             height: Fill
+            width: Fill
             flow: Down,
             spacing:50
             TableRow = <TableRow> {}

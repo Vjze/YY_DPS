@@ -327,9 +327,13 @@ impl Widget for TemplateInfosRow {
                                 item.text_input(ids!(roudan_size_input))
                                     .set_disabled(cx, true);
                             }
-
-                            item.drop_down(ids!(data_type))
-                                .set_selected_by_label(&info.data_type, cx);
+                            if info.data_type.is_empty() {
+                                item.drop_down(ids!(data_type))
+                                    .set_selected_by_label("留空", cx);
+                            } else {
+                                item.drop_down(ids!(data_type))
+                                    .set_selected_by_label(&info.data_type, cx);
+                            }
                             self.ids.insert(
                                 item.drop_down(ids!(data_type)).widget_uid(),
                                 title.clone(),
@@ -347,9 +351,14 @@ impl Widget for TemplateInfosRow {
                                     item.drop_down(ids!(data_select)).widget_uid(),
                                     title.clone(),
                                 );
-                            } else {
+                            } else if item.drop_down(ids!(data_type)).selected_label() == "固定文本" {
                                 item.drop_down(ids!(data_select)).set_disabled(cx, true);
                                 item.text_input(ids!(fixed_content)).set_disabled(cx, false);
+                                item.text_input(ids!(decimal_input)).set_disabled(cx, true);
+                            }else{
+                                item.drop_down(ids!(data_select)).set_disabled(cx, true);
+                                item.text_input(ids!(fixed_content)).set_disabled(cx, true);
+                                item.text_input(ids!(decimal_input)).set_disabled(cx, true);
                             }
 
                             item.text_input(ids!(fixed_content))
@@ -387,7 +396,6 @@ impl Widget for TemplateInfosRow {
 impl WidgetMatchEvent for TemplateInfosRow {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
         let list_widget = self.view.portal_list(ids!(list));
-
         for (_item_id, item_widget) in list_widget.items_with_actions(actions) {
             let mut update_data =
                 |cx: &mut Cx, widget_uid: WidgetUid, update_fn: &mut dyn FnMut(&mut InfoDetail)| {
