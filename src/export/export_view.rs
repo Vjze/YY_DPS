@@ -1,8 +1,8 @@
 use makepad_widgets::*;
-use tracing::info;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
+use tracing::info;
 
 use crate::{
     export::Exportable,
@@ -163,6 +163,7 @@ pub struct ExportScreen {
 pub struct ExportAction {
     data: Vec<HashMap<String, String>>,
 }
+
 impl LiveHook for ExportScreen {
     fn after_new_from_doc(&mut self, _cx: &mut Cx) {
         self.export_processor = Some(crate::export::new_export_processor());
@@ -170,7 +171,6 @@ impl LiveHook for ExportScreen {
 }
 impl Widget for ExportScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        
         self.widget_match_event(cx, event, scope);
         self.view.handle_event(cx, event, scope);
     }
@@ -256,7 +256,11 @@ impl WidgetMatchEvent for ExportScreen {
                         let res = processor.export(type_name, data).await;
                         match res {
                             Ok(_) => {
-                                Cx::post_action("导出成功");
+                                enqueue_popup_notification(PopupItem {
+                                    kind: PopupKind::Success,
+                                    auto_dismissal_duration: Some(2.5),
+                                    message: "数据导出完成.".to_string(),
+                                });
                             }
                             Err(e) => {
                                 Cx::post_action(e);

@@ -3,22 +3,22 @@ use tiberius::{AuthMethod, Config};
 
 use crate::utils::error::MyError;
 
-pub async fn client() -> anyhow::Result<bb8::Pool<ConnectionManager>,MyError> {
+pub async fn client() -> anyhow::Result<bb8::Pool<ConnectionManager>, MyError> {
     let mut config = Config::new();
-    // config.host("192.168.3.250");
+    config.host("192.168.3.250");
     // config.port(1433);
     // config.database("BOSAautotestDB");
-    // config.authentication(AuthMethod::sql_server("yytest", "yytest"));
+    config.authentication(AuthMethod::sql_server("yytest", "yytest"));
     // config.trust_cert();
     // let manager = ConnectionManager::new(config);
     // let pool = bb8::Pool::builder()
     //     .max_size(10) // 最大连接数，调整根据需要
     //     .build(manager)
     //     .await?;
-     config.host("127.0.0.1");
+    // config.host("127.0.0.1");
     config.port(1433);
     config.database("BOSAautotestDB");
-    config.authentication(AuthMethod::sql_server("sa", "Wjz142857."));
+    // config.authentication(AuthMethod::sql_server("sa", "Wjz142857."));
     config.trust_cert();
     let manager = ConnectionManager::new(config);
     let pool = bb8::Pool::builder()
