@@ -9,6 +9,7 @@ use crate::{
     utils::error::MyError,
 };
 use chrono::{Local, NaiveDateTime};
+use directories::UserDirs;
 use rayon::prelude::*;
 use regex::Regex;
 use std::{collections::HashMap, sync::Arc};
@@ -239,9 +240,21 @@ pub async fn write_to_excel(
                     info!("数据写入完毕.");
 
                     // 保存
+                    let user_dirs = UserDirs::new().ok_or(MyError::Zdyknown("无法获取用户目录.".to_string()))?;
+                    let desktop_dir = user_dirs.desktop_dir().ok_or(MyError::Zdyknown("无法找到桌面路径.".to_string()))?;
+                    let target_folder = desktop_dir.join("数据导出");
+                    if !target_folder.exists() {
+                        std::fs::create_dir_all(&target_folder)?;
+                    }
+
                     let date = Local::now().format("%Y-%m-%d").to_string();
-                    let output_path = format!("{}-{}.xlsx", template_name, date);
-                    info!("准备保存文件到: {}", output_path);
+                    let output_folder = target_folder.join(&date);
+                    if !output_folder.exists() {
+                        std::fs::create_dir_all(&output_folder)?;
+                    }
+                    let output_name = format!("{}-{}.xlsx", template_name, date);
+                    let output_path = output_folder.join(output_name);
+                    info!("准备保存文件到: {:?}", output_path);
                     write(&book, &output_path)
                         .map_err(|e| MyError::Zdyknown(format!("无法写入文件: {}", e)))?;
                     info!("模板 '{}' 处理并保存成功.", tn_clone);

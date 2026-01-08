@@ -10,8 +10,8 @@ use tokio::fs;
 use crate::utils::error::{MyError, MyTip};
 
 // 定义 TOML 文件的路径
-const TOML_FILE_PATH: &str = "././configs/type_config.toml";
-// const JSON_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\type_config.toml"; // TOML 文件路径
+// const TOML_FILE_PATH: &str = "././configs/type_config.toml";
+const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\type_config_new.toml"; // TOML 文件路径
 
 // 定义 infos 结构体，用于匹配 TOML 文件中的 [ConfigType.infos]
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
