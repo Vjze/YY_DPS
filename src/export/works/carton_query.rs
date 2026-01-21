@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet}; // 引入 HashSet
-
 use crate::{
     configs::type_config::{Infos, get_type_infos},
     structs::{BandData, CartonData, Data, Datas, PackData},
@@ -11,6 +9,8 @@ use futures::{
     TryStreamExt as _,
     stream::{StreamExt as _, iter},
 };
+use std::collections::{HashMap, HashSet}; // 引入 HashSet
+use std::sync::mpsc;
 use tiberius_mappers::TryFromRow as _;
 use tokio::{
     fs,
@@ -46,6 +46,7 @@ pub async fn do_carton_query(
     typeinfos: String,
     is_multi: bool,
     client: &bb8::Pool<ConnectionManager>,
+    sender: mpsc::Sender<f64>,
 ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
     info!(
         "开始执行箱号查询: carton={}, typeinfos={}, is_multi={}",
@@ -64,10 +65,11 @@ pub async fn do_carton_query(
             .map(|carton| {
                 let typeinfos = typeinfos.clone();
                 let pool = pool.clone();
+                let sender = sender.clone();
                 // 为每个查询创建一个异步任务
-                tokio::spawn(
-                    async move { carton_query_datas(carton.clone(), &pool, typeinfos).await },
-                )
+                tokio::spawn(async move {
+                    carton_query_datas(carton.clone(), &pool, typeinfos, sender).await
+                })
             })
             .buffer_unordered(10); // 限制并发数为 10
 
@@ -87,7 +89,7 @@ pub async fn do_carton_query(
         Ok(all_datas)
     } else {
         info!("执行单箱查询模式");
-        carton_query_datas(carton, pool, typeinfos).await
+        carton_query_datas(carton, pool, typeinfos, sender).await
     }
 }
 
@@ -99,13 +101,14 @@ pub async fn carton_query_datas(
     carton: String,
     pool: &bb8::Pool<ConnectionManager>,
     typeinfos: String,
+    sender: mpsc::Sender<f64>,
 ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
     if carton.is_empty() {
         return Err(MyError::CartonNoEmpty);
     }
 
     // 1. 获取类型信息
-    let infos = get_type_infos(typeinfos).await?.1;
+    let infos = get_type_infos(&typeinfos).await?.1;
     info!("类型信息解析完毕: {:?}", infos);
 
     // --- 优化点 1, 3, 4: ---

@@ -10,8 +10,8 @@ use tokio::fs;
 use crate::utils::error::{MyError, MyTip};
 
 // 定义 TOML 文件的路径
-// const TOML_FILE_PATH: &str = "././configs/type_config.toml";
-const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\type_config_new.toml"; // TOML 文件路径
+const TOML_FILE_PATH: &str = "././configs/type_config.toml";
+// const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\type_config_new.toml"; // TOML 文件路径
 
 // 定义 infos 结构体，用于匹配 TOML 文件中的 [ConfigType.infos]
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -41,7 +41,7 @@ pub struct ConfigType {
 }
 
 /// 获取指定类型名称的类型信息列表
-pub async fn get_type_infos(type_name: String) -> Result<(Vec<String>, Infos), MyError> {
+pub async fn get_type_infos(type_name: &str) -> Result<(Vec<String>, Infos), MyError> {
     // 使用 ? 运算符替代 unwrap()，以传播可能的错误
     let data = load_data().await?;
     let mut type_infos = Vec::new();

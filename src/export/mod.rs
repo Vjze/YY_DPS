@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, mpsc},
+};
 pub mod export_row;
 pub mod export_tabel;
 use makepad_widgets::Cx;
@@ -8,9 +11,7 @@ use async_trait::async_trait;
 use bb8_tiberius::ConnectionManager;
 
 use crate::{
-    export::works::{carton_query::do_carton_query, 
-        export2excel::write_to_excel
-    },
+    export::works::{carton_query::do_carton_query, export2excel::write_to_excel},
     utils::error::MyError,
 };
 pub fn live_design(cx: &mut Cx) {
@@ -27,10 +28,11 @@ pub trait Exportable: Send + Sync {
         typeinfos: String,
         is_multi: bool,
         sql_client: &bb8::Pool<ConnectionManager>,
+        sender: mpsc::Sender<f64>,
     ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError>;
     async fn export(
         &self,
-        type_name: String,
+        type_name: &str,
         datas: Vec<HashMap<String, String>>,
     ) -> anyhow::Result<(), MyError>;
 }
@@ -45,12 +47,13 @@ impl Exportable for Exporter {
         typeinfos: String,
         is_multi: bool,
         sql_client: &bb8::Pool<ConnectionManager>,
+        sender: mpsc::Sender<f64>,
     ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
-        do_carton_query(carton, typeinfos, is_multi, sql_client).await
+        do_carton_query(carton, typeinfos, is_multi, sql_client, sender).await
     }
     async fn export(
         &self,
-        type_name: String,
+        type_name: &str,
         datas: Vec<HashMap<String, String>>,
     ) -> anyhow::Result<(), MyError> {
         write_to_excel(type_name, datas).await

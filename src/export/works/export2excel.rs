@@ -15,8 +15,8 @@ use regex::Regex;
 use std::{collections::HashMap, sync::Arc};
 use tracing::info;
 use umya_spreadsheet::{
-    Border, Font, HorizontalAlignmentValues, Style, VerticalAlignmentValues, Worksheet,
-    reader::xlsx::read, writer::xlsx::write,
+    Border, Font, HorizontalAlignmentValues, Style, VerticalAlignmentValues, reader::xlsx::read,
+    writer::xlsx::write,
 }; // 引入 info!
 
 // 单元格更新结构
@@ -28,7 +28,7 @@ struct CellUpdate {
 }
 
 pub async fn write_to_excel(
-    type_name: String,
+    type_name: &str,
     datas: Vec<HashMap<String, String>>,
 ) -> Result<(), MyError> {
     info!(
@@ -36,10 +36,10 @@ pub async fn write_to_excel(
         type_name,
         datas.len()
     );
-    let template_names: Vec<String> = get_type_infos(type_name.clone()).await?.0;
+    let template_names: Vec<String> = get_type_infos(type_name).await?.0;
     let datas = Arc::new(datas.clone());
-    // let template_path = Arc::new(String::from(r"\\192.168.10.142\Excel_Templates\"));
-    let template_path = String::from(r"D:\rust\YY_DPS\");
+    let template_path = Arc::new(String::from(r"\\192.168.10.142\Excel_Templates\"));
+    // let template_path = String::from(r"D:\rust\YY_DPS\");
 
     info!(
         "找到 {} 个关联模板: {:?}",
@@ -186,7 +186,7 @@ pub async fn write_to_excel(
                                         //     // &unit,
                                         // );
                                         let (raw_value, mapped_key) = calculate_row_value(
-                                            header.to_string(),
+                                            header,
                                             row_data,
                                             config.clone(),
                                             cached_before_po, // 传入缓存的温前值
@@ -240,8 +240,11 @@ pub async fn write_to_excel(
                     info!("数据写入完毕.");
 
                     // 保存
-                    let user_dirs = UserDirs::new().ok_or(MyError::Zdyknown("无法获取用户目录.".to_string()))?;
-                    let desktop_dir = user_dirs.desktop_dir().ok_or(MyError::Zdyknown("无法找到桌面路径.".to_string()))?;
+                    let user_dirs = UserDirs::new()
+                        .ok_or(MyError::Zdyknown("无法获取用户目录.".to_string()))?;
+                    let desktop_dir = user_dirs
+                        .desktop_dir()
+                        .ok_or(MyError::Zdyknown("无法找到桌面路径.".to_string()))?;
                     let target_folder = desktop_dir.join("数据导出");
                     if !target_folder.exists() {
                         std::fs::create_dir_all(&target_folder)?;
@@ -385,21 +388,21 @@ fn format_with_decimals(
 //     }
 // }
 fn calculate_row_value(
-    excel_header: String,
+    excel_header: &str,
     row_data: &HashMap<String, String>,
     config: Arc<TemplateConfig>,
     before_po: f64,  // +++ 新增参数：缓存的温前值 +++
     raw_po_f64: f64, // +++ 新增参数：温后值 +++
 ) -> (String, String) {
     // 1. 获取配置信息
-    let info_opt = config.infos.get(&excel_header);
+    let info_opt = config.infos.get(excel_header);
 
     // 2. 获取映射后的字段名 (data_select)
-    let mapped_key = info_opt.map_or(excel_header.clone(), |info| {
+    let mapped_key = info_opt.map_or(excel_header, |info| {
         if info.data_type == "数据" && !info.data_select.is_empty() {
-            info.data_select.clone()
+            info.data_select.as_str()
         } else {
-            excel_header.clone()
+            excel_header
         }
     });
 
@@ -407,11 +410,11 @@ fn calculate_row_value(
     if let Some(info) = info_opt {
         if info.data_type == "固定文本" {
             // 如果是固定文本，直接返回内容和key
-            return (info.fixed_content.clone(), mapped_key);
+            return (info.fixed_content.clone(), mapped_key.to_string());
         }
     }
 
-    let raw_value = match mapped_key.as_str() {
+    let raw_value = match mapped_key {
         "beforeTC-Ith(mA)" => {
             let val = row_data
                 .get("ith")
@@ -426,9 +429,7 @@ fn calculate_row_value(
                 .unwrap_or(0.0);
             before_im_num(val).to_string()
         }
-        "beforeTC-Po(mW)" => {
-            before_po.to_string()
-        }
+        "beforeTC-Po(mW)" => before_po.to_string(),
         "beforeTC-Vf(V)" => {
             let val = row_data
                 .get("vf")
@@ -458,13 +459,13 @@ fn calculate_row_value(
         _ => {
             // 默认直接取值
             row_data
-                .get(&mapped_key)
+                .get(mapped_key)
                 .unwrap_or(&"".to_string())
                 .to_string()
         }
     };
 
-    (raw_value, mapped_key)
+    (raw_value, mapped_key.to_string())
 }
 // 计算 row_value 的独立函数
 // fn calculate_row_value(

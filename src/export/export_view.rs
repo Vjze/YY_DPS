@@ -1,9 +1,11 @@
 use makepad_widgets::*;
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, mpsc};
 use tokio::runtime::Runtime;
 use tracing::info;
 
+use crate::structs::Datas;
+use crate::widgets::progress::MyProgressWidgetExt;
 use crate::{
     export::Exportable,
     store::Store,
@@ -18,6 +20,8 @@ live_design! {
     use crate::shared::modal::*;
     use crate::shared::widgets::*;
     use crate::export::export_tabel::*;
+    use crate::widgets::clean_input::InputClean;
+    use crate::widgets::progress::MyProgress;
     FirstRow = <View> {
         width: Fill,
         height: Fit,
@@ -66,6 +70,7 @@ live_design! {
                 }
             }
         }
+        // carton_input = <InputClean> {
         carton_input = <MolyTextInput> {
             empty_text: "请输入箱号...."
             width: Fill, height: 40
@@ -137,7 +142,43 @@ live_design! {
             }
         }
     }
-
+    StateBar = <View> {
+        width: Fill,
+        height: Fit,
+        align: {y: 0.5}
+        // padding: {left: 20, right: 20, top: 0, bottom: 0},
+        spacing: 10,
+        <Label> {
+            text: "状态: "
+            draw_text: {
+                color: #000,
+                text_style: {
+                    font_size:16
+                }
+            }
+        }
+        state_label = <Label> {
+            text: "未开始"
+            draw_text: {
+                color: #000,
+                text_style: {
+                    font_size:16
+                }
+            }
+        }
+        // <Label> {
+        //     text: "进度条:"
+        //     draw_text: {
+        //         color: #000,
+        //         text_style: {
+        //             font_size:16
+        //         }
+        //     }
+        // }
+        progress = <MyProgress> {
+            width: Fill, value: .0
+        }
+    }
     pub ExportScreen = {{ExportScreen}} {
         <View> {
             width: Fill,
@@ -147,6 +188,7 @@ live_design! {
             spacing: 10,
             <FirstRow> {}
             <ExTable> {}
+            <StateBar> {}
         }
     }
 }
@@ -158,6 +200,8 @@ pub struct ExportScreen {
     pub rt: Runtime,
     #[rust(None)] // 默认初始化为 None
     pub export_processor: Option<Arc<dyn Exportable>>,
+    #[rust]
+    progress_receiver: Option<mpsc::Receiver<Datas>>,
 }
 #[derive(Clone, Debug, Default)]
 pub struct ExportAction {
@@ -191,8 +235,27 @@ impl Widget for ExportScreen {
 }
 
 impl WidgetMatchEvent for ExportScreen {
+    fn handle_signal(&mut self, cx: &mut Cx, scope: &mut Scope) {
+        if let Some(rx) = &self.progress_receiver {
+            let mut last_msg = None;
+            // 循环读取直到取到最新的一条（Drain all available results）
+            while let Ok(msg) = rx.try_recv() {
+                last_msg = Some(msg);
+            }
+
+            if let Some(progress) = last_msg {
+                if let Some(store) = scope.data.get_mut::<Store>() {
+                    store.datas_store.export_datas.extend(progress);
+                }
+                self.view
+                    .my_progress(ids!(progress))
+                    .set_value(cx, progress * 100.0);
+                self.view.redraw(cx);
+            }
+        }
+    }
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let input = self.view.text_input(ids!(carton_input));
+        let input = self.view.text_input(ids!(input));
         let query_btn = self.view.button(ids!(query_btn));
         let export_btn = self.view.button(ids!(export_btn));
         let type_name = self.view.drop_down(ids!(type_selector));
@@ -229,9 +292,11 @@ impl WidgetMatchEvent for ExportScreen {
             let carton = input.text().clone();
             let is_multi = query_btn.text() == "批量查询";
             let type_name = type_name.selected_label().clone();
+            let (sender, receiver) = mpsc::channel();
+            self.progress_receiver = Some(receiver);
             rt.spawn(async move {
                 let res = processor
-                    .carton_query(carton, type_name, is_multi, &pool.unwrap())
+                    .carton_query(carton, type_name, is_multi, &pool.unwrap(), sender)
                     .await;
 
                 match res {
@@ -253,7 +318,7 @@ impl WidgetMatchEvent for ExportScreen {
                     let type_name = type_name.clone().selected_label();
                     let data = store.datas_store.export_datas.clone();
                     rt.spawn(async move {
-                        let res = processor.export(type_name, data).await;
+                        let res = processor.export(&type_name, data).await;
                         match res {
                             Ok(_) => {
                                 enqueue_popup_notification(PopupItem {

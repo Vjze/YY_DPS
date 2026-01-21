@@ -354,7 +354,6 @@ struct TypeView {
 
 impl Widget for TypeView {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
     }
@@ -399,7 +398,7 @@ impl WidgetMatchEvent for TypeView {
             let rt = self.rt.handle().clone();
             let _guard = rt.enter();
             let type_infos = rt.block_on(async move {
-                let res = get_type_infos(type_name).await;
+                let res = get_type_infos(&type_name).await;
                 match res {
                     Ok(res) => res,
                     Err(e) => {

@@ -5,8 +5,8 @@ use tokio::fs;
 
 use crate::utils::error::MyError;
 
-// const TOML_FILE_PATH: &str = "././configs/all_column_name.toml"; // TOML 文件路径
-const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\all_column_name.toml"; // TOML 文件路径
+const TOML_FILE_PATH: &str = "././configs/all_column_name.toml"; // TOML 文件路径
+// const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\all_column_name.toml"; // TOML 文件路径
 // 定义结构体来匹配 TOML 文件中的键值对
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AllColumnNames {

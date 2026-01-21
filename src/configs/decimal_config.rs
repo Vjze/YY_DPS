@@ -1,20 +1,15 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use crate::{
-    configs::column_map_config::add_new_template_map,
-    utils::error::{MyError, MyTip},
-};
+use crate::utils::error::{MyError, MyTip};
 use anyhow::Result;
 use chrono::Local;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
-use tracing::info;
 use umya_spreadsheet::reader::xlsx::read;
 
-// const TOML_FILE_PATH: &str = "././configs/decimal_config.toml";
-const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\decimal_config_new.toml"; // TOML 文件路径
-
+const TOML_FILE_PATH: &str = "././configs/decimal_config.toml";
+// const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\decimal_config_new.toml"; // TOML 文件路径
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Config {
@@ -107,10 +102,7 @@ pub async fn get_decimal_config_value(template_name: String) -> Result<TemplateC
     }
 }
 
-pub async fn add_new_template(
-    template_name: String,
-    rows: String,
-) -> Result<MyTip, MyError> {
+pub async fn add_new_template(template_name: String, rows: String) -> Result<MyTip, MyError> {
     let now = Local::now().format("%Y/%m/%d %H:%M:%S").to_string();
     let re = Regex::new(r"\r\n|\n|\r").expect("Invalid regex");
 
@@ -182,7 +174,9 @@ pub async fn add_new_template(
 
     for column_name in excel_column_keys.keys() {
         // 对于每一个 Excel 列名，插入一个默认的 InfoDetail，确保配置完整
-        final_infos.entry(column_name.clone()).or_insert_with(InfoDetail::default);
+        final_infos
+            .entry(column_name.clone())
+            .or_insert_with(InfoDetail::default);
     }
     let unit = "Mw".to_string();
     // let mut row_map = HashMap::new();
