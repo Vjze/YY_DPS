@@ -9,6 +9,7 @@ use futures::{
     TryStreamExt as _,
     stream::{StreamExt as _, iter},
 };
+use makepad_widgets::SignalToUI;
 use std::collections::{HashMap, HashSet}; // 引入 HashSet
 use std::sync::mpsc;
 use tiberius_mappers::TryFromRow as _;
@@ -46,8 +47,8 @@ pub async fn do_carton_query(
     typeinfos: String,
     is_multi: bool,
     client: &bb8::Pool<ConnectionManager>,
-    sender: mpsc::Sender<f64>,
-) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
+    // sender: mpsc::Sender<f64>,
+) -> anyhow::Result<Vec<Datas>, MyError> {
     info!(
         "开始执行箱号查询: carton={}, typeinfos={}, is_multi={}",
         carton, typeinfos, is_multi
@@ -65,11 +66,11 @@ pub async fn do_carton_query(
             .map(|carton| {
                 let typeinfos = typeinfos.clone();
                 let pool = pool.clone();
-                let sender = sender.clone();
+                // let sender = sender.clone();
                 // 为每个查询创建一个异步任务
-                tokio::spawn(async move {
-                    carton_query_datas(carton.clone(), &pool, typeinfos, sender).await
-                })
+                tokio::spawn(
+                    async move { carton_query_datas(carton.clone(), &pool, typeinfos).await },
+                )
             })
             .buffer_unordered(10); // 限制并发数为 10
 
@@ -89,7 +90,7 @@ pub async fn do_carton_query(
         Ok(all_datas)
     } else {
         info!("执行单箱查询模式");
-        carton_query_datas(carton, pool, typeinfos, sender).await
+        carton_query_datas(carton, pool, typeinfos).await
     }
 }
 
@@ -101,8 +102,8 @@ pub async fn carton_query_datas(
     carton: String,
     pool: &bb8::Pool<ConnectionManager>,
     typeinfos: String,
-    sender: mpsc::Sender<f64>,
-) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
+    // sender: mpsc::Sender<f64>,
+) -> anyhow::Result<Vec<Datas>, MyError> {
     if carton.is_empty() {
         return Err(MyError::CartonNoEmpty);
     }
@@ -124,7 +125,13 @@ pub async fn carton_query_datas(
         "基础数据和绑定数据获取完毕，共 {} 条，开始查询最新测试数据",
         all_datas.len()
     );
-
+    Ok(all_datas)
+}
+pub async fn get_res(
+    all_datas: &mut Vec<Datas>,
+    pool: &bb8::Pool<ConnectionManager>,
+    sender: mpsc::Sender<Data>,
+) -> Result<Vec<HashMap<String, String>>, MyError> {
     // 3. 提取 SNs 以查询测试数据 (与原逻辑相同)
     let sn_placeholders = all_datas
         .iter()
@@ -146,7 +153,7 @@ pub async fn carton_query_datas(
         // 只有 1 块 (最常见的情况), 正常执行
         info!("开始查询 {} 个SN的测试数据", sn_placeholders.len());
         let sql_text_s = build_query_sql(&sn_list_chunks[0], pool).await?;
-        datas = execute_query(&sql_text_s, pool).await?;
+        datas = execute_query(&sql_text_s, pool, sender).await?;
     } else {
         // (优化) 并发执行多个 Chunks
         info!(
@@ -158,9 +165,10 @@ pub async fn carton_query_datas(
         let mut tasks = iter(sn_list_chunks)
             .map(|sn_list_chunk| {
                 let pool = pool.clone();
+                let sender = sender.clone();
                 tokio::spawn(async move {
                     let sql_text_s = build_query_sql(&sn_list_chunk, &pool).await?;
-                    execute_query(&sql_text_s, &pool).await
+                    execute_query(&sql_text_s, &pool, sender).await
                 })
             })
             .buffer_unordered(5); // 限制 5 个并发 SQL 查询
@@ -383,6 +391,7 @@ async fn get_base_data_unified(
 pub async fn execute_query(
     sql_text_s: &str,
     pool: &bb8::Pool<ConnectionManager>,
+    sender: mpsc::Sender<Data>,
 ) -> Result<Vec<Data>, MyError> {
     // info!("开始执行 carton_query 查询 (已优化): {}", sql_text_s);
     let mut client = pool.get().await.unwrap();
@@ -398,9 +407,11 @@ pub async fn execute_query(
         let data = Data::try_from_row(row)
             .map_err(|e| MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e)))?;
         row_count += 1;
-        datas.push(data);
+        datas.push(data.clone());
+        sender.send(data).ok();
+        SignalToUI::set_ui_signal();
     }
-
+    SignalToUI::set_ui_signal();
     info!(
         "共处理 {} 行原始数据 (已在SQL去重)，得到 {} 条最新SN数据。",
         row_count,

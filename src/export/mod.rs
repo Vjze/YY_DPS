@@ -12,6 +12,7 @@ use bb8_tiberius::ConnectionManager;
 
 use crate::{
     export::works::{carton_query::do_carton_query, export2excel::write_to_excel},
+    structs::Datas,
     utils::error::MyError,
 };
 pub fn live_design(cx: &mut Cx) {
@@ -28,8 +29,8 @@ pub trait Exportable: Send + Sync {
         typeinfos: String,
         is_multi: bool,
         sql_client: &bb8::Pool<ConnectionManager>,
-        sender: mpsc::Sender<f64>,
-    ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError>;
+        // sender: mpsc::Sender<f64>,
+    ) -> anyhow::Result<Vec<Datas>, MyError>;
     async fn export(
         &self,
         type_name: &str,
@@ -47,9 +48,9 @@ impl Exportable for Exporter {
         typeinfos: String,
         is_multi: bool,
         sql_client: &bb8::Pool<ConnectionManager>,
-        sender: mpsc::Sender<f64>,
-    ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
-        do_carton_query(carton, typeinfos, is_multi, sql_client, sender).await
+        // sender: mpsc::Sender<f64>,
+    ) -> anyhow::Result<Vec<Datas>, MyError> {
+        do_carton_query(carton, typeinfos, is_multi, sql_client).await
     }
     async fn export(
         &self,

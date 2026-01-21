@@ -134,7 +134,7 @@ pub async fn get_box_datas(
         .join(",");
     let sn_datas = get_sn_info(sns, pool).await?;
     let carton_data = get_carton_data(&box_no, pool).await;
-    let all = all_datas
+    let mut all = all_datas
         .into_iter()
         .map(|mut d| {
             if carton_data.is_some() {
@@ -145,7 +145,7 @@ pub async fn get_box_datas(
             d
         })
         .collect::<Vec<Datas>>();
-    let mut all = merge_and_format_results(all, &sn_datas);
+    let mut all = merge_and_format_results(&mut all, &sn_datas);
     //     .into_iter()
     //     .map(|mut d| {
     //         let sn_datas = sn_datas
