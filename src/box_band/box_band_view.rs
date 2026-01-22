@@ -1,3 +1,5 @@
+use crate::box_band::unband_dialog::UnbandModalAction;
+use crate::box_band::work::unbind_work::{unbind_box, unbind_carton};
 use crate::{
     box_band::work::{
         band_work::band_work,
@@ -20,6 +22,7 @@ live_design! {
     use crate::shared::modal::*;
     use crate::shared::widgets::*;
     use crate::box_band::band_table::*;
+    use crate::box_band::unband_dialog::UnbandModal;
 
     FirstRow = <View> {
         width: Fill,
@@ -57,19 +60,6 @@ live_design! {
                 uniform color: #000
             }
         }
-        <Label> {
-            text: "新盒号:"
-            width: Fit,
-            height: 40
-            padding: {top: 5}
-            draw_text: {
-                color: #000000,
-                text_style: {
-                    font_size: 16
-                }
-            }
-        }
-
 
         query_btn = <Button> {
             width: Fit
@@ -85,7 +75,7 @@ live_design! {
             draw_bg: {
                 uniform border_size: 1.0
                 uniform border_radius: 5.0
-                uniform color: #FF7F50
+                uniform color: #00FFFF
                 uniform color_hover: #FFB6C1
                 uniform color_disabled: #A9A9A9
             }
@@ -106,6 +96,25 @@ live_design! {
                 uniform border_size: 1.0
                 uniform border_radius: 5.0
                 uniform color: #FF7F50
+                uniform color_hover: #FFB6C1
+                uniform color_disabled: #A9A9A9
+            }
+        }
+        unband_btn = <Button> {
+            width: Fit
+            height: 40
+            padding: {left: 20, right: 20, top: 0, bottom: 0}
+            text: "盒号解绑"
+            draw_text: {
+                color: #000000,
+                text_style: {
+                    font_size: 16
+                }
+            }
+            draw_bg: {
+                uniform border_size: 1.0
+                uniform border_radius: 5.0
+                uniform color: #FF4500
                 uniform color_hover: #FFB6C1
                 uniform color_disabled: #A9A9A9
             }
@@ -183,12 +192,21 @@ live_design! {
         height: Fill,
         padding: 15,
         spacing: 10,
-        flow: Down,
-        <FirstRow> {}
-        <BandHeaderRow> {
-            cursor: Default
+        flow: Overlay
+        <View> {
+            flow: Down,
+            <FirstRow> {}
+            <BandHeaderRow> {
+                cursor: Default
+            }
+            <BandTable> {}
         }
-        <BandTable> {}
+        unbind_modal = <Modal> {
+            content: {
+                <UnbandModal> {}
+            }
+        }
+
     }
 }
 #[derive(Live, LiveHook, Widget)]
@@ -199,8 +217,12 @@ struct BoxBandView {
     pub rt: Runtime,
 }
 #[derive(Clone, Debug, Default)]
-pub struct BoxBandAction {
+struct BoxBandAction {
     data: Vec<BoxBandData>,
+}
+#[derive(Clone, Debug, Default)]
+struct BoxUnBandAction {
+    carton_no: String,
 }
 impl Widget for BoxBandView {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
@@ -238,14 +260,55 @@ impl WidgetMatchEvent for BoxBandView {
         let band_btn = self.view.button(ids!(band_btn));
         let carton_input = self.view.text_input(ids!(carton_input));
         let boxs_num = self.view.label(ids!(boxs_num));
-
+        let unband_btn = self.view.button(ids!(unband_btn));
         let rt = self.rt.handle().clone();
+
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<BoxBandAction>() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     let num = format!("一共: {} 盒", data_action.data.len());
                     boxs_num.set_text(cx, &num.to_string());
                     store.box_band_store.box_data = data_action.data.clone();
+                }
+            }
+            if let Some(UnbandModalAction::Close) = action.downcast_ref() {
+                self.modal(ids!(unbind_modal)).close(cx);
+            }
+            if let Some(UnbandModalAction::Action(no, select)) = action.downcast_ref() {
+                let mut pool = None;
+                if let Some(store) = scope.data.get_mut::<Store>() {
+                    pool = store.pool.clone();
+                }
+                if select == "箱号" {
+                    let res = rt
+                        .block_on(async move { unbind_carton(&no, &pool.clone().unwrap()).await });
+                    match res {
+                        Ok(_) => {
+                            enqueue_popup_notification(PopupItem {
+                                kind: PopupKind::Success,
+                                auto_dismissal_duration: Some(2.5),
+                                message: format!("箱号: {} 解绑成功.", no),
+                            });
+                        }
+                        Err(e) => {
+                            Cx::post_action(e);
+                        }
+                    }
+                } else {
+                    let res =
+                        rt.block_on(async move { unbind_box(&no, &pool.clone().unwrap()).await });
+                    match res {
+                        Ok(_) => {
+                            enqueue_popup_notification(PopupItem {
+                                kind: PopupKind::Success,
+                                auto_dismissal_duration: Some(2.5),
+                                message: format!("盒号: {} 解绑成功.", no),
+                            });
+                        }
+                        Err(e) => {
+                            Cx::post_action(e);
+                        }
+                    }
                 }
             }
         }
@@ -292,6 +355,9 @@ impl WidgetMatchEvent for BoxBandView {
                     });
                 }
             }
+        }
+        if unband_btn.clicked(actions) {
+            self.modal(ids!(unbind_modal)).open(cx);
         }
     }
 }

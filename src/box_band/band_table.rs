@@ -1,6 +1,5 @@
-use crate::{box_band::work::query_work::BoxBandData, store::Store, utils::error::MyError};
+use crate::{store::Store, utils::error::MyError};
 use makepad_widgets::*;
-use tracing::info;
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -31,7 +30,7 @@ live_design! {
     BandDataRow =
     // {{BandDataRow}} {
         <View> {
-            height: 45,
+            height: 50,
             flow: Down
             width: Fill
             align: {x: 0.0, y: 0.5}
@@ -39,7 +38,7 @@ live_design! {
             h_wrapper = <View> {
                 flow: Right
                 spacing: 30
-
+                align: {x: 0.0, y: 0.5}
                 carton_no = <Col> {
                     width: Fill {
                         weight: 1.0
@@ -60,8 +59,23 @@ live_design! {
                     width: Fill {
                         weight: 1.0
                     }
-                    new_box_no_input = <TextInput> {
-
+                    new_box_no_input = <MolyTextInput> {
+                        width: Fill, height: 40
+                        padding: 10,
+                        empty_text: "输入新盒号...",
+                        draw_text: {
+                            text_style: <REGULAR_FONT>{
+                                font_size: 12
+                            }
+                            color: #000
+                        }
+                        draw_bg: {
+                            uniform border_radius: 5.0
+                            uniform border_size: 1.0
+                        }
+                        draw_cursor: {
+                            uniform color: #FFF
+                        }
                     }
                 }
 
