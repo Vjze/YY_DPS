@@ -1,6 +1,3 @@
-use makepad_widgets::*;
-use tokio::runtime::Runtime;
-
 use crate::{
     box_band::work::{
         band_work::band_work,
@@ -10,6 +7,9 @@ use crate::{
     utils::error::MyError,
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
+use makepad_widgets::*;
+use tokio::runtime::Runtime;
+use tracing::info;
 
 live_design! {
     use link::theme::*;
@@ -69,25 +69,7 @@ live_design! {
                 }
             }
         }
-        new_box_no_input = <MolyTextInput> {
-            empty_text: "请输入新盒号...."
-            width: Fill,
-            height: 40
-            padding: 10,
-            draw_text: {
-                text_style: <REGULAR_FONT>{
-                    font_size: 12
-                }
-                color: #000
-            }
-            draw_bg: {
-                uniform border_radius: 5.0
-                uniform border_size: 1.0
-            }
-            draw_cursor: {
-                uniform color: #000
-            }
-        }
+
 
         query_btn = <Button> {
             width: Fit
@@ -229,14 +211,33 @@ impl Widget for BoxBandView {
         self.view.draw_walk(cx, scope, walk)
     }
 }
-
+impl BoxBandView {
+    fn query(&self, _cx: &mut Cx, _scope: &mut Scope, carton_no: String) {
+        let rt = self.rt.handle().clone();
+        if carton_no.is_empty() {
+            Cx::post_action(MyError::Zdyknown("请输入箱号!!!".to_string()));
+        } else {
+            let carton = carton_no.clone();
+            rt.spawn(async move {
+                let res = query_carton_info(&carton).await;
+                match res {
+                    Ok(data) => {
+                        Cx::post_action(BoxBandAction { data });
+                    }
+                    Err(e) => {
+                        Cx::post_action(e);
+                    }
+                }
+            });
+        }
+    }
+}
 impl WidgetMatchEvent for BoxBandView {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
         let query_btn = self.view.button(ids!(query_btn));
         let band_btn = self.view.button(ids!(band_btn));
         let carton_input = self.view.text_input(ids!(carton_input));
         let boxs_num = self.view.label(ids!(boxs_num));
-        let new_box_input = self.view.text_input(ids!(new_box_no_input));
 
         let rt = self.rt.handle().clone();
         for action in actions {
@@ -248,22 +249,10 @@ impl WidgetMatchEvent for BoxBandView {
                 }
             }
         }
-        if let Some(input) = new_box_input.changed(actions) {
-            if let Some(props) = scope.data.get_mut::<Store>() {
-                let datas = props.box_band_store.box_data.clone();
-                let len = datas.len();
-                let mut new_box_nos = vec![];
-                for i in 1..len + 1 {
-                    let mut new_data = datas.get(i - 1).unwrap().clone();
-                    let padded_number = format!("{:03}", i);
-                    let new_box = format!("{}-{}", input, padded_number);
-                    new_data.new_box_no = new_box.clone();
-                    new_box_nos.push(new_data);
-                }
-                props.box_band_store.box_data = new_box_nos;
-                // info!("props.box_data: {:?}", props.box_data);
-            }
+        if let Some((i, _)) = carton_input.returned(actions) {
+            self.query(cx, scope, i);
         }
+
         if carton_input.text().is_empty() {
             query_btn.set_enabled(cx, false);
             query_btn.set_disabled(cx, true);
@@ -276,23 +265,7 @@ impl WidgetMatchEvent for BoxBandView {
             band_btn.set_disabled(cx, false);
         }
         if query_btn.clicked(actions) {
-            if carton_input.text().is_empty() {
-                Cx::post_action(MyError::Zdyknown("请输入箱号!!!".to_string()));
-            } else {
-                let carton = carton_input.clone().text();
-                rt.spawn(async move {
-                    let carton_input = carton;
-                    let res = query_carton_info(carton_input).await;
-                    match res {
-                        Ok(data) => {
-                            Cx::post_action(BoxBandAction { data });
-                        }
-                        Err(e) => {
-                            Cx::post_action(e);
-                        }
-                    }
-                });
-            }
+            self.query(cx, scope, carton_input.text());
         }
         if band_btn.clicked(actions) {
             if let Some(store) = scope.data.get::<Store>() {

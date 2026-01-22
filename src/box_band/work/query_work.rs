@@ -11,14 +11,14 @@ pub struct BoxBandData {
     pub new_box_no: String,
     pub create_time: String,
 }
-pub async fn query_carton_info(carton_no: String) -> Result<Vec<BoxBandData>, MyError> {
-    match check_binded(carton_no.clone()).await {
+pub async fn query_carton_info(carton_no: &str) -> Result<Vec<BoxBandData>, MyError> {
+    match check_binded(carton_no).await {
         Ok(_) => get_carton_infos(carton_no).await,
         Err(e) => Err(e),
     }
 }
 
-async fn get_carton_infos(carton_no: String) -> Result<Vec<BoxBandData>, MyError> {
+async fn get_carton_infos(carton_no: &str) -> Result<Vec<BoxBandData>, MyError> {
     let client = client().await?;
     let pool = &client;
     let sql_text = format!(
@@ -63,14 +63,15 @@ async fn get_carton_infos(carton_no: String) -> Result<Vec<BoxBandData>, MyError
     if results.is_empty() {
         return Err(MyError::Zdyknown("未查询到相关信息!!!".to_string()));
     }
+    results.sort_by(|a, b| a.box_no.cmp(&b.box_no));
     Ok(results)
 }
-async fn check_binded(carton_no: String) -> Result<(), MyError> {
+async fn check_binded(carton_no: &str) -> Result<(), MyError> {
     let client = client().await?;
     let pool = &client;
     let sql_text = format!(
         "select *
-            from [mes_Factory].[dbo].[jz_box_bind] 
+            from [mes_Factory].[dbo].[jz_box_bind]
             where carton_No = '{}' and status = '0'",
         carton_no
     );
