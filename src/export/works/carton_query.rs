@@ -54,7 +54,7 @@ pub async fn do_carton_query(
     // let client = client().await?;
     let pool = client;
 
-    if carton.is_empty() && is_multi {
+    if !is_multi {
         info!("执行批量查询模式");
         let cartons = get_info().await?;
         let mut all_datas = Vec::new();
@@ -100,10 +100,6 @@ pub async fn carton_query_datas(
     pool: &bb8::Pool<ConnectionManager>,
     typeinfos: String,
 ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
-    if carton.is_empty() {
-        return Err(MyError::CartonNoEmpty);
-    }
-
     // 1. 获取类型信息
     let infos = get_type_infos(typeinfos).await?.1;
     info!("类型信息解析完毕: {:?}", infos);
@@ -111,10 +107,21 @@ pub async fn carton_query_datas(
     // --- 优化点 1, 3, 4: ---
     // 2. 调用统一的函数获取基础数据 (箱、盒、SN、绑定数据)
     //    这个函数替换了之前所有的 get_data_for... 函数
-    let all_datas = get_base_data_unified(carton.clone(), pool, &infos).await?;
+    // 如果 carton 为空，查询前 100 条记录
+    let all_datas = if carton.is_empty() {
+        info!("箱号为空，查询前 100 条记录");
+        get_base_data_unified(None, pool, &infos).await?
+    } else {
+        get_base_data_unified(Some(carton.clone()), pool, &infos).await?
+    };
 
     if all_datas.is_empty() {
-        return Err(MyError::NoResult(format!("箱号:{carton}")));
+        let msg = if carton.is_empty() {
+            "查询结果为空".to_string()
+        } else {
+            format!("箱号:{carton}")
+        };
+        return Err(MyError::NoResult(msg));
     }
 
     info!(
@@ -181,20 +188,28 @@ pub async fn carton_query_datas(
     Ok(all)
 }
 async fn get_base_data_unified(
-    carton: String,
+    carton: Option<String>,
     pool: &bb8::Pool<ConnectionManager>,
     infos: &Infos,
 ) -> anyhow::Result<Vec<Datas>, MyError> {
     info!("开始执行统一查询 (get_base_data_unified)...");
 
     // --- 1. (最终修复 CTE) 查找最新批次的 CreateTime 窗口 ---
-    let cte = "WITH LatestBatchTime AS (
+    // 如果 carton 为 None，不使用 CTE，直接查询 TOP 100
+    let (cte, use_cte) = if carton.is_some() {
+        (
+            "WITH LatestBatchTime AS (
         -- 查找该箱号的绝对最新 CreateTime (T_max)
         SELECT TOP 1 CreateTime AS MaxTime
         FROM [mes_Factory].[dbo].[packing_carton]
         WHERE CartonNo = @P1 AND PnOptionID = '-100'
         ORDER BY CreateTime DESC
-    )";
+    )",
+            true,
+        )
+    } else {
+        ("", false)
+    };
 
     // --- 2. 基础表和别名 (保持不变) ---
     let (
@@ -210,25 +225,31 @@ async fn get_base_data_unified(
         pch_join_key_box,
     ) = if infos.zdy_box {
         // ...with_zdy... (自定义盒)
+        let mut joins = vec![
+            "INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.box_no = b.Packing_no".to_string(),
+        ];
+        // 只有在使用 CTE 时才加入 LatestBatchTime JOIN
+        if use_cte {
+            joins.push("INNER JOIN LatestBatchTime lbt ON b.CreateTime <= lbt.MaxTime AND DATEDIFF(SECOND, b.CreateTime, lbt.MaxTime) < 5".to_string());
+        }
+        joins.push("INNER JOIN [mes_Factory].[dbo].[MaterialPackSn] d ON d.Pack_no = b.Packing_no".to_string());
         (
             "FROM [mes_Factory].[dbo].[jz_box_bind] a".to_string(),
-            vec![
-                "INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.box_no = b.Packing_no".to_string(),
-                // 关键修改: JOIN 最新批次 (LatestBatchTime) 并使用时间窗口过滤
-                "INNER JOIN LatestBatchTime lbt ON b.CreateTime <= lbt.MaxTime AND DATEDIFF(SECOND, b.CreateTime, lbt.MaxTime) < 5".to_string(), // <-- 5秒窗口
-                "INNER JOIN [mes_Factory].[dbo].[MaterialPackSn] d ON d.Pack_no = b.Packing_no".to_string(),
-            ],
+            joins,
             "d.sn", "a.pkg_no", "d.pn", "d.creator", "d.createtime", "d.Pack_no", "d.Pack_no", "d.Pack_no",
         )
     } else {
         // ...no_zdy... (标准盒)
+        let mut joins = vec![
+            "INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no".to_string(),
+        ];
+        // 只有在使用 CTE 时才加入 LatestBatchTime JOIN
+        if use_cte {
+            joins.push("INNER JOIN LatestBatchTime lbt ON b.CreateTime <= lbt.MaxTime AND DATEDIFF(SECOND, b.CreateTime, lbt.MaxTime) < 5".to_string());
+        }
         (
             "FROM [mes_Factory].[dbo].[MaterialPackSn] a".to_string(),
-            vec![
-                "INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no".to_string(),
-                // 关键修改: JOIN 最新批次 (LatestBatchTime) 并使用时间窗口过滤
-                "INNER JOIN LatestBatchTime lbt ON b.CreateTime <= lbt.MaxTime AND DATEDIFF(SECOND, b.CreateTime, lbt.MaxTime) < 5".to_string(), // <-- 5秒窗口
-            ],
+            joins,
             "a.sn", "a.Pack_no", "a.pn", "a.creator", "a.createtime", "a.Pack_no", "b.CartonNo", "a.Pack_no",
         )
     };
@@ -242,6 +263,7 @@ async fn get_base_data_unified(
         format!("{} AS pack_time_dt", pack_time_field),
         "b.creator AS carton_worker".to_string(),
         "b.createtime AS carton_time_dt".to_string(),
+        "b.CartonNo AS carton_no".to_string(),
     ];
 
     // --- 4. PCH (批次号) 逻辑 (保持不变) ---
@@ -282,17 +304,28 @@ async fn get_base_data_unified(
     // --- 6. 组装并执行 SQL ---
     let select_clause = select_list.join(", ");
     let join_clause = join_list.join(" ");
-    let sql = format!(
-        // 注意: 我们仍然保留了 b.CartonNo = @P1 AND b.PnOptionID = '-100' 作为最终 WHERE 条件
-        // 因为 CTE TOP 1 无法保证只选择了 @P1 的 CartonNo（虽然在 CTE 里已过滤）
-        "{0} SELECT {1} {2} {3} WHERE b.CartonNo = @P1 AND b.PnOptionID = '-100' ORDER BY b.Packing_no desc, {4} asc",
-        cte, select_clause, from_clause, join_clause, order_by_pack_no
-    );
 
-    info!("执行统一 SQL 查询 (已最终优化): {}", sql);
+    let sql = if carton.is_some() {
+        // 有箱号的查询
+        format!(
+            "{0} SELECT {1} {2} {3} WHERE b.CartonNo = @P1 AND b.PnOptionID = '-100' ORDER BY b.Packing_no desc, {4} asc",
+            cte, select_clause, from_clause, join_clause, order_by_pack_no
+        )
+    } else {
+        // 无箱号的查询，返回前 100 条
+        format!(
+            "SELECT TOP 100 {0} {1} {2} WHERE b.PnOptionID = '-100' ORDER BY b.CreateTime DESC, b.Packing_no desc, {3} asc",
+            select_clause, from_clause, join_clause, order_by_pack_no
+        )
+    };
+
+    info!("执行统一 SQL 查询: {}", sql);
     let mut client = pool.get().await.unwrap();
-    // CartonNo 的值 @P1 现在被用于 CTE 内部
-    let stream = client.query(&sql, &[&carton]).await.unwrap();
+    let stream = if let Some(ref carton_no) = carton {
+        client.query(&sql, &[carton_no]).await.unwrap()
+    } else {
+        client.query(&sql, &[]).await.unwrap()
+    };
 
     // --- 7. 解析循环 (保持不变) ---
     let mut all_datas = Vec::new();
@@ -320,7 +353,7 @@ async fn get_base_data_unified(
         };
 
         let carton_data = CartonData {
-            carton_no: carton.clone(),
+            carton_no: row.get::<&str, _>("carton_no").unwrap_or_default().to_string(),
             yypn: row.get::<&str, _>("yypn").unwrap_or_default().to_string(),
             carton_worker: row
                 .get::<&str, _>("carton_worker")
