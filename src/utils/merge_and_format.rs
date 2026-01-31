@@ -8,7 +8,7 @@ pub fn merge_and_format_results(
 ) -> Vec<HashMap<String, String>> {
     all_datas
         .into_iter()
-        .map(|mut d| {
+        .map(|d| {
             // 找到对应的最新测试数据
             if let Some(sn_datas) = test_datas.iter().find(|x| x.sn == d.sn_data.sn) {
                 d.sn_data = sn_datas.clone();

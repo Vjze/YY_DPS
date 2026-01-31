@@ -422,7 +422,7 @@ impl WidgetMatchEvent for TypeView {
                         .set_active(cx, store.setting_store.type_infos.1.box_pch);
                     self.view
                         .check_box(ids!(jz_band_check))
-                        .set_active(cx, store.setting_store.type_infos.1.jz_band);
+                        .set_active(cx, store.setting_store.type_infos.1.jz_bind);
                     self.view
                         .check_box(ids!(zdy_box_check))
                         .set_active(cx, store.setting_store.type_infos.1.zdy_box);
@@ -459,7 +459,7 @@ impl WidgetMatchEvent for TypeView {
         }
         if let Some(check) = jz_band_check.changed(actions) {
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.setting_store.type_infos.1.jz_band = check;
+                store.setting_store.type_infos.1.jz_bind = check;
             }
         }
         if add_type_btn.clicked(actions) {

@@ -11,7 +11,6 @@ use crate::{
 };
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
-use tracing::info;
 
 live_design! {
     use link::theme::*;
@@ -220,10 +219,7 @@ struct BoxBandView {
 struct BoxBandAction {
     data: Vec<BoxBandData>,
 }
-#[derive(Clone, Debug, Default)]
-struct BoxUnBandAction {
-    carton_no: String,
-}
+
 impl Widget for BoxBandView {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.widget_match_event(cx, event, scope);

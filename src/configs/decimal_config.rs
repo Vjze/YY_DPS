@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use tokio::fs;
 use umya_spreadsheet::reader::xlsx::read;
 
-const TOML_FILE_PATH: &str = "././configs/decimal_config.toml";
+const TOML_FILE_PATH: &str = "././configs/decimal_config_new.toml";
 // const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\decimal_config_new.toml"; // TOML 文件路径
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

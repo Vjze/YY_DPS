@@ -30,6 +30,7 @@ struct CellUpdate {
 pub async fn write_to_excel(
     type_name: &str,
     datas: Vec<HashMap<String, String>>,
+    lock: bool,
 ) -> Result<(), MyError> {
     info!(
         "开始执行 write_to_excel, 类型: {}, 数据量: {}",
@@ -229,14 +230,15 @@ pub async fn write_to_excel(
                             .get_style_mut((update.col, update.row))
                             .clone_from(&style);
                     }
-                    // 开启工作表保护
-                    // 默认情况下，开启保护后所有未显式“解锁”的单元格都无法编辑
-                    sheet
-                        .get_sheet_protection_mut()
-                        .set_password("test") // 设置保护密码
-                        .set_sheet(true) // 开启保护
-                        .set_objects(true) // 保护对象
-                        .set_scenarios(true);
+                    if lock {
+                        sheet
+                            .get_sheet_protection_mut()
+                            .set_password("test") // 设置保护密码
+                            .set_sheet(true) // 开启保护
+                            .set_objects(true) // 保护对象
+                            .set_scenarios(true);
+                    }
+
                     info!("数据写入完毕.");
 
                     // 保存

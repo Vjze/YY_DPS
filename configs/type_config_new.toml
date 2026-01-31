@@ -8,7 +8,7 @@ update_time = "2025/12/29 21:39:32"
 is_have_pch = false
 carton_pch = true
 box_pch = false
-jz_band = false
+jz_bind = false
 zdy_box = true
 
 [ConfigType.template]
@@ -24,7 +24,7 @@ update_time = "2025/07/31 02:21:41"
 is_have_pch = false
 carton_pch = false
 box_pch = true
-jz_band = true
+jz_bind = true
 zdy_box = false
 
 [ConfigType.template]
@@ -42,7 +42,7 @@ update_time = "2025/07/29 22:37:03"
 is_have_pch = true
 carton_pch = true
 box_pch = false
-jz_band = false
+jz_bind = false
 zdy_box = false
 
 [ConfigType.template]
@@ -58,7 +58,7 @@ update_time = "2025/07/31 02:16:12"
 is_have_pch = false
 carton_pch = false
 box_pch = false
-jz_band = false
+jz_bind = false
 zdy_box = false
 
 [ConfigType.template]
@@ -74,7 +74,7 @@ update_time = "2025/07/01 15:53:01"
 is_have_pch = false
 carton_pch = false
 box_pch = false
-jz_band = false
+jz_bind = false
 zdy_box = false
 
 [ConfigType.template]
@@ -90,7 +90,7 @@ update_time = "2025/07/01 16:35:19"
 is_have_pch = false
 carton_pch = false
 box_pch = false
-jz_band = false
+jz_bind = false
 zdy_box = false
 
 [ConfigType.template]
@@ -106,7 +106,7 @@ update_time = "2025/12/31 20:52:47"
 is_have_pch = false
 carton_pch = false
 box_pch = false
-jz_band = true
+jz_bind = true
 zdy_box = true
 
 [ConfigType.template]

@@ -274,7 +274,7 @@ async fn get_base_data_unified(
     }
 
     // --- 5. Band (绑定) 逻辑 (保持不变) ---
-    if infos.jz_band {
+    if infos.jz_bind {
         join_list.push(format!(
             "LEFT JOIN [mes_Factory].[dbo].[QA_snRelation] qr ON {} = qr.sn",
             sn_field

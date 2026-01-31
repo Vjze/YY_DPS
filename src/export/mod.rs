@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, mpsc},
-};
+use std::{collections::HashMap, sync::Arc};
 pub mod export_row;
 pub mod export_tabel;
 use makepad_widgets::Cx;
@@ -29,12 +26,12 @@ pub trait Exportable: Send + Sync {
         typeinfos: String,
         is_multi: bool,
         sql_client: &bb8::Pool<ConnectionManager>,
-        // sender: mpsc::Sender<f64>,
     ) -> anyhow::Result<Vec<Datas>, MyError>;
     async fn export(
         &self,
         type_name: &str,
         datas: Vec<HashMap<String, String>>,
+        lock: bool,
     ) -> anyhow::Result<(), MyError>;
 }
 
@@ -48,7 +45,6 @@ impl Exportable for Exporter {
         typeinfos: String,
         is_multi: bool,
         sql_client: &bb8::Pool<ConnectionManager>,
-        // sender: mpsc::Sender<f64>,
     ) -> anyhow::Result<Vec<Datas>, MyError> {
         do_carton_query(carton, typeinfos, is_multi, sql_client).await
     }
@@ -56,8 +52,9 @@ impl Exportable for Exporter {
         &self,
         type_name: &str,
         datas: Vec<HashMap<String, String>>,
+        lock: bool,
     ) -> anyhow::Result<(), MyError> {
-        write_to_excel(type_name, datas).await
+        write_to_excel(type_name, datas, lock).await
         // Ok(())
     }
 }

@@ -10,7 +10,7 @@ use tokio::fs;
 use crate::utils::error::{MyError, MyTip};
 
 // 定义 TOML 文件的路径
-const TOML_FILE_PATH: &str = "././configs/type_config.toml";
+const TOML_FILE_PATH: &str = "././configs/type_config_new.toml";
 // const TOML_FILE_PATH: &str = r"\\192.168.10.142\Excel_Templates\Configs\type_config_new.toml"; // TOML 文件路径
 
 // 定义 infos 结构体，用于匹配 TOML 文件中的 [ConfigType.infos]
@@ -19,7 +19,7 @@ pub struct Infos {
     pub is_have_pch: bool,
     pub carton_pch: bool,
     pub box_pch: bool,
-    pub jz_band: bool,
+    pub jz_bind: bool,
     pub zdy_box: bool,
 }
 // 定义根结构体，用于匹配 TOML 文件中的 [[ConfigType]]
