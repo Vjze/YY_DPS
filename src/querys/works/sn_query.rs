@@ -94,21 +94,21 @@ pub async fn sn_query_datas(
     // 添加 test_result 条件
     if test_result != "全部" {
         where_clauses.push(format!("Result = @P{}", param_index));
-        params.push(test_result); // "OK" or "NG"
+        params.push(test_result.to_string()); // "OK" or "NG"
         param_index += 1;
     }
 
     // 添加 pn (yypn) 条件 (注意: 别名是 Yypn)
     if !pn.is_empty() {
         where_clauses.push(format!("Yypn = @P{}", param_index));
-        params.push(pn);
+        params.push(pn.to_string());
         param_index += 1;
     }
 
     // 添加 worker (tester) 条件 (注意: 别名是 Tester)
     if !worker.is_empty() {
         where_clauses.push(format!("Tester = @P{}", param_index));
-        params.push(worker);
+        params.push(worker.to_string());
         param_index += 1;
     }
 
@@ -124,8 +124,8 @@ pub async fn sn_query_datas(
             param_index,
             param_index + 1
         ));
-        params.push(date_time_start);
-        params.push(date_time_end);
+        params.push(date_time_start.to_string());
+        params.push(date_time_end.to_string());
         // param_index += 2; // (不需要，因为我们已经使用了param_index和param_index + 1)
     }
 

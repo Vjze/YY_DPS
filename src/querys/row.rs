@@ -139,7 +139,7 @@ impl Widget for DataRow {
             label.set_text(cx, &sents);
 
             let testtimes = data
-                .get("testtime")
+                .get("testdate")
                 .cloned() // 将 Option<&String> 转换为 Option<String>
                 .unwrap_or_else(|| "".to_string());
             let label = self.label(ids!(testtime.label));

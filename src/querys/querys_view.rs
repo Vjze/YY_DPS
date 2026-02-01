@@ -348,6 +348,26 @@ live_design! {
 
             }
         }
+        batch_query_btn = <Button> {
+            width: Fit
+            height: 40
+            padding: {left: 20, right: 20, top: 0, bottom: 0}
+            text: "批量查询"
+            draw_text: {
+                color: #000000,
+                text_style: {
+                    font_size:16
+                }
+            }
+            draw_bg: {
+                uniform border_size: 1.0
+                uniform border_radius: 5.0
+                uniform color: #AFEEEE
+                uniform color_hover: #9370DB
+                uniform color_disabled: #DCDCDC
+
+            }
+        }
 
         qty_label = <Label> {
             padding: {
@@ -396,13 +416,12 @@ impl LiveHook for QueryScreen {
 }
 impl Widget for QueryScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-       
         self.widget_match_event(cx, event, scope);
         self.view.handle_event(cx, event, scope);
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
-         if let Some(store) = scope.data.get::<Store>() {
+        if let Some(store) = scope.data.get::<Store>() {
             if store.datas_store.query_datas.is_empty() {
                 self.view.button(ids!(export_btn)).set_disabled(cx, true);
             } else {
@@ -428,6 +447,7 @@ impl WidgetMatchEvent for QueryScreen {
         let res = self.view.drop_down(ids!(result_selector));
         let qty_label = self.view.label(ids!(qty_label));
         let processor = self.datas_query_processor.as_ref().unwrap().clone();
+        let batch_query_btn = self.view.button(ids!(batch_query_btn));
         let rt = self.rt.handle().clone();
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<QueryAction>() {
@@ -559,6 +579,49 @@ impl WidgetMatchEvent for QueryScreen {
                     });
                 }
             }
+        }
+        if batch_query_btn.clicked(actions) {
+            let processor = self.datas_query_processor.as_ref().unwrap().clone();
+            let mut pool: Option<bb8::Pool<ConnectionManager>> = None;
+            if let Some(store) = scope.data.get_mut::<Store>() {
+                store.datas_store.query_datas.clear();
+                qty_label.set_text(
+                    cx,
+                    &format!("总数量: {} PCS", store.datas_store.query_datas.len()),
+                );
+                pool = store.pool.clone();
+            }
+            let query_type = type_select.selected_label();
+            let use_date = use_date.active(cx);
+            let query_start_time = start_time_input.text();
+            let query_end_time = end_time_input.text();
+            let query_pn = pn_input.text();
+            let query_worker = worker_input.text();
+            let query_devices = devices.selected_label();
+            let query_result = res.selected_label();
+            rt.spawn(async move {
+                let res = processor
+                    .batch_query(
+                        query_type,
+                        use_date,
+                        query_start_time,
+                        query_end_time,
+                        query_pn,
+                        query_result,
+                        query_devices,
+                        query_worker,
+                        &pool.unwrap(),
+                    )
+                    .await;
+                match res {
+                    Ok(data) => {
+                        Cx::post_action(QueryAction { data });
+                    }
+                    Err(err) => {
+                        Cx::post_action(err);
+                    }
+                }
+            });
         }
         if use_date.active(cx) {
             self.view.widget(ids!(date_view)).set_visible(cx, true);

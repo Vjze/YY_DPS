@@ -19,7 +19,7 @@ use tokio::{
 };
 use tracing::info;
 
-async fn get_info() -> anyhow::Result<Vec<String>, MyError> {
+pub async fn get_info() -> anyhow::Result<Vec<String>, MyError> {
     info!("开始执行文件选择...");
     let pick = rfd::AsyncFileDialog::new()
         .pick_file()

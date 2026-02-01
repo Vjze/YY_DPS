@@ -6,8 +6,8 @@ pub mod row;
 pub mod tabel;
 use crate::{
     querys::works::{
-        box_querys::get_box_datas, carton_querys::get_carton_datas, export2excel::sn_export,
-        sn_query::sn_query_datas,
+        batch_query::batch_query, box_querys::get_box_datas, carton_querys::get_carton_datas,
+        export2excel::sn_export, sn_query::sn_query_datas,
     },
     utils::error::MyError,
 };
@@ -46,6 +46,18 @@ pub trait DatasQuery: Send + Sync {
         use_time: bool,
         date_time_start: String,
         date_time_end: String,
+        test_result: String,
+        test_devices: String,
+        worker: String,
+        pool: &bb8::Pool<ConnectionManager>,
+    ) -> Result<Vec<HashMap<String, String>>, MyError>;
+    async fn batch_query(
+        &self,
+        q_type: String,
+        use_time: bool,
+        date_time_start: String,
+        date_time_end: String,
+        pn: String,
         test_result: String,
         test_devices: String,
         worker: String,
@@ -101,6 +113,31 @@ impl DatasQuery for DatasQueryer {
             use_time,
             date_time_start,
             date_time_end,
+            test_result,
+            test_devices,
+            worker,
+            pool,
+        )
+        .await
+    }
+    async fn batch_query(
+        &self,
+        q_type: String,
+        use_time: bool,
+        date_time_start: String,
+        date_time_end: String,
+        pn: String,
+        test_result: String,
+        test_devices: String,
+        worker: String,
+        pool: &bb8::Pool<ConnectionManager>,
+    ) -> Result<Vec<HashMap<String, String>>, MyError> {
+        batch_query(
+            q_type,
+            use_time,
+            date_time_start,
+            date_time_end,
+            pn,
             test_result,
             test_devices,
             worker,
