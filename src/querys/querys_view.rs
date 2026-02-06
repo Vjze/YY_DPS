@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-
 use crate::querys::DatasQuery;
 use crate::utils::memory::DataStore;
 use crate::widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification};
@@ -486,7 +485,12 @@ impl WidgetMatchEvent for QueryScreen {
                 let query_worker = worker_input.text();
                 let query_devices = devices.selected_label();
                 let query_result = res.selected_label();
-                if query_type == "Sn" {
+                // 优先从桥接渲染数据
+                let bridge_q = crate::app_data_bridge::get_query_datas_vec();
+                if !bridge_q.is_empty() {
+                    self.datas.set_data(bridge_q.clone());
+                    cx.redraw_all();
+                } else if query_type == "Sn" {
                     let sns = if query_input.is_empty() {
                         vec![]
                     } else {
@@ -509,9 +513,11 @@ impl WidgetMatchEvent for QueryScreen {
                                     &p,
                                 )
                                 .await;
-                            match res {
+            match res {
                                 Ok(data) => {
-                                    Cx::post_action(QueryAction { data });
+                                    crate::app_bus::post(crate::app_bus::BusEvent::QueryResult(data.clone()));
+                                    // 同时写入桥接数据以供 UI 直接读取
+                                    crate::app_data_bridge::set_query_datas(data.clone());
                                 }
                                 Err(err) => {
                                     Cx::post_action(err);
@@ -538,7 +544,8 @@ impl WidgetMatchEvent for QueryScreen {
                                 .await;
                             match res {
                                 Ok(data) => {
-                                    Cx::post_action(QueryAction { data });
+                                    crate::app_bus::post(crate::app_bus::BusEvent::QueryResult(data.clone()));
+                                    // 不在后台任务中直接修改 UI 存储，改由桥接+BusEvent 驱动渲染
                                 }
                                 Err(err) => {
                                     Cx::post_action(err);
@@ -565,7 +572,7 @@ impl WidgetMatchEvent for QueryScreen {
                                 .await;
                             match res {
                                 Ok(data) => {
-                                    Cx::post_action(QueryAction { data });
+                                    crate::app_bus::post(crate::app_bus::BusEvent::QueryResult(data.clone()));
                                 }
                                 Err(err) => {
                                     Cx::post_action(err);
@@ -639,7 +646,7 @@ impl WidgetMatchEvent for QueryScreen {
                         .await;
                     match res {
                         Ok(data) => {
-                            Cx::post_action(QueryAction { data });
+                            crate::app_bus::post(crate::app_bus::BusEvent::QueryResult(data.clone()));
                         }
                         Err(err) => {
                             Cx::post_action(err);

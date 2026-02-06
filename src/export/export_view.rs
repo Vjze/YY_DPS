@@ -447,8 +447,9 @@ impl WidgetMatchEvent for ExportScreen {
                         .await;
 
                     match res {
-                        Ok(mut data) => {
-                            Cx::post_action(ExportAction { data: data.clone() });
+                    Ok(mut data) => {
+                        // 发布导出结果 via AppBus
+                        crate::app_bus::post(crate::app_bus::BusEvent::ExportResult(data.clone()));
                             let d = get_res(&mut data, &p, sender).await;
                             match d {
                                 Ok(data) => {

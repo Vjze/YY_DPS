@@ -233,6 +233,11 @@ impl MatchEvent for App {
         let _guard = rt.enter();
         let store = rt.block_on(async move { Store::init().await });
         self.store = store;
+        // 注册 AppBus 的 UI 消费点，便于后续事件驱动更新 UI
+        crate::app_bus::AppBus::init().register_ui_consumer(|event| {
+            // 当前环境下，直接输出日志，未来可以在这里把事件分发到具体 UI 更新逻辑
+            println!("[AppBus] UI consumer received: {:?}", event);
+        });
     }
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
         let mut navigate_to_export = false;
@@ -362,6 +367,14 @@ impl App {
         }
         self.ui.widget(id).set_visible(cx, true);
     }
+}
+
+// 在启动阶段注册一个简单的 UI 消费者，用于可观测 AppBus 的事件流
+fn register_appbus_ui_consumer(app: &mut App) {
+    crate::app_bus::AppBus::init().register_ui_consumer(|event| {
+        // 简单打印事件，帮助诊断阶段性问题，后续可将事件分发到具体 UI 更新逻辑
+        println!("[AppBus] Event received: {:?}", event);
+    });
 }
 
 #[derive(Live, Widget, LiveHook)]

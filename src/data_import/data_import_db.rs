@@ -240,8 +240,8 @@ impl WidgetMatchEvent for DataImportDb {
                             file_path,
                         };
 
-                        // 4. Post 包含数据的成功 Action 回 UI 线程
-                        Cx::post_action(DataExtractedAction { data });
+                        // 4. Post 数据提取成功，通过 AppBus 发送 DbData 给 UI/引擎
+                        crate::app_bus::post(crate::app_bus::BusEvent::DataExtractedAction(data));
                     }
                     Err(e) => {
                         Cx::post_action(e); // Post 错误

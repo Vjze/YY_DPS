@@ -71,7 +71,11 @@ pub struct ImportTable {
 
 impl Widget for ImportTable {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        if let Some(store) = scope.data.get::<Store>() {
+        // 优先从桥接读取导入数据
+        let bridge_imports = crate::app_data_bridge::get_import_datas();
+        if !bridge_imports.is_empty() {
+            self.datas = bridge_imports;
+        } else if let Some(store) = scope.data.get::<Store>() {
             let import_datas = &store.import_store.import_datas;
             self.datas =
                 <Vec<ImportDBDatas> as AsRef<[ImportDBDatas]>>::as_ref(&import_datas.data).to_vec();

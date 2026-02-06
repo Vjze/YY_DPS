@@ -1,5 +1,6 @@
 pub use makepad_widgets;
 pub mod app;
+pub mod app_bus;
 pub mod configs;
 pub mod export;
 pub mod settings;
@@ -10,5 +11,6 @@ pub mod utils;
 pub mod widgets;
 pub mod querys;
 pub mod login_view;
+pub mod app_data_bridge;
 pub mod box_band;
 pub mod data_import;
