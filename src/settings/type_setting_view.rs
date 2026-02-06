@@ -494,7 +494,7 @@ impl WidgetMatchEvent for TypeView {
         if add_template_btn.clicked(actions) {
             let type_name = input.text().clone();
             if type_name.is_empty() {
-                Cx::post_action(MyError::Zdyknown("型号名称不能为空".to_string()));
+                Cx::post_action(MyError::TypeNameEmpty);
                 return;
             }
             self.view.modal(ids!(type_add_template_modal)).open(cx);
@@ -503,7 +503,7 @@ impl WidgetMatchEvent for TypeView {
             if let Some(store) = scope.data.get_mut::<Store>() {
                 let type_name = input.text().clone();
                 if type_name.is_empty() {
-                    Cx::post_action(MyError::Zdyknown("型号名称不能为空".to_string()));
+                    Cx::post_action(MyError::TypeNameEmpty);
                     return;
                 }
                 let rt = self.rt.handle().clone();
@@ -528,7 +528,7 @@ impl WidgetMatchEvent for TypeView {
         if del_type_btn.clicked(actions) {
             let type_name = input.text().clone();
             if type_name.is_empty() {
-                Cx::post_action(MyError::Zdyknown("型号名称不能为空".to_string()));
+                Cx::post_action(MyError::TypeNameEmpty);
                 return;
             }
             let rt = self.rt.handle().clone();

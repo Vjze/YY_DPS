@@ -116,13 +116,13 @@ pub async fn add_new_template(template_name: String, rows: String) -> Result<MyT
         .add_filter("XLSX 文件", &["xlsx"])
         .pick_file()
         .await
-        .ok_or(MyError::Zdyknown("选择框关闭!".to_string()))?;
+        .ok_or(MyError::DialogClosed)?;
     let path = file_path.path();
     let mut book = read(&path)
-        .map_err(|_| MyError::Zdyknown(format!("无法读取模板文件: {}", path.display())))?;
+        .map_err(|_| MyError::FileOperationError(format!("无法读取模板文件: {}", path.display())))?;
     let sheet = book
         .get_sheet_by_name_mut("Sheet1")
-        .ok_or(MyError::Zdyknown(format!("找不到 Sheet1")))?;
+        .ok_or(MyError::FileOperationError("找不到 Sheet1".to_string()))?;
     let mut headers = vec![];
     // 获取工作表中最高行号
     let highest_row = sheet.get_highest_row();

@@ -6,7 +6,7 @@ use crate::{
         type_config::{Infos, get_type_names},
     },
     data_import::data_import_db::DbData,
-    utils::sql::client,
+    utils::{retry::retry_default, sql::client},
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
 use bb8_tiberius::ConnectionManager;
@@ -53,21 +53,21 @@ pub struct Store {
 
 impl Store {
     pub async fn init() -> Self {
-        let types = match get_type_names().await {
+let types = match retry_default(|| get_type_names()).await {
             Ok(res) => res,
             Err(e) => {
                 Cx::post_action(e);
                 Vec::default()
             }
         };
-        let templates = match get_templates().await {
+        let templates = match retry_default(|| get_templates()).await {
             Ok(res) => res,
             Err(e) => {
                 Cx::post_action(e);
                 Vec::default()
             }
         };
-        let all_column_name = match load_all_column_names().await {
+        let all_column_name = match retry_default(|| load_all_column_names()).await {
             Ok(res) => res,
             Err(e) => {
                 Cx::post_action(e);

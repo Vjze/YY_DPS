@@ -38,7 +38,7 @@ live_design! {
             flow: Down
             width: Fill
             align: {x: 0.0, y: 0.5}
-
+            padding: {top: 0, bottom: 0, left: 20, right: 20}
             h_wrapper = <View> {
                 flow: Right
                 width: Fill

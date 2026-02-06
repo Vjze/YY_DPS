@@ -6,6 +6,7 @@ live_design!(
 
     use crate::shared::widgets::*;
     use crate::shared::styles::*;
+    use crate::widgets::widget::MyDropdown;
 
     pub UnbandModal = {{UnbandModal}} {
         width: Fit,
@@ -107,7 +108,7 @@ live_design!(
                             }
                             text: "选择解绑项:"
                         }
-                        untype_selector = <DropDown> {
+                        untype_selector = <MyDropdown> {
                             width: 100,height:40
                             labels:["箱号","盒号"],
                             padding: {top:12,left:15}

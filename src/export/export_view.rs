@@ -1,6 +1,7 @@
 use crate::configs::type_config::{Infos, get_type_infos};
 use crate::export::works::carton_query::get_res;
 use crate::structs::{Data, Datas};
+use crate::utils::{memory::DataStore, retry::retry_default};
 use crate::widgets::progress::MyProgressWidgetExt;
 use crate::{
     export::Exportable,
@@ -11,6 +12,16 @@ use makepad_widgets::*;
 use std::sync::{Arc, mpsc};
 use tokio::runtime::Runtime;
 use tracing::info;
+
+// 常量字符串，避免重复分配
+mod constants {
+    pub const CARTON_QUERY: &str = "箱号查询";
+    pub const BATCH_QUERY: &str = "批量查询";
+    pub const QUERY_SUCCESS: &str = "查询成功";
+    pub const QUERY_FAILED: &str = "查询失败";
+    pub const QUERYING: &str = "查询中";
+    pub const EXPORT_COMPLETE: &str = "数据导出完成";
+}
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -242,12 +253,25 @@ live_design! {
                 width: Fill,
                 height: Fill,
                 flow: Overlay,
-                padding: 15,
                 spacing: 10,
                 <ExTable> {}
-                loading_spinner = <LoadingSpinner> {
-                    visible: false
+                <View> {
+                    width: Fill,
+                    height: Fill,
+                    align: {x: 0.5, y: 0.5}
+                    loading_spinner = <LoadingSpinner> {
+                        width: Fit {
+                            min: 200.0,
+                            max: 500.0,
+                        },
+                        height: Fit {
+                            min: 200.0,
+                            max: 500.0,
+                        },
+                        visible: false
+                    }
                 }
+
             }
             <StateBar> {}
         }
@@ -264,7 +288,7 @@ pub struct ExportScreen {
     #[rust]
     progress_receiver: Option<mpsc::Receiver<Data>>,
     #[rust]
-    datas: Vec<Datas>,
+    datas: DataStore<Datas>,
     #[rust]
     data: Vec<Data>,
 }
@@ -289,15 +313,15 @@ impl Widget for ExportScreen {
             // let mut last_msg = None;
             // 循环读取直到取到最新的一条（Drain all available results）
             while let Ok(msg) = rx.try_recv() {
-                //     last_msg = Some(msg);
-                // }
-                // if let Some(progress) = last_msg {
                 self.data.push(msg);
-                info!("msg_len: {}", self.data.len());
-                info!("datas_len: {}", self.datas.len());
-                let p = (self.data.len() as f64 / self.datas.len() as f64) * 100.0;
-                info!("Progress: {:.2}%", p);
-                self.view.my_progress(ids!(progress)).set_value(cx, p);
+                // 避免频繁计算，只在需要时计算进度
+                let data_len = self.data.len();
+                let total_len = self.datas.len();
+                
+                if total_len > 0 {
+                    let p = (data_len as f64 / total_len as f64) * 100.0;
+                    self.view.my_progress(ids!(progress)).set_value(cx, p);
+                }
                 self.view.redraw(cx);
             }
         }
@@ -332,10 +356,9 @@ impl WidgetMatchEvent for ExportScreen {
         let ui = self.ui_runner();
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<ExportAction>() {
-                // if let Some(store) = scope.data.get_mut::<Store>() {
-                // store.datas_store.export_datas = data_action.data.clone();
-                self.datas = data_action.data.clone();
-                let qty = format!("总数量: {} PCS", data_action.data.len());
+                // 使用优化的数据存储，避免克隆
+                self.datas.set_data(data_action.data.clone());
+                let qty = self.datas.get_cached_quantity();
                 qty_label.set_text(cx, &qty);
                 // enqueue_popup_notification(PopupItem {
                 //     kind: PopupKind::Success,
@@ -359,46 +382,67 @@ impl WidgetMatchEvent for ExportScreen {
             // }
         }
         if input.text().is_empty() {
-            query_btn.set_text(cx, "批量查询");
+            query_btn.set_text(cx, constants::BATCH_QUERY);
         } else {
-            query_btn.set_text(cx, "箱号查询");
+            query_btn.set_text(cx, constants::CARTON_QUERY);
         }
         if let Some(t_name) = type_name.changed_label(actions) {
-            let type_infos = rt.block_on(async move {
-                let res = get_type_infos(&t_name).await;
+            // 显示加载状态
+            self.view.label(ids!(pch_q)).set_text(cx, "加载中...");
+            self.view.label(ids!(pch_q_b)).set_text(cx, "加载中...");
+            self.view.label(ids!(pch_q_c)).set_text(cx, "加载中...");
+            self.view.label(ids!(jz_bind)).set_text(cx, "加载中...");
+            self.view.label(ids!(zdy_q)).set_text(cx, "加载中...");
+            self.view.label(ids!(templates)).set_text(cx, "加载中...");
+            
+            let ui = self.ui_runner();
+            let t_name = t_name.clone();
+            rt.spawn(async move {
+                let res = retry_default(|| get_type_infos(&t_name)).await;
                 info!("type_infos: {:?}", res);
-                match res {
+                let type_infos = match res {
                     Ok(res) => res,
                     Err(e) => {
                         Cx::post_action(e);
                         (Vec::new(), Infos::default())
                     }
-                }
+                };
+                
+                ui.defer_with_redraw(move |me, cx, _scope| {
+                    if !type_infos.0.is_empty() {
+                        let pch_q_text = format!("批次号查询: {}", bool2string(type_infos.1.is_have_pch));
+                        me.view.label(ids!(pch_q)).set_text(cx, &pch_q_text);
+                        let carton_pch_text =
+                            format!("批次号-箱号查询: {}", bool2string(type_infos.1.carton_pch));
+                        me.view
+                            .label(ids!(pch_q_c))
+                            .set_text(cx, &carton_pch_text);
+                        let box_pch_text =
+                            format!("批次号-盒号查询: {}", bool2string(type_infos.1.box_pch));
+                        me.view.label(ids!(pch_q_b)).set_text(cx, &box_pch_text);
+                        let jz_band_text = format!("尾标绑定查询: {}", bool2string(type_infos.1.jz_bind));
+                        me.view.label(ids!(jz_bind)).set_text(cx, &jz_band_text);
+                        let zdy_box_text = format!("自定义盒号查询: {}", bool2string(type_infos.1.zdy_box));
+                        me.view.label(ids!(zdy_q)).set_text(cx, &zdy_box_text);
+                        let templates_text = format!("关联模板: {}", type_infos.0.join(", "));
+                        me.view
+                            .label(ids!(templates))
+                            .set_text(cx, &templates_text);
+                    } else {
+                        // 重置为默认状态
+                        me.view.label(ids!(pch_q)).set_text(cx, "批次号查询: 未启用");
+                        me.view.label(ids!(pch_q_b)).set_text(cx, "批次号-盒号查询: 未启用");
+                        me.view.label(ids!(pch_q_c)).set_text(cx, "批次号-箱号查询: 未启用");
+                        me.view.label(ids!(jz_bind)).set_text(cx, "尾标绑定查询: 未启用");
+                        me.view.label(ids!(zdy_q)).set_text(cx, "自定义盒号查询: 未启用");
+                        me.view.label(ids!(templates)).set_text(cx, "关联模板: 无");
+                    }
+                });
             });
-            if !type_infos.0.is_empty() {
-                let pch_q_text = format!("批次号查询: {}", bool2string(type_infos.1.is_have_pch));
-                self.view.label(ids!(pch_q)).set_text(cx, &pch_q_text);
-                let carton_pch_text =
-                    format!("批次号-箱号查询: {}", bool2string(type_infos.1.carton_pch));
-                self.view
-                    .label(ids!(pch_q_c))
-                    .set_text(cx, &carton_pch_text);
-                let box_pch_text =
-                    format!("批次号-盒号查询: {}", bool2string(type_infos.1.box_pch));
-                self.view.label(ids!(pch_q_b)).set_text(cx, &box_pch_text);
-                let jz_band_text = format!("尾标绑定查询: {}", bool2string(type_infos.1.jz_bind));
-                self.view.label(ids!(jz_bind)).set_text(cx, &jz_band_text);
-                let zdy_box_text = format!("自定义盒号查询: {}", bool2string(type_infos.1.zdy_box));
-                self.view.label(ids!(zdy_q)).set_text(cx, &zdy_box_text);
-                let templates_text = format!("关联模板: {}", type_infos.0.join(", "));
-                self.view
-                    .label(ids!(templates))
-                    .set_text(cx, &templates_text);
-            }
         }
         if query_btn.clicked(actions) {
             self.view.view(ids!(loading_spinner)).set_visible(cx, true);
-            self.view.label(ids!(state_label)).set_text(cx, "查询中");
+            self.view.label(ids!(state_label)).set_text(cx, constants::QUERYING);
             let mut pool = None;
             if let Some(store) = scope.data.get_mut::<Store>() {
                 store.datas_store.export_datas.clear();
@@ -436,13 +480,13 @@ impl WidgetMatchEvent for ExportScreen {
                                             message: "查询完成，可以进行导出.".to_string(),
                                         });
                                     }
-                                    me.view.label(ids!(state_label)).set_text(cx, "查询成功");
+                                    me.view.label(ids!(state_label)).set_text(cx, constants::QUERY_SUCCESS);
                                 });
                             }
                             Err(e) => {
                                 ui.defer_with_redraw(move |me, cx, _scope| {
                                     me.view.view(ids!(loading_spinner)).set_visible(cx, false);
-                                    me.view.label(ids!(state_label)).set_text(cx, "查询失败");
+                                    me.view.label(ids!(state_label)).set_text(cx, constants::QUERY_FAILED);
                                 });
                                 Cx::post_action(e);
                             }
@@ -463,9 +507,11 @@ impl WidgetMatchEvent for ExportScreen {
             let processor = self.export_processor.as_ref().unwrap().clone();
             let lock = self.view.check_box(ids!(lock_check)).active(cx);
             if let Some(store) = scope.data.get_mut::<Store>() {
-                info!("导出数据数量: {}", store.datas_store.export_datas.len());
-                if !store.datas_store.export_datas.is_empty() {
-                    let type_name = type_name.clone().selected_label();
+                let data_len = store.datas_store.export_datas.len();
+                info!("导出数据数量: {}", data_len);
+                if data_len > 0 {
+                    let type_name = type_name.selected_label();
+                    // 只在确实需要时克隆数据
                     let data = store.datas_store.export_datas.clone();
                     rt.spawn(async move {
                         let res = processor.export(&type_name, data, lock).await;
@@ -474,7 +520,7 @@ impl WidgetMatchEvent for ExportScreen {
                                 enqueue_popup_notification(PopupItem {
                                     kind: PopupKind::Success,
                                     auto_dismissal_duration: Some(2.5),
-                                    message: "数据导出完成.".to_string(),
+                                    message: constants::EXPORT_COMPLETE.to_string(),
                                 });
                             }
                             Err(e) => {

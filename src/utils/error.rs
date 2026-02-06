@@ -46,6 +46,31 @@ pub enum MyError {
     DialogClosed,
     #[error("盒号解绑错误：{0}")]
     UnbindBoxErr(String),
+
+    // 数据查询相关错误
+    #[error("箱号 '{0}' 没有找到数据")]
+    CartonNoData(String),
+    #[error("SN查询错误: {0}")]
+    SnQueryError(String),
+    #[error("批次号查询错误: {0}")]
+    BatchQueryError(String),
+
+    // 配置相关错误
+    #[error("型号名称不能为空")]
+    TypeNameEmpty,
+    #[error("模板名称不能为空")]
+    TemplateNameEmpty,
+    #[error("文件操作错误: {0}")]
+    FileOperationError(String),
+
+    // 数据处理相关错误
+    #[error("没有数据，无法操作")]
+    NoDataAvailable,
+    #[error("数据转换错误: {0}")]
+    DataConversionError(String),
+    #[error("导出数据为空")]
+    ExportDataEmpty,
+
     #[error("未知错误")]
     Unknown,
 }

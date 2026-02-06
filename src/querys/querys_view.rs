@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::querys::DatasQuery;
+use crate::utils::memory::DataStore;
 use crate::widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification};
 use crate::{store::Store, utils::error::MyError};
 use bb8_tiberius::ConnectionManager;
@@ -403,6 +404,8 @@ pub struct QueryScreen {
     pub rt: Runtime,
     #[rust(None)] // 默认初始化为 None
     pub datas_query_processor: Option<Arc<dyn DatasQuery>>,
+    #[rust]
+    datas: DataStore<HashMap<String, String>>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -421,8 +424,8 @@ impl Widget for QueryScreen {
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
-        if let Some(store) = scope.data.get::<Store>() {
-            if store.datas_store.query_datas.is_empty() {
+if let Some(_store) = scope.data.get::<Store>() {
+            if self.datas.is_empty() {
                 self.view.button(ids!(export_btn)).set_disabled(cx, true);
             } else {
                 self.view.button(ids!(export_btn)).set_disabled(cx, false);
@@ -450,7 +453,8 @@ impl WidgetMatchEvent for QueryScreen {
         let batch_query_btn = self.view.button(ids!(batch_query_btn));
         let rt = self.rt.handle().clone();
         for action in actions {
-            if let Some(data_action) = action.downcast_ref::<QueryAction>() {
+if let Some(data_action) = action.downcast_ref::<QueryAction>() {
+                self.datas.set_data(data_action.data.clone());
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     store.datas_store.query_datas = data_action.data.clone();
                 }

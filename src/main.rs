@@ -1,6 +1,9 @@
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
+    // 加载环境变量（如果.env文件存在）
+    dotenv::dotenv().ok();
+
     tracing_subscriber::fmt()
         // enable everything
         .with_max_level(tracing::Level::DEBUG)

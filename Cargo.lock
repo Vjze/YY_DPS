@@ -722,6 +722,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "780955b8b195a21ab8e4ac6b60dd1dbdcec1dc6c51c0617964b08c81785e12c9"
 
 [[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
 name = "downcast-rs"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3722,6 +3728,7 @@ dependencies = [
  "chrono",
  "crossbeam-queue",
  "directories",
+ "dotenv",
  "futures",
  "makepad-widgets",
  "num_cpus",
@@ -3732,6 +3739,7 @@ dependencies = [
  "rfd",
  "rust_xlsxwriter",
  "serde",
+ "serde_json",
  "thiserror 2.0.17",
  "tiberius",
  "tiberius-mappers",

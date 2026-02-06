@@ -30,7 +30,7 @@ pub async fn get_box_datas(
         && date_time_end.is_empty()
         && !use_time
     {
-        return Err(MyError::Zdyknown("所有条件不能为空".to_string()));
+        return Err(MyError::AllNone);
     }
 
     // 2. 动态构建 SQL 语句和参数列表
@@ -91,7 +91,7 @@ pub async fn get_box_datas(
     while let Ok(Some(row)) = rows.try_next().await {
         let sn = row
             .get::<&str, _>(0)
-            .ok_or_else(|| MyError::Zdyknown(format!("查询结果中缺少 SN 信息。")))?
+            .ok_or_else(|| MyError::DataConversionError("查询结果中缺少 SN 信息".to_string()))?
             .to_string();
 
         if seen_sns.contains(&sn) {

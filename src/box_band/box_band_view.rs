@@ -6,7 +6,7 @@ use crate::{
         query_work::{BoxBandData, query_carton_info},
     },
     store::Store,
-    utils::error::MyError,
+    utils::{error::MyError, memory::DataStore, retry::retry_default},
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
 use makepad_widgets::*;
@@ -214,6 +214,8 @@ struct BoxBandView {
     view: View,
     #[rust(Runtime::new().unwrap())]
     pub rt: Runtime,
+    #[rust]
+    datas: DataStore<BoxBandData>,
 }
 #[derive(Clone, Debug, Default)]
 struct BoxBandAction {
@@ -233,11 +235,11 @@ impl BoxBandView {
     fn query(&self, _cx: &mut Cx, _scope: &mut Scope, carton_no: String) {
         let rt = self.rt.handle().clone();
         if carton_no.is_empty() {
-            Cx::post_action(MyError::Zdyknown("请输入箱号!!!".to_string()));
+            Cx::post_action(MyError::CartonNoEmpty);
         } else {
             let carton = carton_no.clone();
             rt.spawn(async move {
-                let res = query_carton_info(&carton).await;
+                let res = retry_default(|| query_carton_info(&carton)).await;
                 match res {
                     Ok(data) => {
                         Cx::post_action(BoxBandAction { data });
@@ -260,9 +262,10 @@ impl WidgetMatchEvent for BoxBandView {
         let rt = self.rt.handle().clone();
 
         for action in actions {
-            if let Some(data_action) = action.downcast_ref::<BoxBandAction>() {
+if let Some(data_action) = action.downcast_ref::<BoxBandAction>() {
+                self.datas.set_data(data_action.data.clone());
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    let num = format!("一共: {} 盒", data_action.data.len());
+                    let num = format!("一共: {} 盒", self.datas.len());
                     boxs_num.set_text(cx, &num.to_string());
                     store.box_band_store.box_data = data_action.data.clone();
                 }
@@ -291,20 +294,34 @@ impl WidgetMatchEvent for BoxBandView {
                         }
                     }
                 } else {
-                    let res =
-                        rt.block_on(async move { unbind_box(&no, &pool.clone().unwrap()).await });
-                    match res {
-                        Ok(_) => {
-                            enqueue_popup_notification(PopupItem {
-                                kind: PopupKind::Success,
-                                auto_dismissal_duration: Some(2.5),
-                                message: format!("盒号: {} 解绑成功.", no),
-                            });
+                    let ui = self.ui_runner();
+                    let pool = pool.clone().unwrap();
+                    let no = no.clone();
+                    rt.spawn(async move {
+                        let res = unbind_box(&no, &pool).await;
+                        match res {
+                            Ok(_) => {
+                                enqueue_popup_notification(PopupItem {
+                                    kind: PopupKind::Success,
+                                    auto_dismissal_duration: Some(2.5),
+                                    message: format!("盒号: {} 解绑成功.", no),
+                                });
+                            }
+                            Err(e) => {
+                                enqueue_popup_notification(PopupItem {
+                                    kind: PopupKind::Error,
+                                    auto_dismissal_duration: Some(2.5),
+                                    message: format!("解绑失败: {}", e),
+                                });
+                                Cx::post_action(e);
+                            }
                         }
-                        Err(e) => {
-                            Cx::post_action(e);
-                        }
-                    }
+                        
+                        ui.defer_with_redraw(move |_me, cx, _scope| {
+                            // 刷新UI状态
+                            cx.redraw_all();
+                        });
+                    });
                 }
             }
         }
@@ -329,7 +346,7 @@ impl WidgetMatchEvent for BoxBandView {
         if band_btn.clicked(actions) {
             if let Some(store) = scope.data.get::<Store>() {
                 if store.box_band_store.box_data.is_empty() {
-                    Cx::post_action(MyError::Zdyknown("没有数据，无法绑定!!!".to_string()));
+                    Cx::post_action(MyError::NoDataAvailable);
                 } else {
                     let datas = store.box_band_store.box_data.clone();
                     let carton = carton_input.text();
