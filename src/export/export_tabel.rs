@@ -107,7 +107,7 @@ impl Widget for ExTable {
         // let last_item_id = if entries_count > 0 { entries_count } else { 0 };
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(store) = scope.data.get::<Store>() {
-                let entries_count = store.datas_store.export_datas.clone().len();
+                let entries_count = store.datas_store.export_datas.len();
                 let last_item_id = if entries_count > 0 { entries_count } else { 0 };
                 if let Some(mut list) = item.as_portal_list().borrow_mut() {
                     list.set_item_range(cx, 0, last_item_id);
@@ -116,7 +116,8 @@ impl Widget for ExTable {
                             let template = live_id!(ExItemRow);
                             let item = list.item(cx, item_id, template);
 
-                            let mut file_data = store.datas_store.export_datas[item_id].clone();
+                            let mut file_data =
+                                store.datas_store.export_datas.as_ref()[item_id].clone();
                             let mut scope = Scope::with_data(&mut file_data);
                             item.draw_all(cx, &mut scope);
                         }

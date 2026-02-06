@@ -298,10 +298,8 @@ impl MatchEvent for App {
                 self.ui.modal(ids!(dialog_ui)).close(cx);
             }
             if let Some(LoginResult::Logined) = action.downcast_ref() {
-                let store = self.store.clone();
-                // store.logined = true;
-                // store.free_login = false;
-                let show_login = !store.login_store.logined;
+                let logined = self.store.login_store.logined;
+                let show_login = !logined;
                 self.ui.view(ids!(login_view)).set_visible(cx, show_login);
                 self.ui
                     .view(ids!(root_adaptive_view))
@@ -315,10 +313,8 @@ impl MatchEvent for App {
                 });
             }
             if let Some(LoginResult::FreeLogin) = action.downcast_ref() {
-                let store = self.store.clone();
-                // store.logined = true;
-                // store.free_login = true;
-                let show_login = !store.login_store.logined;
+                let logined = self.store.login_store.logined;
+                let show_login = !logined;
                 self.ui.view(ids!(login_view)).set_visible(cx, show_login);
                 self.ui
                     .view(ids!(root_adaptive_view))

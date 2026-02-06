@@ -1,5 +1,6 @@
 use crate::{store::Store, utils::error::MyError};
 use makepad_widgets::*;
+use std::sync::Arc;
 live_design! {
     use link::theme::*;
     use link::shaders::*;
@@ -134,7 +135,7 @@ impl Widget for BandTable {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(store) = scope.data.get::<Store>() {
-                let entries_count = store.box_band_store.box_data.clone().len();
+                let entries_count = store.box_band_store.box_data.len();
                 let last_item_id = if entries_count > 0 { entries_count } else { 0 };
                 if let Some(mut list) = item.as_portal_list().borrow_mut() {
                     list.set_item_range(cx, 0, last_item_id);
@@ -143,7 +144,7 @@ impl Widget for BandTable {
                             let template = live_id!(BandDataRow);
                             let item = list.item(cx, item_id, template);
 
-                            let file_data = store.box_band_store.box_data[item_id].clone();
+                            let file_data = store.box_band_store.box_data.as_ref()[item_id].clone();
 
                             let carton_nos = file_data.carton_no.clone();
                             let label = item.label(ids!(h_wrapper.carton_no.label));
@@ -182,7 +183,8 @@ impl WidgetMatchEvent for BandTable {
             let new_box_no = item_widget.text_input(ids!(new_box_no_input));
             if let Some(new_box_no) = new_box_no.changed(actions) {
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    if let Some(band) = store.box_band_store.box_data.get_mut(item_id) {
+                    let templates = Arc::make_mut(&mut store.box_band_store.box_data);
+                    if let Some(band) = templates.get_mut(item_id) {
                         band.new_box_no = new_box_no;
                     }
                 }
@@ -190,7 +192,8 @@ impl WidgetMatchEvent for BandTable {
             if let Some((i, _)) = new_box_no.returned(actions) {
                 if !i.is_empty() {
                     if let Some(store) = scope.data.get_mut::<Store>() {
-                        if let Some(band) = store.box_band_store.box_data.get_mut(item_id) {
+                        let templates = Arc::make_mut(&mut store.box_band_store.box_data);
+                        if let Some(band) = templates.get_mut(item_id) {
                             band.new_box_no = i;
                         }
                         let next_item_id = item_id + 1;

@@ -71,6 +71,9 @@ pub enum MyError {
     #[error("导出数据为空")]
     ExportDataEmpty,
 
+    #[error("数据库未连接")]
+    DatabaseNotConnected,
+
     #[error("未知错误")]
     Unknown,
 }

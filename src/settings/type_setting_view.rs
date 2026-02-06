@@ -1,5 +1,6 @@
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
+use std::sync::Arc;
 
 use crate::{
     configs::type_config::{Infos, add_new_type, delete_type, get_type_infos, update_type},
@@ -363,7 +364,7 @@ impl Widget for TypeView {
             if !store.setting_store.types.is_empty() {
                 self.view
                     .drop_down(ids!(type_selector))
-                    .set_labels(cx, store.setting_store.types.clone());
+                    .set_labels(cx, store.setting_store.types.as_ref().clone());
             };
             if store.setting_store.type_infos.1.is_have_pch {
                 self.view
@@ -409,7 +410,7 @@ impl WidgetMatchEvent for TypeView {
             });
             if !type_infos.0.is_empty() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    store.setting_store.type_infos = type_infos;
+                    store.setting_store.type_infos = (Arc::new(type_infos.0), type_infos.1);
 
                     self.view
                         .check_box(ids!(pch_check))
@@ -477,7 +478,7 @@ impl WidgetMatchEvent for TypeView {
                 let _guard = rt.enter();
                 let infos = store.setting_store.type_infos.clone();
                 rt.block_on(async move {
-                    let res = add_new_type(type_name, infos.0, infos.1).await;
+                    let res = add_new_type(type_name, infos.0.to_vec(), infos.1).await;
                     match res {
                         Ok(res) => {
                             Cx::post_action(res);
@@ -511,7 +512,7 @@ impl WidgetMatchEvent for TypeView {
                 rt.block_on(async move {
                     let res = update_type(
                         type_name,
-                        store.setting_store.type_infos.0.clone(),
+                        store.setting_store.type_infos.0.to_vec(),
                         store.setting_store.type_infos.1.clone(),
                     )
                     .await;
@@ -550,7 +551,7 @@ impl WidgetMatchEvent for TypeView {
             }
             if let Some(TemplateNameModalAction::Action(template_name)) = action.downcast_ref() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    store.setting_store.type_infos.0.push(template_name.clone());
+                    store.setting_store.add_template_to_type(template_name.clone());
                 }
                 self.view.modal(ids!(type_add_template_modal)).close(cx);
             }
@@ -559,7 +560,7 @@ impl WidgetMatchEvent for TypeView {
         for (item_id, item_widget) in list_widget.items_with_actions(actions) {
             if item_widget.button(ids!(del_btn)).clicked(actions) {
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    store.setting_store.type_infos.0.remove(item_id);
+                    store.setting_store.remove_template_from_type(item_id);
                 }
             }
         }
@@ -578,14 +579,16 @@ impl Widget for TemplateItemsRow {
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(mut list) = item.as_portal_list().borrow_mut() {
                 let state = scope.data.get_mut::<Store>().unwrap();
-                list.set_item_range(cx, 0, state.setting_store.type_infos.0.len());
+                let templates = state.setting_store.type_infos.0.as_ref();
+                let len = templates.len();
+                list.set_item_range(cx, 0, len);
                 while let Some(item_idx) = list.next_visible_item(cx) {
-                    if item_idx >= state.setting_store.type_infos.0.len() {
+                    if item_idx >= len {
                         continue;
                     }
                     let item = list.item(cx, item_idx, live_id!(TemplateItems));
                     let label_name = item.label(ids!(template_name));
-                    let t_name = state.setting_store.type_infos.0.get(item_idx).unwrap();
+                    let t_name = templates.get(item_idx).unwrap();
                     label_name.set_text(cx, &t_name);
                     item.draw_all(cx, &mut Scope::empty());
                 }

@@ -66,13 +66,15 @@ pub struct ImportTable {
     #[deref]
     view: View,
     #[rust]
-    datas: Vec<ImportDBDatas>
+    datas: Vec<ImportDBDatas>,
 }
 
 impl Widget for ImportTable {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         if let Some(store) = scope.data.get::<Store>() {
-            self.datas = store.import_store.import_datas.data.clone()
+            let import_datas = &store.import_store.import_datas;
+            self.datas =
+                <Vec<ImportDBDatas> as AsRef<[ImportDBDatas]>>::as_ref(&import_datas.data).to_vec();
         }
         self.view.handle_event(cx, event, scope);
     }

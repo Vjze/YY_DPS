@@ -5,7 +5,6 @@ use crate::querys::DatasQuery;
 use crate::utils::memory::DataStore;
 use crate::widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification};
 use crate::{store::Store, utils::error::MyError};
-use bb8_tiberius::ConnectionManager;
 use chrono::Local;
 use makepad_widgets::*;
 use tokio::runtime::Runtime;
@@ -453,10 +452,10 @@ impl WidgetMatchEvent for QueryScreen {
         let batch_query_btn = self.view.button(ids!(batch_query_btn));
         let rt = self.rt.handle().clone();
         for action in actions {
-if let Some(data_action) = action.downcast_ref::<QueryAction>() {
+            if let Some(data_action) = action.downcast_ref::<QueryAction>() {
                 self.datas.set_data(data_action.data.clone());
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    store.datas_store.query_datas = data_action.data.clone();
+                    store.datas_store.set_query_datas(data_action.data.clone());
                 }
             }
         }
@@ -469,14 +468,14 @@ if let Some(data_action) = action.downcast_ref::<QueryAction>() {
             {
                 Cx::post_action(MyError::AllNone);
             } else {
-                let mut pool: Option<bb8::Pool<ConnectionManager>> = None;
+                let mut store_mut = None;
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    store.datas_store.query_datas.clear();
+                    store.datas_store.clear_query_datas();
                     qty_label.set_text(
                         cx,
                         &format!("总数量: {} PCS", store.datas_store.query_datas.len()),
                     );
-                    pool = store.pool.clone();
+                    store_mut = Some(store);
                 }
                 let query_input = input.text();
                 let query_type = type_select.selected_label();
@@ -493,69 +492,87 @@ if let Some(data_action) = action.downcast_ref::<QueryAction>() {
                     } else {
                         vec![query_input.clone()]
                     };
+                    let pool = store_mut.as_ref().and_then(|s| s.pool.clone());
+                    let processor_clone = processor.clone();
                     rt.spawn(async move {
-                        let res = processor
-                            .sn_query_datas(
-                                sns,
-                                query_pn,
-                                use_date,
-                                query_start_time,
-                                query_end_time,
-                                query_result,
-                                query_devices,
-                                query_worker,
-                                &pool.unwrap(),
-                            )
-                            .await;
-                        match res {
-                            Ok(data) => {
-                                Cx::post_action(QueryAction { data });
+                        if let Some(p) = pool {
+                            let res = processor_clone
+                                .sn_query_datas(
+                                    sns,
+                                    query_pn,
+                                    use_date,
+                                    query_start_time,
+                                    query_end_time,
+                                    query_result,
+                                    query_devices,
+                                    query_worker,
+                                    &p,
+                                )
+                                .await;
+                            match res {
+                                Ok(data) => {
+                                    Cx::post_action(QueryAction { data });
+                                }
+                                Err(err) => {
+                                    Cx::post_action(err);
+                                }
                             }
-                            Err(err) => {
-                                Cx::post_action(err);
-                            }
+                        } else {
+                            Cx::post_action(MyError::DatabaseNotConnected);
                         }
                     });
                 } else if query_type == "盒号" {
+                    let pool = store_mut.as_ref().and_then(|s| s.pool.clone());
+                    let processor_clone = processor.clone();
                     rt.spawn(async move {
-                        let res = processor
-                            .box_query(
-                                query_input,
-                                use_date,
-                                query_start_time,
-                                query_end_time,
-                                query_pn,
-                                &pool.unwrap(),
-                            )
-                            .await;
-                        match res {
-                            Ok(data) => {
-                                Cx::post_action(QueryAction { data });
+                        if let Some(p) = pool {
+                            let res = processor_clone
+                                .box_query(
+                                    query_input,
+                                    use_date,
+                                    query_start_time,
+                                    query_end_time,
+                                    query_pn,
+                                    &p,
+                                )
+                                .await;
+                            match res {
+                                Ok(data) => {
+                                    Cx::post_action(QueryAction { data });
+                                }
+                                Err(err) => {
+                                    Cx::post_action(err);
+                                }
                             }
-                            Err(err) => {
-                                Cx::post_action(err);
-                            }
+                        } else {
+                            Cx::post_action(MyError::DatabaseNotConnected);
                         }
                     });
                 } else {
+                    let pool = store_mut.as_ref().and_then(|s| s.pool.clone());
+                    let processor_clone = processor.clone();
                     rt.spawn(async move {
-                        let res = processor
-                            .get_carton_datas(
-                                query_input,
-                                use_date,
-                                query_start_time,
-                                query_end_time,
-                                query_pn,
-                                &pool.unwrap(),
-                            )
-                            .await;
-                        match res {
-                            Ok(data) => {
-                                Cx::post_action(QueryAction { data });
+                        if let Some(p) = pool {
+                            let res = processor_clone
+                                .get_carton_datas(
+                                    query_input,
+                                    use_date,
+                                    query_start_time,
+                                    query_end_time,
+                                    query_pn,
+                                    &p,
+                                )
+                                .await;
+                            match res {
+                                Ok(data) => {
+                                    Cx::post_action(QueryAction { data });
+                                }
+                                Err(err) => {
+                                    Cx::post_action(err);
+                                }
                             }
-                            Err(err) => {
-                                Cx::post_action(err);
-                            }
+                        } else {
+                            Cx::post_action(MyError::DatabaseNotConnected);
                         }
                     });
                 }
@@ -565,7 +582,7 @@ if let Some(data_action) = action.downcast_ref::<QueryAction>() {
             let processor = self.datas_query_processor.as_ref().unwrap().clone();
             if let Some(store) = scope.data.get::<Store>() {
                 if !store.datas_store.query_datas.is_empty() {
-                    let data = store.datas_store.query_datas.clone();
+                    let data = store.datas_store.query_datas.as_ref().clone();
                     rt.spawn(async move {
                         let res = processor.data_export(data).await;
                         match res {
@@ -586,14 +603,14 @@ if let Some(data_action) = action.downcast_ref::<QueryAction>() {
         }
         if batch_query_btn.clicked(actions) {
             let processor = self.datas_query_processor.as_ref().unwrap().clone();
-            let mut pool: Option<bb8::Pool<ConnectionManager>> = None;
+            let mut store_mut = None;
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.datas_store.query_datas.clear();
+                store.datas_store.clear_query_datas();
                 qty_label.set_text(
                     cx,
                     &format!("总数量: {} PCS", store.datas_store.query_datas.len()),
                 );
-                pool = store.pool.clone();
+                store_mut = Some(store);
             }
             let query_type = type_select.selected_label();
             let use_date = use_date.active(cx);
@@ -603,27 +620,33 @@ if let Some(data_action) = action.downcast_ref::<QueryAction>() {
             let query_worker = worker_input.text();
             let query_devices = devices.selected_label();
             let query_result = res.selected_label();
+            let pool = store_mut.as_ref().and_then(|s| s.pool.clone());
+            let processor_clone = processor.clone();
             rt.spawn(async move {
-                let res = processor
-                    .batch_query(
-                        query_type,
-                        use_date,
-                        query_start_time,
-                        query_end_time,
-                        query_pn,
-                        query_result,
-                        query_devices,
-                        query_worker,
-                        &pool.unwrap(),
-                    )
-                    .await;
-                match res {
-                    Ok(data) => {
-                        Cx::post_action(QueryAction { data });
+                if let Some(p) = pool {
+                    let res = processor_clone
+                        .batch_query(
+                            query_type,
+                            use_date,
+                            query_start_time,
+                            query_end_time,
+                            query_pn,
+                            query_result,
+                            query_devices,
+                            query_worker,
+                            &p,
+                        )
+                        .await;
+                    match res {
+                        Ok(data) => {
+                            Cx::post_action(QueryAction { data });
+                        }
+                        Err(err) => {
+                            Cx::post_action(err);
+                        }
                     }
-                    Err(err) => {
-                        Cx::post_action(err);
-                    }
+                } else {
+                    Cx::post_action(MyError::DatabaseNotConnected);
                 }
             });
         }

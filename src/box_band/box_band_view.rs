@@ -262,12 +262,12 @@ impl WidgetMatchEvent for BoxBandView {
         let rt = self.rt.handle().clone();
 
         for action in actions {
-if let Some(data_action) = action.downcast_ref::<BoxBandAction>() {
+            if let Some(data_action) = action.downcast_ref::<BoxBandAction>() {
                 self.datas.set_data(data_action.data.clone());
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     let num = format!("一共: {} 盒", self.datas.len());
                     boxs_num.set_text(cx, &num.to_string());
-                    store.box_band_store.box_data = data_action.data.clone();
+                    store.box_band_store.set_box_data(data_action.data.clone());
                 }
             }
             if let Some(UnbandModalAction::Close) = action.downcast_ref() {
@@ -348,7 +348,7 @@ if let Some(data_action) = action.downcast_ref::<BoxBandAction>() {
                 if store.box_band_store.box_data.is_empty() {
                     Cx::post_action(MyError::NoDataAvailable);
                 } else {
-                    let datas = store.box_band_store.box_data.clone();
+                    let datas = store.box_band_store.box_data.as_ref().clone();
                     let carton = carton_input.text();
                     rt.spawn(async move {
                         let res = band_work(datas).await;

@@ -173,7 +173,7 @@ impl WidgetMatchEvent for DataImportDb {
             if let Some(data_action) = action.downcast_ref::<DataExtractedAction>() {
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     let qty = data_action.data.data.len();
-                    store.import_store.import_datas = data_action.data.clone();
+                    store.import_store.set_import_datas(data_action.data.clone());
                     info!(
                         "数据提取完成，提取数据量: {}",
                         store.import_store.import_datas.data.len()
@@ -197,8 +197,8 @@ impl WidgetMatchEvent for DataImportDb {
         let rt = self.rt.handle().clone();
         if select_btn.clicked(actions) {
             info!("开始选择文件 (异步)");
-            if let Some(scope) = scope.data.get_mut::<Store>() {
-                scope.import_store.import_datas = DbData::default();
+            if let Some(store) = scope.data.get_mut::<Store>() {
+                store.import_store.clear();
                 qty_label.set_text(cx, "总数量: 0 PCS");
             }
             let procrssor = self.import_processor.as_ref().unwrap().clone();
@@ -254,7 +254,7 @@ impl WidgetMatchEvent for DataImportDb {
             info!("开始写入数据");
             let processor = self.import_processor.as_ref().unwrap().clone();
             if let Some(store) = scope.data.get::<Store>() {
-                let data = store.import_store.import_datas.clone();
+                let data = store.import_store.import_datas.as_ref().clone();
                 let pool = store.pool.clone().unwrap();
                 let _ = rt.spawn(async move {
                     let res = processor.write(data, &pool).await;

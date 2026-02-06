@@ -310,7 +310,7 @@ impl Widget for TemplateView {
         if !store.setting_store.templates.is_empty() {
             self.view
                 .drop_down(ids!(template_selector))
-                .set_labels(cx, store.setting_store.templates.clone());
+                .set_labels(cx, store.setting_store.templates.as_ref().clone());
         };
         let rows = store.setting_store.template_infos.row.clone();
         let unit = store.setting_store.template_infos.unit.clone();

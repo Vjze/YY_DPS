@@ -259,7 +259,7 @@ impl Widget for TemplateInfosRow {
         keys.sort();
         let len = state.setting_store.template_infos.infos.len();
         let len = if len > 0 { len } else { 0 };
-        let labels = state.setting_store.all_column_name.clone();
+        let labels = state.setting_store.all_column_name.as_ref().clone();
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(mut list) = item.as_portal_list().borrow_mut() {
                 // if let Some(state) = scope.data.get_mut::<Store>() {
@@ -351,11 +351,12 @@ impl Widget for TemplateInfosRow {
                                     item.drop_down(ids!(data_select)).widget_uid(),
                                     title.clone(),
                                 );
-                            } else if item.drop_down(ids!(data_type)).selected_label() == "固定文本" {
+                            } else if item.drop_down(ids!(data_type)).selected_label() == "固定文本"
+                            {
                                 item.drop_down(ids!(data_select)).set_disabled(cx, true);
                                 item.text_input(ids!(fixed_content)).set_disabled(cx, false);
                                 item.text_input(ids!(decimal_input)).set_disabled(cx, true);
-                            }else{
+                            } else {
                                 item.drop_down(ids!(data_select)).set_disabled(cx, true);
                                 item.text_input(ids!(fixed_content)).set_disabled(cx, true);
                                 item.text_input(ids!(decimal_input)).set_disabled(cx, true);
@@ -376,7 +377,7 @@ impl Widget for TemplateInfosRow {
                             );
                             item.draw_all(cx, scope);
                         }
-                        
+
                         // item.draw_all(cx, &mut Scope::empty());
                     }
                 }
