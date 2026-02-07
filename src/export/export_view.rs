@@ -161,7 +161,7 @@ pub struct ExportScreen {
 }
 #[derive(Clone, Debug, Default)]
 pub struct ExportAction {
-    data: Vec<HashMap<String, String>>,
+    pub data: Vec<HashMap<String, String>>,
 }
 
 impl LiveHook for ExportScreen {
