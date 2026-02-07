@@ -2,10 +2,11 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{
     structs::{CartonData, Data, Datas, PackData},
-    utils::error::MyError,
+    utils::{error::MyError, query_builder::QueryBuilder},
 };
 use bb8_tiberius::ConnectionManager;
 use chrono::NaiveDateTime;
+use tiberius::Query;
 
 fn format_data(all_datas: Vec<Datas>) -> Vec<HashMap<String, String>> {
     let all = all_datas
@@ -49,82 +50,34 @@ pub async fn get_carton_datas(
     {
         return Err(MyError::Zdyknown("所有条件不能为空".to_string()));
     }
-    let sql_text = if !carton.is_empty() && pn.is_empty() && !use_time {
-        format!(
-            "select a.sn, a.Pack_no, a.pn, a.creator, a.createtime, b.creator, b.createtime, b.CartonNo
-            from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no = b.Packing_no
-            where b.CartonNo = '{}' and b.PnOptionID = '-100'
-            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
-            carton
-        )
-    } else if !carton.is_empty() && !pn.is_empty() && !use_time {
-        format!(
-            "select a.sn, a.Pack_no, a.pn, a.creator, a.createtime, b.creator, b.createtime, b.CartonNo
-            from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no = b.Packing_no
-            where b.CartonNo = '{}' and b.PnOptionID = '-100' and b.pn = '{}'
-            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
-            carton, pn
-        )
-    } else if !carton.is_empty() && pn.is_empty() && use_time {
-        format!(
-            "select a.sn, a.Pack_no, a.pn, a.creator, a.createtime, b.creator, b.createtime, b.CartonNo
-            from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no = b.Packing_no
-            where b.CartonNo = '{}' and b.PnOptionID = '-100' and b.createtime between '{}' and '{}'
-            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
-            carton, date_time_start, date_time_end
-        )
-    } else if carton.is_empty() && !pn.is_empty() && use_time {
-        format!(
-            "select a.sn, a.Pack_no, a.pn, a.creator, a.createtime, b.creator, b.createtime, b.CartonNo
-            from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no = b.Packing_no
-            where b.pn = '{}' and b.PnOptionID = '-100' and b.createtime between '{}' and '{}'
-            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
-            pn, date_time_start, date_time_end
-        )
-    } else if !carton.is_empty() && !pn.is_empty() && use_time {
-        format!(
-            "select a.sn, a.Pack_no, a.pn, a.creator, a.createtime, b.creator, b.createtime, b.CartonNo
-            from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no = b.Packing_no
-            where b.CartonNo = '{}' and b.pn = '{}' and b.PnOptionID = '-100' and b.createtime between '{}' and '{}'
-            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
-            carton, pn, date_time_start, date_time_end
-        )
-    } else if carton.is_empty() && pn.is_empty() && use_time {
-        format!(
-            "select a.sn, a.Pack_no, a.pn, a.creator, a.createtime, b.creator, b.createtime, b.CartonNo
-            from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no = b.Packing_no
-            where b.PnOptionID = '-100' and b.createtime between '{}' and '{}'
-            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
-            date_time_start, date_time_end
-        )
-    } else if carton.is_empty() && !pn.is_empty() && !use_time {
-        format!(
-            "select a.sn, a.Pack_no, a.pn, a.creator, a.createtime, b.creator, b.createtime, b.CartonNo
-            from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no = b.Packing_no
-            where b.pn = '{}' and b.PnOptionID = '-100'
-            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
-            pn
-        )
-    } else {
-        format!(
-            "select a.sn, a.Pack_no, a.pn, a.creator, a.createtime, b.creator, b.createtime, b.CartonNo
-            from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no = b.Packing_no
-            where b.PnOptionID = '-100'
-            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc"
-        )
-    };
-    println!("执行 SQL 查询: {}", sql_text);
-    let mut pool = pool.get().await.unwrap();
-
-    let stream = pool.simple_query(sql_text).await?;
+    // 使用参数化查询构建器，防止 SQL 注入
+    let base_sql = "SELECT a.sn, a.Pack_no, a.pn, a.creator, a.createtime, 
+                    b.creator, b.createtime, b.CartonNo
+                    FROM [mes_Factory].[dbo].[MaterialPackSn] a
+                    INNER JOIN [mes_Factory].[dbo].[packing_carton] b 
+                    ON a.Pack_no = b.Packing_no";
+    
+    let (sql_text, params) = QueryBuilder::new(base_sql)
+        .add_raw("b.PnOptionID = '-100'")
+        .add_equals("b.CartonNo", &carton)
+        .add_equals("b.pn", &pn)
+        .add_between("b.createtime", &date_time_start, &date_time_end)
+        .add_order_by(&["b.CreateTime DESC", "b.Packing_no DESC", "a.Pack_no ASC"])
+        .build();
+    
+    tracing::info!("执行 SQL 查询: {}, 参数: {:?}", sql_text, params);
+    
+    let mut client = pool.get().await
+        .map_err(|_| MyError::DatabaseNotConnected)?;
+    
+    // 构建参数化查询
+    let mut query = Query::new(&sql_text);
+    for param in &params {
+        query.bind(param.as_str());
+    }
+    
+    let stream = query.query(&mut client).await
+        .map_err(|e| MyError::DbConnectionError(e))?;
 
     let rows = stream.into_results().await?;
 
@@ -143,21 +96,31 @@ pub async fn get_carton_datas(
                 continue; // 跳过重复的 SN
             }
 
-            let box_no = row.get::<&str, _>(1).unwrap().to_string();
-            let yypn = row.get::<&str, _>(2).unwrap().to_string();
-            let pack_worker = row.get::<&str, _>(3).unwrap().to_string();
+            let box_no = row.get::<&str, _>(1)
+                .ok_or_else(|| MyError::DataConversionError("缺少盒号信息".to_string()))?
+                .to_string();
+            let yypn = row.get::<&str, _>(2)
+                .ok_or_else(|| MyError::DataConversionError("缺少料号信息".to_string()))?
+                .to_string();
+            let pack_worker = row.get::<&str, _>(3)
+                .ok_or_else(|| MyError::DataConversionError("缺少包装工号".to_string()))?
+                .to_string();
             let pack_time = row
                 .get::<NaiveDateTime, _>(4)
-                .unwrap()
+                .ok_or_else(|| MyError::DataConversionError("缺少包装时间".to_string()))?
                 .format("%Y-%m-%d %H:%M:%S")
                 .to_string();
-            let carton_worker = row.get::<&str, _>(5).unwrap().to_string();
+            let carton_worker = row.get::<&str, _>(5)
+                .ok_or_else(|| MyError::DataConversionError("缺少装箱工号".to_string()))?
+                .to_string();
             let carton_time = row
                 .get::<NaiveDateTime, _>(6)
-                .unwrap()
+                .ok_or_else(|| MyError::DataConversionError("缺少装箱时间".to_string()))?
                 .format("%Y-%m-%d %H:%M:%S")
                 .to_string();
-            let carton_no = row.get::<&str, _>(7).unwrap().to_string();
+            let carton_no = row.get::<&str, _>(7)
+                .ok_or_else(|| MyError::DataConversionError("缺少箱号信息".to_string()))?
+                .to_string();
             let carton_data = CartonData {
                 carton_no,
                 yypn,

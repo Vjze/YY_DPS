@@ -19,7 +19,8 @@ pub async fn get_box_datas(
     pn: String,
     pool: &bb8::Pool<ConnectionManager>,
 ) -> anyhow::Result<Vec<HashMap<String, String>>, MyError> {
-    let mut client = pool.get().await.unwrap();
+    let mut client = pool.get().await
+        .map_err(|_| MyError::DatabaseNotConnected)?;
     let mut all_datas = Vec::new();
     let mut seen_sns = HashSet::new();
 
@@ -99,12 +100,18 @@ pub async fn get_box_datas(
         }
 
         // 注意：这里的 `box_no` 变量名与函数输入参数重名，为了清晰，我改用 `current_box_no`
-        let current_box_no = row.get::<&str, _>(1).unwrap().to_string();
-        let yypn = row.get::<&str, _>(2).unwrap().to_string();
-        let pack_worker = row.get::<&str, _>(3).unwrap().to_string();
+        let current_box_no = row.get::<&str, _>(1)
+            .ok_or_else(|| MyError::DataConversionError("缺少盒号信息".to_string()))?
+            .to_string();
+        let yypn = row.get::<&str, _>(2)
+            .ok_or_else(|| MyError::DataConversionError("缺少料号信息".to_string()))?
+            .to_string();
+        let pack_worker = row.get::<&str, _>(3)
+            .ok_or_else(|| MyError::DataConversionError("缺少包装工号".to_string()))?
+            .to_string();
         let pack_time = row
             .get::<NaiveDateTime, _>(4)
-            .unwrap()
+            .ok_or_else(|| MyError::DataConversionError("缺少包装时间".to_string()))?
             .format("%Y-%m-%d %H:%M:%S")
             .to_string();
 
@@ -216,7 +223,8 @@ async fn get_sn_info(
     sns: String,
     pool: &bb8::Pool<ConnectionManager>,
 ) -> anyhow::Result<Vec<Data>, MyError> {
-    let mut client = pool.get().await.unwrap();
+    let mut client = pool.get().await
+        .map_err(|_| MyError::DatabaseNotConnected)?;
     let sql_text = build_query_sql(&sns, &pool).await?;
     let mut rows = client.simple_query(sql_text).await?.into_row_stream();
     info!("sn查询执行完毕，开始处理结果集...");
@@ -251,22 +259,33 @@ async fn get_carton_data(
     box_no: &str,
     pool: &bb8::Pool<ConnectionManager>,
 ) -> Option<HashMap<String, String>> {
-    let sql_text = format!(
-        "SELECT TOP 1 CartonNo FROM [mes_Factory].[dbo].[packing_carton] WHERE Packing_no = '{}'",
-        box_no
-    );
-    let mut clinet = pool.get().await.unwrap();
-    let stream = clinet.simple_query(&sql_text).await.unwrap();
-    let row = stream.into_row().await.unwrap();
+    // 使用参数化查询，防止 SQL 注入
+    let sql_text = "SELECT TOP 1 CartonNo FROM [mes_Factory].[dbo].[packing_carton] WHERE Packing_no = @P1";
+    
+    let mut client = match pool.get().await {
+        Ok(c) => c,
+        Err(_) => return None,
+    };
+    
+    let mut query = Query::new(sql_text);
+    query.bind(box_no);
+    
+    let stream = match query.query(&mut client).await {
+        Ok(s) => s,
+        Err(_) => return None,
+    };
+    
+    let row = match stream.into_row().await {
+        Ok(r) => r,
+        Err(_) => return None,
+    };
+    
     let mut carton_data = HashMap::new();
-    match row {
-        Some(row) => {
-            let carton_no = row.get::<&str, _>(0).unwrap().to_string();
-
-            carton_data.insert("carton_no".to_string(), carton_no.clone());
+    if let Some(row) = row {
+        if let Some(carton_no) = row.get::<&str, _>(0) {
+            carton_data.insert("carton_no".to_string(), carton_no.to_string());
             carton_data.insert("box_no".to_string(), box_no.to_string());
         }
-        None => {}
     }
 
     Some(carton_data)

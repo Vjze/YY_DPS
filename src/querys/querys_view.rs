@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-use std::sync::Arc;
 use crate::querys::DatasQuery;
 use crate::utils::memory::DataStore;
 use crate::widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification};
 use crate::{store::Store, utils::error::MyError};
 use chrono::Local;
 use makepad_widgets::*;
+use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::runtime::Runtime;
 live_design! {
     use link::theme::*;
@@ -314,7 +314,7 @@ impl Widget for QueryScreen {
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
-if let Some(_store) = scope.data.get::<Store>() {
+        if let Some(_store) = scope.data.get::<Store>() {
             if self.datas.is_empty() {
                 self.view.button(ids!(export_btn)).set_disabled(cx, true);
             } else {
@@ -377,12 +377,7 @@ impl WidgetMatchEvent for QueryScreen {
                 let query_worker = worker_input.text();
                 let query_devices = devices.selected_label();
                 let query_result = res.selected_label();
-                // 优先从桥接渲染数据
-                let bridge_q = crate::app_data_bridge::get_query_datas_vec();
-                if !bridge_q.is_empty() {
-                    self.datas.set_data(bridge_q.clone());
-                    cx.redraw_all();
-                } else if query_type == "Sn" {
+                if query_type == "Sn" {
                     let sns = if query_input.is_empty() {
                         vec![]
                     } else {
@@ -405,11 +400,10 @@ impl WidgetMatchEvent for QueryScreen {
                                     &p,
                                 )
                                 .await;
-            match res {
+                            match res {
                                 Ok(data) => {
-                                    crate::app_bus::post(crate::app_bus::BusEvent::QueryResult(data.clone()));
-                                    // 同时写入桥接数据以供 UI 直接读取
-                                    crate::app_data_bridge::set_query_datas(data.clone());
+                                    // 直接发送 QueryAction，让 handle_actions 处理 UI 更新
+                                    Cx::post_action(QueryAction { data: data.clone() });
                                 }
                                 Err(err) => {
                                     Cx::post_action(err);
@@ -436,8 +430,8 @@ impl WidgetMatchEvent for QueryScreen {
                                 .await;
                             match res {
                                 Ok(data) => {
-                                    crate::app_bus::post(crate::app_bus::BusEvent::QueryResult(data.clone()));
-                                    // 不在后台任务中直接修改 UI 存储，改由桥接+BusEvent 驱动渲染
+                                    // 直接发送 QueryAction，让 handle_actions 处理 UI 更新
+                                    Cx::post_action(QueryAction { data: data.clone() });
                                 }
                                 Err(err) => {
                                     Cx::post_action(err);
@@ -464,7 +458,8 @@ impl WidgetMatchEvent for QueryScreen {
                                 .await;
                             match res {
                                 Ok(data) => {
-                                    crate::app_bus::post(crate::app_bus::BusEvent::QueryResult(data.clone()));
+                                    // 直接发送 QueryAction，让 handle_actions 处理 UI 更新
+                                    Cx::post_action(QueryAction { data: data.clone() });
                                 }
                                 Err(err) => {
                                     Cx::post_action(err);
@@ -536,14 +531,15 @@ impl WidgetMatchEvent for QueryScreen {
                             &p,
                         )
                         .await;
-                    match res {
-                        Ok(data) => {
-                            crate::app_bus::post(crate::app_bus::BusEvent::QueryResult(data.clone()));
-                        }
-                        Err(err) => {
-                            Cx::post_action(err);
-                        }
-                    }
+                            match res {
+                                Ok(data) => {
+                                    // 直接发送 QueryAction，让 handle_actions 处理 UI 更新
+                                    Cx::post_action(QueryAction { data: data.clone() });
+                                }
+                                Err(err) => {
+                                    Cx::post_action(err);
+                                }
+                            }
                 } else {
                     Cx::post_action(MyError::DatabaseNotConnected);
                 }

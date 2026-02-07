@@ -1,5 +1,6 @@
 use anyhow::Result;
 use chrono::NaiveDateTime;
+use tiberius::Query;
 
 use crate::utils::{error::MyError, sql::client};
 
@@ -21,16 +22,22 @@ pub async fn query_carton_info(carton_no: &str) -> Result<Vec<BoxBandData>, MyEr
 async fn get_carton_infos(carton_no: &str) -> Result<Vec<BoxBandData>, MyError> {
     let client = client().await?;
     let pool = &client;
-    let sql_text = format!(
-        "select a.Pack_no, a.pn, b.CartonNo, a.CreateTime
-            from [mes_Factory].[dbo].[MaterialPackSn] a
-            inner join [mes_Factory].[dbo].[packing_carton] b on a.Pack_no = b.Packing_no
-            where b.CartonNo = '{}' and b.PnOptionID = '-100'
-            order by b.CreateTime desc, b.Packing_no desc, a.Pack_no asc",
-        carton_no
-    );
-    let mut pool = pool.get().await.unwrap();
-    let stream = pool.simple_query(sql_text).await?;
+    
+    // 使用参数化查询，防止 SQL 注入
+    let sql_text = "SELECT a.Pack_no, a.pn, b.CartonNo, a.CreateTime
+        FROM [mes_Factory].[dbo].[MaterialPackSn] a
+        INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no
+        WHERE b.CartonNo = @P1 AND b.PnOptionID = '-100'
+        ORDER BY b.CreateTime DESC, b.Packing_no DESC, a.Pack_no ASC";
+    
+    let mut client = pool.get().await
+        .map_err(|_| MyError::DatabaseNotConnected)?;
+    
+    let mut query = Query::new(sql_text);
+    query.bind(carton_no);
+    
+    let stream = query.query(&mut client).await
+        .map_err(|e| MyError::DbConnectionError(e))?;
 
     let rows = stream.into_results().await?;
     let mut results = Vec::new();
@@ -69,14 +76,20 @@ async fn get_carton_infos(carton_no: &str) -> Result<Vec<BoxBandData>, MyError> 
 async fn check_binded(carton_no: &str) -> Result<(), MyError> {
     let client = client().await?;
     let pool = &client;
-    let sql_text = format!(
-        "select *
-            from [mes_Factory].[dbo].[jz_box_bind]
-            where carton_No = '{}' and status = '0'",
-        carton_no
-    );
-    let mut pool = pool.get().await.unwrap();
-    let stream = pool.simple_query(sql_text).await?;
+    
+    // 使用参数化查询，防止 SQL 注入
+    let sql_text = "SELECT TOP 1 carton_No 
+        FROM [mes_Factory].[dbo].[jz_box_bind]
+        WHERE carton_No = @P1 AND status = '0'";
+    
+    let mut client = pool.get().await
+        .map_err(|_| MyError::DatabaseNotConnected)?;
+    
+    let mut query = Query::new(sql_text);
+    query.bind(carton_no);
+    
+    let stream = query.query(&mut client).await
+        .map_err(|e| MyError::DbConnectionError(e))?;
 
     let rows = stream.into_row().await?;
     if let Some(_e) = rows {

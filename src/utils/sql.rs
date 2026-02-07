@@ -3,6 +3,7 @@ use tiberius::{AuthMethod, Config};
 use std::env;
 
 use crate::constants::db;
+use crate::utils::cache::get_cached_tables;
 use crate::utils::error::MyError;
 use crate::utils::retry::retry_default;
 
@@ -70,10 +71,21 @@ pub async fn client() -> anyhow::Result<bb8::Pool<ConnectionManager>, MyError> {
 pub async fn get_tables(
     pool: &bb8::Pool<ConnectionManager>,
 ) -> anyhow::Result<Vec<String>, MyError> {
+    // 尝试从缓存获取
+    let pool_clone = pool.clone();
+    if let Some(cached) = get_cached_tables(|| {
+        // 这个分支在同步上下文中，无法执行异步操作
+        // 所以这里返回 None，实际查询在下面执行
+        None
+    }) {
+        return Ok(cached);
+    }
+    
     let query = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';";
     
     // 使用重试机制执行查询
     let result = retry_default(|| async {
+        let pool = pool_clone.clone();
         let mut client = pool.get().await
             .map_err(|e| MyError::Zdyknown(format!("数据库连接池错误: {}", e)))?;
             

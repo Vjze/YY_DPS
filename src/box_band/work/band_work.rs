@@ -37,13 +37,13 @@ pub async fn band_box(box_data: &BoxBandData) -> Result<(), MyError> {
     let client = client().await?;
     let pool = &client;
     let datetime = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-    let sql_text = format!(
-        "INSERT INTO [mes_Factory].[dbo].[jz_box_bind] (carton_No, pkg_No, box_No, [module], p_No, status, createtime) VALUES (
-    @p1, @p2, @p3, @p4, @p5, @p6, @p7
-);"
-    );
-    let mut pool = pool.get().await.unwrap();
-    pool.execute(
+    // 使用正确的参数占位符格式 @P1, @P2, ...
+    let sql_text = "INSERT INTO [mes_Factory].[dbo].[jz_box_bind] (carton_No, pkg_No, box_No, [module], p_No, status, createtime) VALUES (@P1, @P2, @P3, @P4, @P5, @P6, @P7)";
+    
+    let mut client = pool.get().await
+        .map_err(|_| MyError::DatabaseNotConnected)?;
+    
+    client.execute(
         sql_text,
         &[
             &box_data.carton_no,
@@ -55,6 +55,8 @@ pub async fn band_box(box_data: &BoxBandData) -> Result<(), MyError> {
             &datetime,
         ],
     )
-    .await?;
+    .await
+    .map_err(|e| MyError::DbConnectionError(e))?;
+    
     Ok(())
 }

@@ -233,11 +233,6 @@ impl MatchEvent for App {
         let _guard = rt.enter();
         let store = rt.block_on(async move { Store::init().await });
         self.store = store;
-        // 注册 AppBus 的 UI 消费点，便于后续事件驱动更新 UI
-        crate::app_bus::AppBus::init().register_ui_consumer(|event| {
-            // 当前环境下，直接输出日志，未来可以在这里把事件分发到具体 UI 更新逻辑
-            println!("[AppBus] UI consumer received: {:?}", event);
-        });
     }
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
         let mut navigate_to_export = false;

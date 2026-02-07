@@ -1,8 +1,8 @@
 use crate::configs::type_config::{Infos, get_type_infos};
 use crate::export::works::carton_query::get_res;
 use crate::structs::{Data, Datas};
-use crate::utils::{memory::DataStore, retry::retry_default};
 use crate::utils::error::MyError;
+use crate::utils::{memory::DataStore, retry::retry_default};
 use crate::widgets::progress::MyProgressWidgetExt;
 use crate::{
     export::Exportable,
@@ -318,7 +318,7 @@ impl Widget for ExportScreen {
                 // 避免频繁计算，只在需要时计算进度
                 let data_len = self.data.len();
                 let total_len = self.datas.len();
-                
+
                 if total_len > 0 {
                     let p = (data_len as f64 / total_len as f64) * 100.0;
                     self.view.my_progress(ids!(progress)).set_value(cx, p);
@@ -375,7 +375,7 @@ impl WidgetMatchEvent for ExportScreen {
             self.view.label(ids!(jz_bind)).set_text(cx, "加载中...");
             self.view.label(ids!(zdy_q)).set_text(cx, "加载中...");
             self.view.label(ids!(templates)).set_text(cx, "加载中...");
-            
+
             let ui = self.ui_runner();
             let t_name = t_name.clone();
             rt.spawn(async move {
@@ -388,34 +388,43 @@ impl WidgetMatchEvent for ExportScreen {
                         (Vec::new(), Infos::default())
                     }
                 };
-                
+
                 ui.defer_with_redraw(move |me, cx, _scope| {
                     if !type_infos.0.is_empty() {
-                        let pch_q_text = format!("批次号查询: {}", bool2string(type_infos.1.is_have_pch));
+                        let pch_q_text =
+                            format!("批次号查询: {}", bool2string(type_infos.1.is_have_pch));
                         me.view.label(ids!(pch_q)).set_text(cx, &pch_q_text);
                         let carton_pch_text =
                             format!("批次号-箱号查询: {}", bool2string(type_infos.1.carton_pch));
-                        me.view
-                            .label(ids!(pch_q_c))
-                            .set_text(cx, &carton_pch_text);
+                        me.view.label(ids!(pch_q_c)).set_text(cx, &carton_pch_text);
                         let box_pch_text =
                             format!("批次号-盒号查询: {}", bool2string(type_infos.1.box_pch));
                         me.view.label(ids!(pch_q_b)).set_text(cx, &box_pch_text);
-                        let jz_band_text = format!("尾标绑定查询: {}", bool2string(type_infos.1.jz_bind));
+                        let jz_band_text =
+                            format!("尾标绑定查询: {}", bool2string(type_infos.1.jz_bind));
                         me.view.label(ids!(jz_bind)).set_text(cx, &jz_band_text);
-                        let zdy_box_text = format!("自定义盒号查询: {}", bool2string(type_infos.1.zdy_box));
+                        let zdy_box_text =
+                            format!("自定义盒号查询: {}", bool2string(type_infos.1.zdy_box));
                         me.view.label(ids!(zdy_q)).set_text(cx, &zdy_box_text);
                         let templates_text = format!("关联模板: {}", type_infos.0.join(", "));
-                        me.view
-                            .label(ids!(templates))
-                            .set_text(cx, &templates_text);
+                        me.view.label(ids!(templates)).set_text(cx, &templates_text);
                     } else {
                         // 重置为默认状态
-                        me.view.label(ids!(pch_q)).set_text(cx, "批次号查询: 未启用");
-                        me.view.label(ids!(pch_q_b)).set_text(cx, "批次号-盒号查询: 未启用");
-                        me.view.label(ids!(pch_q_c)).set_text(cx, "批次号-箱号查询: 未启用");
-                        me.view.label(ids!(jz_bind)).set_text(cx, "尾标绑定查询: 未启用");
-                        me.view.label(ids!(zdy_q)).set_text(cx, "自定义盒号查询: 未启用");
+                        me.view
+                            .label(ids!(pch_q))
+                            .set_text(cx, "批次号查询: 未启用");
+                        me.view
+                            .label(ids!(pch_q_b))
+                            .set_text(cx, "批次号-盒号查询: 未启用");
+                        me.view
+                            .label(ids!(pch_q_c))
+                            .set_text(cx, "批次号-箱号查询: 未启用");
+                        me.view
+                            .label(ids!(jz_bind))
+                            .set_text(cx, "尾标绑定查询: 未启用");
+                        me.view
+                            .label(ids!(zdy_q))
+                            .set_text(cx, "自定义盒号查询: 未启用");
                         me.view.label(ids!(templates)).set_text(cx, "关联模板: 无");
                     }
                 });
@@ -423,7 +432,9 @@ impl WidgetMatchEvent for ExportScreen {
         }
         if query_btn.clicked(actions) {
             self.view.view(ids!(loading_spinner)).set_visible(cx, true);
-            self.view.label(ids!(state_label)).set_text(cx, constants::QUERYING);
+            self.view
+                .label(ids!(state_label))
+                .set_text(cx, constants::QUERYING);
             let mut pool = None;
             if let Some(store) = scope.data.get_mut::<Store>() {
                 store.datas_store.clear_export_datas();
@@ -447,29 +458,33 @@ impl WidgetMatchEvent for ExportScreen {
                         .await;
 
                     match res {
-                    Ok(mut data) => {
-                        // 发布导出结果 via AppBus
-                        crate::app_bus::post(crate::app_bus::BusEvent::ExportResult(data.clone()));
+                        Ok(mut data) => {
                             let d = get_res(&mut data, &p, sender).await;
                             match d {
                                 Ok(data) => {
                                     ui.defer_with_redraw(move |me, cx, scope| {
                                         if let Some(store) = scope.data.get_mut::<Store>() {
                                             store.datas_store.set_export_datas(data);
-                                            me.view.view(ids!(loading_spinner)).set_visible(cx, false);
+                                            me.view
+                                                .view(ids!(loading_spinner))
+                                                .set_visible(cx, false);
                                             enqueue_popup_notification(PopupItem {
                                                 kind: PopupKind::Success,
                                                 auto_dismissal_duration: Some(2.5),
                                                 message: "查询完成，可以进行导出.".to_string(),
                                             });
                                         }
-                                        me.view.label(ids!(state_label)).set_text(cx, constants::QUERY_SUCCESS);
+                                        me.view
+                                            .label(ids!(state_label))
+                                            .set_text(cx, constants::QUERY_SUCCESS);
                                     });
                                 }
                                 Err(e) => {
                                     ui.defer_with_redraw(move |me, cx, _scope| {
                                         me.view.view(ids!(loading_spinner)).set_visible(cx, false);
-                                        me.view.label(ids!(state_label)).set_text(cx, constants::QUERY_FAILED);
+                                        me.view
+                                            .label(ids!(state_label))
+                                            .set_text(cx, constants::QUERY_FAILED);
                                     });
                                     Cx::post_action(e);
                                 }
@@ -486,7 +501,9 @@ impl WidgetMatchEvent for ExportScreen {
                 } else {
                     ui.defer_with_redraw(move |me, cx, _scope| {
                         me.view.view(ids!(loading_spinner)).set_visible(cx, false);
-                        me.view.label(ids!(state_label)).set_text(cx, "数据库未连接");
+                        me.view
+                            .label(ids!(state_label))
+                            .set_text(cx, "数据库未连接");
                     });
                     Cx::post_action(MyError::DatabaseNotConnected);
                 }

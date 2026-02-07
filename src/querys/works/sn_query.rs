@@ -352,15 +352,18 @@ async fn get_box_caoton(
 ) -> anyhow::Result<HashMap<String, String>, MyError> {
     let sql = "SELECT TOP 1 a.Pack_no, b.cartonno FROM [mes_Factory].[dbo].[MaterialPackSn]a
     INNER JOIN [mes_Factory].[dbo].[packing_carton] b ON a.Pack_no = b.Packing_no WHERE a.sn = @P1 AND a.PnOptionID = '-100' ORDER BY a.CreateTime DESC";
-    let mut pool = pool.get().await.unwrap();
-    let row = pool.query(sql, &[&sn]).await?;
+    let mut client = pool.get().await
+        .map_err(|_| MyError::DatabaseNotConnected)?;
+    let row = client.query(sql, &[&sn]).await?;
     let data = row.into_row().await?;
     let mut infos = HashMap::new();
     if let Some(row) = data {
-        let box_no = row.get::<&str, _>(0).unwrap().to_string();
-        let carton_no = row.get::<&str, _>(1).unwrap().to_string();
-        infos.insert("box_no".to_string(), box_no);
-        infos.insert("carton_no".to_string(), carton_no);
+        if let Some(box_no) = row.get::<&str, _>(0) {
+            infos.insert("box_no".to_string(), box_no.to_string());
+        }
+        if let Some(carton_no) = row.get::<&str, _>(1) {
+            infos.insert("carton_no".to_string(), carton_no.to_string());
+        }
     }
     Ok(infos)
 }
@@ -371,7 +374,8 @@ pub async fn execute_query_sn(
 ) -> Result<Vec<Data>, MyError> {
     // 不再打印 SQL 字符串，以避免日志中泄露敏感数据（如SN列表）
     info!("开始执行 sn_query 参数化查询...");
-    let mut client = pool.get().await.unwrap();
+    let mut client = pool.get().await
+        .map_err(|_| MyError::DatabaseNotConnected)?;
     let stream = query.query(&mut client).await?;
 
     info!("查询执行完毕，开始处理结果集...");

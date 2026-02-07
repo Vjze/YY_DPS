@@ -301,9 +301,11 @@ async fn get_base_data_unified(
     );
 
     info!("执行统一 SQL 查询 (已最终优化): {}", sql);
-    let mut client = pool.get().await.unwrap();
+    let mut client = pool.get().await
+        .map_err(|e| MyError::Zdyknown(format!("获取数据库连接失败: {}", e)))?;
     // CartonNo 的值 @P1 现在被用于 CTE 内部
-    let stream = client.query(&sql, &[&carton]).await.unwrap();
+    let stream = client.query(&sql, &[&carton]).await
+        .map_err(|e| MyError::DbConnectionError(e))?;
 
     // --- 7. 解析循环 (保持不变) ---
     let mut all_datas = Vec::new();
@@ -394,8 +396,10 @@ pub async fn execute_query(
     sender: mpsc::Sender<Data>,
 ) -> Result<Vec<Data>, MyError> {
     // info!("开始执行 carton_query 查询 (已优化): {}", sql_text_s);
-    let mut client = pool.get().await.unwrap();
-    let stream = client.query(sql_text_s, &[&1i32]).await?;
+    let mut client = pool.get().await
+        .map_err(|e| MyError::Zdyknown(format!("获取数据库连接失败: {}", e)))?;
+    let stream = client.query(sql_text_s, &[&1i32]).await
+        .map_err(|e| MyError::DbConnectionError(e))?;
     info!("查询执行完毕，开始处理结果集...");
     let mut rows = stream.into_row_stream();
 

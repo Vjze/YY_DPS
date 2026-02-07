@@ -234,19 +234,19 @@ impl WidgetMatchEvent for DataImportDb {
                         // 3. 准备数据
                         let f = p.file_name().unwrap().display().to_string();
                         let pn = if f.len() >= 8 { f[..8].to_string() } else { f.to_string() };
-                        let file_path = p;
-                        let data = DbData {
-                            data: r.clone(),
-                            pn,
-                            file_path,
-                        };
+                            let file_path = p;
+                            let data = DbData {
+                                data: r.clone(),
+                                pn,
+                                file_path,
+                            };
 
-                        // 4. Post 数据提取成功，通过 AppBus 发送 DbData 给 UI/引擎
-                        crate::app_bus::post(crate::app_bus::BusEvent::DataExtractedAction(data));
-                    }
-                    Err(e) => {
-                        Cx::post_action(e); // Post 错误
-                    }
+                            // 直接发送 DataExtractedAction 给 UI
+                            Cx::post_action(DataExtractedAction { data });
+                        }
+                        Err(e) => {
+                            Cx::post_action(e); // Post 错误
+                        }
                 }
             });
         }
