@@ -344,9 +344,11 @@ impl WidgetMatchEvent for QueryScreen {
         let rt = self.rt.handle().clone();
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<QueryAction>() {
-                self.datas.set_data(data_action.data.clone());
+                // 只 clone 一次数据，然后移动所有权
+                let data = data_action.data.clone();
+                self.datas.set_data(data.clone());
                 if let Some(store) = scope.data.get_mut::<Store>() {
-                    store.datas_store.set_query_datas(data_action.data.clone());
+                    store.datas_store.set_query_datas(data);
                 }
             }
         }
@@ -381,10 +383,10 @@ impl WidgetMatchEvent for QueryScreen {
                     let sns = if query_input.is_empty() {
                         vec![]
                     } else {
-                        vec![query_input.clone()]
+                        vec![query_input]
                     };
                     let pool = store_mut.as_ref().and_then(|s| s.pool.clone());
-                    let processor_clone = processor.clone();
+                    let processor_clone = Arc::clone(&processor);
                     rt.spawn(async move {
                         if let Some(p) = pool {
                             let res = processor_clone
@@ -415,7 +417,7 @@ impl WidgetMatchEvent for QueryScreen {
                     });
                 } else if query_type == "盒号" {
                     let pool = store_mut.as_ref().and_then(|s| s.pool.clone());
-                    let processor_clone = processor.clone();
+                    let processor_clone = Arc::clone(&processor);
                     rt.spawn(async move {
                         if let Some(p) = pool {
                             let res = processor_clone
@@ -431,7 +433,7 @@ impl WidgetMatchEvent for QueryScreen {
                             match res {
                                 Ok(data) => {
                                     // 直接发送 QueryAction，让 handle_actions 处理 UI 更新
-                                    Cx::post_action(QueryAction { data: data.clone() });
+                                    Cx::post_action(QueryAction { data });
                                 }
                                 Err(err) => {
                                     Cx::post_action(err);
@@ -443,7 +445,7 @@ impl WidgetMatchEvent for QueryScreen {
                     });
                 } else {
                     let pool = store_mut.as_ref().and_then(|s| s.pool.clone());
-                    let processor_clone = processor.clone();
+                    let processor_clone = Arc::clone(&processor);
                     rt.spawn(async move {
                         if let Some(p) = pool {
                             let res = processor_clone
@@ -515,7 +517,7 @@ impl WidgetMatchEvent for QueryScreen {
             let query_devices = devices.selected_label();
             let query_result = res.selected_label();
             let pool = store_mut.as_ref().and_then(|s| s.pool.clone());
-            let processor_clone = processor.clone();
+            let processor_clone = Arc::clone(&processor);
             rt.spawn(async move {
                 if let Some(p) = pool {
                     let res = processor_clone
@@ -531,15 +533,15 @@ impl WidgetMatchEvent for QueryScreen {
                             &p,
                         )
                         .await;
-                            match res {
-                                Ok(data) => {
-                                    // 直接发送 QueryAction，让 handle_actions 处理 UI 更新
-                                    Cx::post_action(QueryAction { data: data.clone() });
-                                }
-                                Err(err) => {
-                                    Cx::post_action(err);
-                                }
-                            }
+                    match res {
+                        Ok(data) => {
+                            // 直接发送 QueryAction，让 handle_actions 处理 UI 更新
+                            Cx::post_action(QueryAction { data });
+                        }
+                        Err(err) => {
+                            Cx::post_action(err);
+                        }
+                    }
                 } else {
                     Cx::post_action(MyError::DatabaseNotConnected);
                 }

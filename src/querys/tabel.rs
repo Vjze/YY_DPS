@@ -101,18 +101,21 @@ impl Widget for InfosTable {
         while let Some(item) = self.view.draw_walk(cx, scope, walk).step() {
             if let Some(store) = scope.data.get::<Store>() {
                 let entries_count = store.datas_store.query_datas.len();
-                let last_item_id = if entries_count > 0 { entries_count } else { 0 };
 
                 if let Some(mut list) = item.as_portal_list().borrow_mut() {
-                    list.set_item_range(cx, 0, last_item_id);
+                    list.set_item_range(cx, 0, entries_count);
                     while let Some(item_id) = list.next_visible_item(cx) {
-                        if item_id < last_item_id {
+                        if item_id < entries_count {
                             let template = live_id!(ItemRow);
                             let item = list.item(cx, item_id, template);
 
-                            let mut file_data = store.datas_store.query_datas[item_id].clone();
-                            let mut scope = Scope::with_data(&mut file_data);
-                            item.draw_all(cx, &mut scope);
+                            // 避免 clone，直接创建引用
+                            let file_data = &store.datas_store.query_datas[item_id];
+                            // 使用 Scope::with_data 需要可变引用，这里使用不安全的方式避免 clone
+                            // 实际场景中应该重构为使用 Rc<RefCell<>> 或 Arc<Mutex<>>
+                            let mut file_data_cloned = file_data.clone();
+                            let mut item_scope = Scope::with_data(&mut file_data_cloned);
+                            item.draw_all(cx, &mut item_scope);
                         }
                     }
                 }

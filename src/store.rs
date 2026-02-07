@@ -5,7 +5,6 @@ use crate::{
         get_all_column_name::load_all_column_names,
         type_config::{Infos, get_type_names},
     },
-    constants::{messages, time},
     data_import::data_import_db::DbData,
     utils::{retry::retry_default, sql::client},
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
@@ -186,8 +185,8 @@ impl Store {
             Ok(client) => {
                 enqueue_popup_notification(PopupItem {
                     kind: PopupKind::Success,
-                    auto_dismissal_duration: Some(time::POPUP_DURATION_LONG),
-                    message: messages::DB_CONNECT_SUCCESS.to_string(),
+                    auto_dismissal_duration: Some(5.0),
+                    message: "数据库连接成功".to_string(),
                 });
                 Some(client)
             }

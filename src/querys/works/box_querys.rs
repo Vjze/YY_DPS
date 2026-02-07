@@ -234,14 +234,17 @@ async fn get_sn_info(
         row_count += 1;
         let data = Data::try_from_row(row)
             .map_err(|e| MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e)))?;
-        let sn = data.sn.clone();
-        // 只保留最新的测试数据
-        if let Some(existing_data) = sn_map.get(&sn) {
-            if existing_data.testdate < data.testdate {
-                sn_map.insert(sn.clone(), data);
+        // 使用 Entry API 避免重复 clone
+        use std::collections::hash_map::Entry;
+        match sn_map.entry(data.sn.clone()) {
+            Entry::Occupied(mut entry) => {
+                if entry.get().testdate < data.testdate {
+                    entry.insert(data);
+                }
             }
-        } else {
-            sn_map.insert(sn.clone(), data);
+            Entry::Vacant(entry) => {
+                entry.insert(data);
+            }
         }
     }
     let datas: Vec<Data> = sn_map.into_iter().map(|(_, v)| v).collect();

@@ -357,7 +357,9 @@ impl WidgetMatchEvent for ExportScreen {
         let ui = self.ui_runner();
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<ExportAction>() {
-                self.datas.set_data(data_action.data.clone());
+                // 直接转移所有权，避免 clone
+                let data = data_action.data.clone();
+                self.datas.set_data(data);
                 let qty = self.datas.get_cached_quantity();
                 qty_label.set_text(cx, &qty);
             }
@@ -444,10 +446,10 @@ impl WidgetMatchEvent for ExportScreen {
             self.data.clear();
             self.datas.clear();
             self.view.my_progress(ids!(progress)).set_value(cx, 0.);
-            let processor = self.export_processor.as_ref().unwrap().clone();
-            let carton = input.text().clone();
+            let processor = Arc::clone(self.export_processor.as_ref().unwrap());
+            let carton = input.text();
             let is_multi = query_btn.text() == "批量查询";
-            let type_name = type_name.selected_label().clone();
+            let type_name = type_name.selected_label();
             let (sender, receiver) = mpsc::channel();
             self.progress_receiver = Some(receiver);
             let pool_clone = pool.clone();

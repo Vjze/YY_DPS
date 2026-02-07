@@ -1,8 +1,7 @@
 use bb8_tiberius::ConnectionManager;
-use tiberius::{AuthMethod, Config};
 use std::env;
+use tiberius::{AuthMethod, Config};
 
-use crate::constants::db;
 use crate::utils::cache::get_cached_tables;
 use crate::utils::error::MyError;
 use crate::utils::retry::retry_default;
@@ -10,8 +9,8 @@ use crate::utils::retry::retry_default;
 fn _local_ip() -> Config {
     let mut config = Config::new();
     config.host("127.0.0.1");
-    config.port(db::DEFAULT_PORT);
-    config.database(db::DEFAULT_DATABASE);
+    config.port(1433);
+    config.database("BOSAautotestDB");
 
     // 优先使用环境变量，回退到默认值（临时方案）
     let username = env::var("DB_USER_LOCAL").unwrap_or_else(|_| "sa".to_string());
@@ -25,8 +24,8 @@ fn _local_ip() -> Config {
 fn _server_ip() -> Config {
     let mut config = Config::new();
     config.host("192.168.3.250");
-    config.port(db::DEFAULT_PORT);
-    config.database(db::DEFAULT_DATABASE);
+    config.port(1433);
+    config.database("BOSAautotestDB");
 
     // 优先使用环境变量，回退到默认值（临时方案）
     let username = env::var("DB_USER_SERVER").unwrap_or_else(|_| "yytest".to_string());
@@ -41,7 +40,7 @@ fn get_pool_size() -> u32 {
     env::var("DB_POOL_SIZE")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(db::DEFAULT_POOL_SIZE)
+        .unwrap_or(10)
 }
 
 pub async fn client() -> anyhow::Result<bb8::Pool<ConnectionManager>, MyError> {
@@ -80,35 +79,42 @@ pub async fn get_tables(
     }) {
         return Ok(cached);
     }
-    
+
     let query = "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';";
-    
+
     // 使用重试机制执行查询
     let result = retry_default(|| async {
         let pool = pool_clone.clone();
-        let mut client = pool.get().await
+        let mut client = pool
+            .get()
+            .await
             .map_err(|e| MyError::Zdyknown(format!("数据库连接池错误: {}", e)))?;
-            
-        let stream = client.query(query, &[]).await
+
+        let stream = client
+            .query(query, &[])
+            .await
             .map_err(|e| MyError::DbConnectionError(e))?;
-            
-        let rowsets = stream.into_results().await
+
+        let rowsets = stream
+            .into_results()
+            .await
             .map_err(|e| MyError::DbConnectionError(e))?;
-            
+
         let mut v = vec![];
         for rows in rowsets {
             for row in rows {
                 if let Some(val) = row.get::<&str, _>(0) {
                     let r = val.to_string();
-                    if r.starts_with(db::TABLE_PREFIX) {
+                    if r.starts_with("MAC_") {
                         v.push(r);
                     }
                 }
             }
         }
-        
+
         Ok::<Vec<String>, MyError>(v)
-    }).await?;
-    
+    })
+    .await?;
+
     Ok(result)
 }

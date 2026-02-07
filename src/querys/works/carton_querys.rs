@@ -9,27 +9,27 @@ use chrono::NaiveDateTime;
 use tiberius::Query;
 
 fn format_data(all_datas: Vec<Datas>) -> Vec<HashMap<String, String>> {
-    let all = all_datas
-        .into_iter()
-        .map(|d| {
-            // 展平 Datas 为 HashMap
-            let mut map = HashMap::new();
-            // CartonData
-            map.insert("carton_no".to_string(), d.carton_data.carton_no);
-            map.insert("yypn".to_string(), d.carton_data.yypn);
-            map.insert("carton_worker".to_string(), d.carton_data.carton_worker);
-            map.insert("carton_packtime".to_string(), d.carton_data.carton_packtime);
-            // PackData
-            map.insert("box_no".to_string(), d.pack_data.box_no);
-            map.insert("pack_worker".to_string(), d.pack_data.pack_worker);
-            map.insert("pack_packtime".to_string(), d.pack_data.pack_packtime);
-            // Data
-            map.insert("sn".to_string(), d.sn_data.sn);
+    // 预分配容量避免重复分配
+    let mut result = Vec::with_capacity(all_datas.len());
+    
+    for d in all_datas {
+        // 使用 with_capacity 预分配 HashMap 容量
+        let mut map = HashMap::with_capacity(8);
+        // CartonData - 直接使用所有权转移，避免 clone
+        map.insert("carton_no".to_string(), d.carton_data.carton_no);
+        map.insert("yypn".to_string(), d.carton_data.yypn);
+        map.insert("carton_worker".to_string(), d.carton_data.carton_worker);
+        map.insert("carton_packtime".to_string(), d.carton_data.carton_packtime);
+        // PackData
+        map.insert("box_no".to_string(), d.pack_data.box_no);
+        map.insert("pack_worker".to_string(), d.pack_data.pack_worker);
+        map.insert("pack_packtime".to_string(), d.pack_data.pack_packtime);
+        // Data
+        map.insert("sn".to_string(), d.sn_data.sn);
 
-            map
-        })
-        .collect::<Vec<HashMap<String, String>>>();
-    all
+        result.push(map);
+    }
+    result
 }
 
 pub async fn get_carton_datas(
@@ -152,6 +152,7 @@ pub async fn get_carton_datas(
     if all_datas.is_empty() {
         return Err(MyError::Zdyknown(format!("箱号 '{}' 没有找到数据", carton)));
     }
-    let datas = format_data(all_datas.clone());
+    // 直接传递所有权，避免 clone
+    let datas = format_data(all_datas);
     Ok(datas)
 }
