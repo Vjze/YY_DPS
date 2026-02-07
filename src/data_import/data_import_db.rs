@@ -7,6 +7,7 @@ use tracing::info;
 use crate::{
     data_import::{DataImport, work::extract_data::ImportDBDatas},
     store::Store,
+    utils::error::MyError,
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
 
@@ -223,7 +224,7 @@ impl WidgetMatchEvent for DataImportDb {
                     Some(s) => s.to_string(),
                     None => {
                         info!("Invalid file path encoding");
-                        // TODO: Post 一个特定的错误 Action
+                        Cx::post_action(MyError::FileOperationError("文件路径编码无效".to_string()));
                         return;
                     }
                 };
@@ -232,7 +233,7 @@ impl WidgetMatchEvent for DataImportDb {
                     Ok(r) => {
                         // 3. 准备数据
                         let f = p.file_name().unwrap().display().to_string();
-                        let pn = f[..8].to_string();
+                        let pn = if f.len() >= 8 { f[..8].to_string() } else { f.to_string() };
                         let file_path = p;
                         let data = DbData {
                             data: r.clone(),
@@ -251,11 +252,39 @@ impl WidgetMatchEvent for DataImportDb {
         }
 
         if action_btn.clicked(actions) {
-            info!("开始写入数据");
-            let processor = self.import_processor.as_ref().unwrap().clone();
-            if let Some(store) = scope.data.get::<Store>() {
-                let data = store.import_store.import_datas.as_ref().clone();
-                let pool = store.pool.clone().unwrap();
+                info!("开始写入数据");
+                let processor = self.import_processor.as_ref().unwrap().clone();
+                let pool_clone = if let Some(store) = scope.data.get::<Store>() {
+                    store.pool.clone()
+                } else {
+                    enqueue_popup_notification(PopupItem {
+                        kind: PopupKind::Error,
+                        auto_dismissal_duration: Some(2.5),
+                        message: "Store 不可用".to_string(),
+                    });
+                    return;
+                };
+                let pool = match pool_clone {
+                    Some(p) => p,
+                    None => {
+                        enqueue_popup_notification(PopupItem {
+                            kind: PopupKind::Error,
+                            auto_dismissal_duration: Some(2.5),
+                            message: "数据库连接池不可用".to_string(),
+                        });
+                        return;
+                    }
+                };
+                let data = if let Some(store) = scope.data.get::<Store>() {
+                    store.import_store.import_datas.as_ref().clone()
+                } else {
+                    enqueue_popup_notification(PopupItem {
+                        kind: PopupKind::Error,
+                        auto_dismissal_duration: Some(2.5),
+                        message: "无法获取导入数据".to_string(),
+                    });
+                    return;
+                };
                 let _ = rt.spawn(async move {
                     let res = processor.write(data, &pool).await;
                     match res {
@@ -273,13 +302,6 @@ impl WidgetMatchEvent for DataImportDb {
                         }
                     };
                 });
-            }
-        }
-        if self.view.button(ids!(test_btn)).clicked(actions) {
-            self.view.popup_notification(ids!(t)).open(cx);
-            self.view
-                .popup_notification(ids!(t))
-                .set_text(cx, "ceshi tanchuang ");
         }
         cx.redraw_all();
     }

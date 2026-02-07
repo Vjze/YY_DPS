@@ -499,4 +499,42 @@ live_design! {
             }
         }
     }
+
+    // 通用下拉菜单组件，避免重复定义样式
+    pub StyledDropDown = <DropDown> {
+        padding: {top:12,left:15}
+        draw_text: {
+            uniform color: #000
+            uniform color_down: #000
+            uniform color_hover: #000
+            uniform color_focus: #000
+        }
+        draw_bg: {
+            color: (MAIN_BG_COLOR_DARK),
+            uniform border_radius:5.0,
+            uniform border_size: 1.0
+            uniform border_color_1: #333
+            uniform border_color_1_hover: #555
+        }
+        popup_menu: <PopupMenu> {
+            draw_bg: {
+                uniform color: #333,
+                uniform border_color: #666,
+                uniform border_size: 1.0
+            }
+            menu_item: <PopupMenuItem> {
+                padding: {left: 20, top: 8, bottom: 8, right: 10}
+                draw_bg: {
+                    color: #333
+                    color_hover: #555
+                    color_active: #888
+                }
+                draw_text: {
+                    color: #EEE
+                    color_hover: #FFF
+                    color_active: #FFF
+                }
+            }
+        }
+    }
 }

@@ -30,45 +30,9 @@ live_design! {
                 color: #000
             }
         }
-        type_selector = <DropDown> {
-            width: 60,height:40
-            labels:["箱号","盒号","Sn"],
-            padding: {top:12,left:15}
-            draw_text: {
-                uniform color: #000
-                uniform color_down: #000
-                uniform color_hover: #000
-                uniform color_focus: #000
-            }
-            draw_bg: {
-                color: (MAIN_BG_COLOR_DARK),
-                uniform border_radius:5.0,
-                uniform border_size: 1.0
-                uniform border_color_1: #333
-                uniform border_color_1_hover: #555
-                // uniform shadow_color: #0002
-                // shadow_radius: 9.0,
-                // shadow_offset: vec2(0.0,-2.0)
-            }
-            popup_menu: <PopupMenu> {
-                // 自定义菜单背景
-                draw_bg: { uniform color: #333, uniform border_color: #666,
-                    uniform border_size: 1.0 }
-                menu_item: <PopupMenuItem> {
-                    // 自定义菜单项
-                    padding: {left: 20, top: 8, bottom: 8, right: 10}
-                    draw_bg: {
-                        color: #333
-                        color_hover: #555 // 悬停背景
-                        color_active: #888 // 选中背景
-                    }
-                    draw_text: {
-                        color: #EEE // 默认文字颜色
-                        color_hover: #FFF // 悬停文字颜色
-                        color_active: #FFF // 选中文字颜色
-                    }
-                }
-            }
+        type_selector = <StyledDropDown> {
+            width: 60, height: 40
+            labels: ["箱号","盒号","Sn"]
         }
         <Label> {
             text: "料号:"
@@ -110,45 +74,9 @@ live_design! {
                     color: #000
                 }
             }
-            devices_selector = <DropDown> {
-                width: 60,height:40
-                labels:["全部","10G","2.5G"],
-                padding: {top:12,left:15}
-                draw_text: {
-                    uniform color: #000
-                    uniform color_down: #000
-                    uniform color_hover: #000
-                    uniform color_focus: #000
-                }
-                draw_bg: {
-                    color: (MAIN_BG_COLOR_DARK),
-                    uniform border_radius:5.0,
-                    uniform border_size: 1.0
-                    uniform border_color_1: #333
-                    uniform border_color_1_hover: #555
-                    // uniform shadow_color: #0002
-                    // shadow_radius: 9.0,
-                    // shadow_offset: vec2(0.0,-2.0)
-                }
-                popup_menu: <PopupMenu> {
-                    // 自定义菜单背景
-                    draw_bg: { uniform color: #333, uniform border_color: #666,
-                        uniform border_size: 1.0 }
-                    menu_item: <PopupMenuItem> {
-                        // 自定义菜单项
-                        padding: {left: 20, top: 8, bottom: 8, right: 10}
-                        draw_bg: {
-                            color: #333
-                            color_hover: #555 // 悬停背景
-                            color_active: #888 // 选中背景
-                        }
-                        draw_text: {
-                            color: #EEE // 默认文字颜色
-                            color_hover: #FFF // 悬停文字颜色
-                            color_active: #FFF // 选中文字颜色
-                        }
-                    }
-                }
+            devices_selector = <StyledDropDown> {
+                width: 60, height: 40
+                labels: ["全部","10G","2.5G"]
             }
             <Label> {
                 text: "选择结果:"
@@ -159,45 +87,9 @@ live_design! {
                     color: #000
                 }
             }
-            result_selector = <DropDown> {
-                width: 60,height:40
-                labels:["全部","Ok","NG"],
-                padding: {top:12,left:15}
-                draw_text: {
-                    uniform color: #000
-                    uniform color_down: #000
-                    uniform color_hover: #000
-                    uniform color_focus: #000
-                }
-                draw_bg: {
-                    color: (MAIN_BG_COLOR_DARK),
-                    uniform border_radius:5.0,
-                    uniform border_size: 1.0
-                    uniform border_color_1: #333
-                    uniform border_color_1_hover: #555
-                    // uniform shadow_color: #0002
-                    // shadow_radius: 9.0,
-                    // shadow_offset: vec2(0.0,-2.0)
-                }
-                popup_menu: <PopupMenu> {
-                    // 自定义菜单背景
-                    draw_bg: { uniform color: #333, uniform border_color: #666,
-                        uniform border_size: 1.0 }
-                    menu_item: <PopupMenuItem> {
-                        // 自定义菜单项
-                        padding: {left: 20, top: 8, bottom: 8, right: 10}
-                        draw_bg: {
-                            color: #333
-                            color_hover: #555 // 悬停背景
-                            color_active: #888 // 选中背景
-                        }
-                        draw_text: {
-                            color: #EEE // 默认文字颜色
-                            color_hover: #FFF // 悬停文字颜色
-                            color_active: #FFF // 选中文字颜色
-                        }
-                    }
-                }
+            result_selector = <StyledDropDown> {
+                width: 60, height: 40
+                labels: ["全部","Ok","NG"]
             }
         }
         date = <MySwitch> {

@@ -2,6 +2,7 @@ pub use makepad_widgets;
 pub mod app;
 pub mod app_bus;
 pub mod configs;
+pub mod constants;
 pub mod export;
 pub mod settings;
 pub mod shared;

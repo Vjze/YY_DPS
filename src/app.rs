@@ -246,7 +246,6 @@ impl MatchEvent for App {
         let mut navigate_to_data_import_db = false;
         let mut navigate_to_providers = false;
 
-        // TODO: Replace this with a proper navigation widget.
         if let Some(selected_tab) = self
             .ui
             .radio_button_set(ids_array!(
@@ -369,13 +368,7 @@ impl App {
     }
 }
 
-// 在启动阶段注册一个简单的 UI 消费者，用于可观测 AppBus 的事件流
-fn register_appbus_ui_consumer(app: &mut App) {
-    crate::app_bus::AppBus::init().register_ui_consumer(|event| {
-        // 简单打印事件，帮助诊断阶段性问题，后续可将事件分发到具体 UI 更新逻辑
-        println!("[AppBus] Event received: {:?}", event);
-    });
-}
+
 
 #[derive(Live, Widget, LiveHook)]
 pub struct MyRoot {

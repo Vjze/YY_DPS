@@ -115,7 +115,8 @@ impl Widget for MapRow {
                     let all_column_name = state.setting_store.all_column_name.clone();
                     list.set_item_range(cx, 0, num_to_render);
                     // 迭代 numbers 的键值对
-                    let mut keys = state.setting_store
+                    let mut keys = state
+                        .setting_store
                         .map_infos
                         .iter()
                         .map(|(key, _)| {
@@ -124,27 +125,25 @@ impl Widget for MapRow {
                         })
                         .collect::<Vec<_>>();
                     keys.sort(); // 可选：按键排序以确保一致的显示顺序
-                    let values = state.setting_store
-                        .map_infos.clone();
+                    let values = state.setting_store.map_infos.clone();
                     for i in 0..num_to_render {
                         let global_idx = first_idx + i;
                         if global_idx >= keys_len {
                             break;
                         }
                         let key = &keys[global_idx]; // 获取正确全局索引的 key
-                        // 使用行内索引 i 来创建项
+                                                     // 使用行内索引 i 来创建项
                         let item = list.item(cx, i, live_id!(MapItem));
                         let widget_id = item.drop_down(ids!(map_selector)).widget_uid();
                         let map_name = item.label(ids!(map_name));
                         let map_selector = item.drop_down(ids!(map_selector));
-                        let store_value = values.get(key).clone().unwrap();
+                        let store_value = values.get(key).cloned().unwrap_or_default();
                         self.ids.insert(widget_id, key.clone());
                         map_name.set_text(cx, &key);
                         map_selector.set_labels(cx, all_column_name.clone());
                         map_selector.set_selected_by_label(&store_value, cx);
                         item.draw_all(cx, scope);
                     }
-                    
                 }
             }
         }

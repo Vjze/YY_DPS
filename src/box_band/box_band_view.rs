@@ -274,13 +274,17 @@ impl WidgetMatchEvent for BoxBandView {
                 self.modal(ids!(unbind_modal)).close(cx);
             }
             if let Some(UnbandModalAction::Action(no, select)) = action.downcast_ref() {
-                let mut pool = None;
-                if let Some(store) = scope.data.get_mut::<Store>() {
-                    pool = store.pool.clone();
-                }
+                // 在处理时直接获取 pool，避免生命周期问题
+                let pool_opt = scope.data.get::<Store>().and_then(|s| s.pool.clone());
+                let pool = match pool_opt {
+                    Some(p) => p,
+                    None => {
+                        Cx::post_action(MyError::DatabaseNotConnected);
+                        continue;
+                    }
+                };
                 if select == "箱号" {
-                    let res = rt
-                        .block_on(async move { unbind_carton(&no, &pool.clone().unwrap()).await });
+                    let res = rt.block_on(async move { unbind_carton(&no, &pool).await });
                     match res {
                         Ok(_) => {
                             enqueue_popup_notification(PopupItem {
@@ -295,7 +299,6 @@ impl WidgetMatchEvent for BoxBandView {
                     }
                 } else {
                     let ui = self.ui_runner();
-                    let pool = pool.clone().unwrap();
                     let no = no.clone();
                     rt.spawn(async move {
                         let res = unbind_box(&no, &pool).await;

@@ -4,11 +4,12 @@ pub async fn unbind_box(
     box_no: &str,
     pool: &bb8::Pool<ConnectionManager>,
 ) -> anyhow::Result<(), MyError> {
-    let mut client = pool.get().await.unwrap();
+    let mut client = pool.get().await
+        .map_err(|_| MyError::DatabaseNotConnected)?;
     let stream = client
         .execute(
             format!(
-                "UPDATE [mes_Factory].[dbo].[jz_box_bind] SET status = '1' WHERE pkg_No = '{0}' or box_No = '{0}",
+                "UPDATE [mes_Factory].[dbo].[jz_box_bind] SET status = '1' WHERE pkg_No = '{0}' or box_No = '{0}'",
                 box_no
             ),
             &[&1i32],
@@ -23,7 +24,8 @@ pub async fn unbind_carton(
     carton_no: &str,
     pool: &bb8::Pool<ConnectionManager>,
 ) -> anyhow::Result<(), MyError> {
-    let mut client = pool.get().await.unwrap();
+    let mut client = pool.get().await
+        .map_err(|e| MyError::Zdyknown(format!("获取数据库连接失败: {}", e)))?;
 
     let stream = client
         .execute(
