@@ -57,7 +57,7 @@ pub async fn get_carton_datas(
                     INNER JOIN [mes_Factory].[dbo].[packing_carton] b 
                     ON a.Pack_no = b.Packing_no";
     
-    let (sql_text, params) = QueryBuilder::new(base_sql)
+    let (conditions, params) = QueryBuilder::new(base_sql)
         .add_raw("b.PnOptionID = '-100'")
         .add_equals("b.CartonNo", &carton)
         .add_equals("b.pn", &pn)
@@ -65,6 +65,7 @@ pub async fn get_carton_datas(
         .add_order_by(&["b.CreateTime DESC", "b.Packing_no DESC", "a.Pack_no ASC"])
         .build();
     
+    let sql_text = format!("{} {}", base_sql, conditions);
     tracing::info!("执行 SQL 查询: {}, 参数: {:?}", sql_text, params);
     
     let mut client = pool.get().await

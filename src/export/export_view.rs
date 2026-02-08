@@ -293,14 +293,10 @@ pub struct ExportScreen {
     #[rust]
     data: Vec<Data>,
 }
-#[derive(Debug)]
-pub struct TestMsg {
-    pub name: String,
-    pub age: u32,
-}
+
 #[derive(Clone, Debug, Default)]
 pub struct ExportAction {
-    data: Vec<Datas>,
+    pub data: Vec<Datas>,
 }
 
 impl LiveHook for ExportScreen {

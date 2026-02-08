@@ -2,6 +2,7 @@
 // query_utils.rs
 use crate::utils::{error::MyError, sql::get_tables};
 use bb8_tiberius::ConnectionManager;
+use chrono::{Datelike, NaiveDate};
 use tracing::info;
 /// 为 10G 表 [MAC_10GBOSADATA] 定义的列和别名
 /// 别名 (e.g., Pf as Po) 用于匹配 SnQueryRow 结构体
@@ -30,6 +31,9 @@ const SELECT_2_5G: &str = "
 pub async fn build_base_union_query(
     test_devices: &str,
     pool: &bb8::Pool<ConnectionManager>,
+    use_time: bool,
+    start_date: &str,
+    end_date: &str,
 ) -> anyhow::Result<String, MyError> {
     let mut sql_parts = Vec::new();
 
@@ -44,8 +48,38 @@ pub async fn build_base_union_query(
     // 2. 如果是 "2.5G" 或 "全部"，添加所有 2.5G 的动态表
     if test_devices == "2.5G" || test_devices == "全部" {
         let tables = get_tables(pool).await?;
-        for table in tables {
-            // 确保动态表名不是 10G 表 (如果 get_tables 可能会返回它)
+        let mut filtered_tables = Vec::new();
+
+        if use_time && !start_date.is_empty() && !end_date.is_empty() {
+            // 解析开始和结束日期 (只取 YYYY-MM-DD 部分)
+            let start_bound = NaiveDate::parse_from_str(&start_date[..10], "%Y-%m-%d")
+                .map_err(|_| MyError::Zdyknown("无效的开始日期格式".to_string()))?
+                .with_day(1)
+                .unwrap();
+            let end_bound = NaiveDate::parse_from_str(&end_date[..10], "%Y-%m-%d")
+                .map_err(|_| MyError::Zdyknown("无效的结束日期格式".to_string()))?
+                .with_day(1)
+                .unwrap();
+
+            for table in tables {
+                if let Some(date_part) = table.split('_').last() {
+                    if date_part.len() == 6 {
+                        if let Ok(table_date) =
+                            NaiveDate::parse_from_str(&format!("{}01", date_part), "%Y%m%d")
+                        {
+                            if table_date >= start_bound && table_date <= end_bound {
+                                filtered_tables.push(table);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // 如果不使用时间过滤，则包含所有表
+            filtered_tables = tables;
+        }
+
+        for table in filtered_tables {
             if table.to_uppercase() != "[BOSAautotest_Data].[dbo].[MAC_10GBOSADATA]" {
                 sql_parts.push(format!("SELECT {} FROM {}", SELECT_2_5G, table));
             }

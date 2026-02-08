@@ -1,4 +1,3 @@
-// use serde::{Deserialize, Serialize};
 use chrono::NaiveDateTime;
 use tiberius_mappers::TryFromRow;
 #[derive(Debug, Clone, Default, TryFromRow)]
@@ -24,6 +23,8 @@ pub struct Data {
     pub i_xtalk: String,
     pub mdpid: String, // 统一别名 mdpid
     pub yypn: String,  // 统一别名 yypn (数据库列名 testtype)
+    pub box_no: Option<String>,
+    pub carton_no: Option<String>,
 }
 #[derive(Debug, Clone, Default )]
 pub struct CartonData {

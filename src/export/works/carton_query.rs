@@ -1,5 +1,6 @@
 use crate::{
     configs::type_config::{Infos, get_type_infos},
+    export::export_view::ExportAction,
     structs::{BandData, CartonData, Data, Datas, PackData},
     utils::{error::MyError, merge_and_format::merge_and_format_results, sql::get_tables},
 };
@@ -9,7 +10,7 @@ use futures::{
     TryStreamExt as _,
     stream::{StreamExt as _, iter},
 };
-use makepad_widgets::SignalToUI;
+use makepad_widgets::{Cx, SignalToUI};
 use std::collections::{HashMap, HashSet}; // 引入 HashSet
 use std::sync::mpsc;
 use tiberius_mappers::TryFromRow as _;
@@ -116,7 +117,9 @@ pub async fn carton_query_datas(
     // 2. 调用统一的函数获取基础数据 (箱、盒、SN、绑定数据)
     //    这个函数替换了之前所有的 get_data_for... 函数
     let all_datas = get_base_data_unified(carton.clone(), pool, &infos).await?;
-
+    Cx::post_action(ExportAction {
+        data: all_datas.clone(),
+    });
     if all_datas.is_empty() {
         return Err(MyError::NoResult(format!("箱号:{carton}")));
     }
@@ -301,10 +304,14 @@ async fn get_base_data_unified(
     );
 
     info!("执行统一 SQL 查询 (已最终优化): {}", sql);
-    let mut client = pool.get().await
+    let mut client = pool
+        .get()
+        .await
         .map_err(|e| MyError::Zdyknown(format!("获取数据库连接失败: {}", e)))?;
     // CartonNo 的值 @P1 现在被用于 CTE 内部
-    let stream = client.query(&sql, &[&carton]).await
+    let stream = client
+        .query(&sql, &[&carton])
+        .await
         .map_err(|e| MyError::DbConnectionError(e))?;
 
     // --- 7. 解析循环 (保持不变) ---
@@ -396,9 +403,13 @@ pub async fn execute_query(
     sender: mpsc::Sender<Data>,
 ) -> Result<Vec<Data>, MyError> {
     // info!("开始执行 carton_query 查询 (已优化): {}", sql_text_s);
-    let mut client = pool.get().await
+    let mut client = pool
+        .get()
+        .await
         .map_err(|e| MyError::Zdyknown(format!("获取数据库连接失败: {}", e)))?;
-    let stream = client.query(sql_text_s, &[&1i32]).await
+    let stream = client
+        .query(sql_text_s, &[&1i32])
+        .await
         .map_err(|e| MyError::DbConnectionError(e))?;
     info!("查询执行完毕，开始处理结果集...");
     let mut rows = stream.into_row_stream();
@@ -432,7 +443,7 @@ pub async fn build_query_sql(
     pool: &bb8::Pool<ConnectionManager>,
 ) -> anyhow::Result<String, MyError> {
     // 1. 定义最终结果集中的所有列 (全部小写，用于 Rust 映射)
-    let final_columns = "sn,ith,po,vf,im,rs,se,sen,res,icc,vbr,kink,imkink,testdate,idark,result,tester,iop,i_xtalk,mdpid,yypn";
+    let final_columns = "sn,ith,po,vf,im,rs,se,sen,res,icc,vbr,kink,imkink,testdate,idark,result,tester,iop,i_xtalk,mdpid,yypn,box_no,carton_no";
 
     // 2. 定义第一个表的 SELECT 映射 (MAC_10GBOSADATA)
     let select_10 = format!(
@@ -444,7 +455,8 @@ pub async fn build_query_sql(
             Kink AS kink, imkink AS imkink,
             CAST(TestDate AS DATETIME2(0)) AS testdate, /* 强制类型转换 */
             Idark AS idark, Result AS result, ProductBill AS tester,
-            iop AS iop, ixtalk AS i_xtalk, MDPId AS mdpid, testtype AS yypn
+            iop AS iop, ixtalk AS i_xtalk, MDPId AS mdpid, testtype AS yypn,
+            CAST(NULL AS NVARCHAR(255)) AS box_no, CAST(NULL AS NVARCHAR(255)) AS carton_no
         FROM [BOSAautotest_Data].[dbo].[MAC_10GBOSADATA]"
     );
 
@@ -462,7 +474,8 @@ pub async fn build_query_sql(
             io AS iop, /* io 映射到 iop */
             xtalk AS i_xtalk, /* xtalk 映射到 i_xtalk */
             Te AS mdpid, /* Te 映射到 mdpid */
-            testtype AS yypn
+            testtype AS yypn,
+            CAST(NULL AS NVARCHAR(255)) AS box_no, CAST(NULL AS NVARCHAR(255)) AS carton_no
         FROM {{}} /* 占位符 for 表名 */ "
     );
 
