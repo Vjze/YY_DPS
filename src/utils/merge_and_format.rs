@@ -1,19 +1,11 @@
 use std::collections::HashMap;
 
-use crate::structs::{Data, Datas};
+use crate::structs::Datas;
 
-pub fn merge_and_format_results(
-    all_datas: &mut Vec<Datas>,
-    test_datas: &Vec<Data>,
-) -> Vec<HashMap<String, String>> {
+pub fn merge_and_format_results(all_datas: &Vec<Datas>) -> Vec<HashMap<String, String>> {
     all_datas
         .into_iter()
         .map(|d| {
-            // 找到对应的最新测试数据
-            if let Some(sn_datas) = test_datas.iter().find(|x| x.sn == d.sn_data.sn) {
-                d.sn_data = sn_datas.clone();
-            }
-
             // 展平 Datas 为 HashMap
             let mut map = HashMap::new();
             // CartonData

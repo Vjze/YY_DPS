@@ -6,7 +6,8 @@ use crate::{
         decimal_config::{InfoDetail, TemplateConfig, get_decimal_config_value},
         type_config::get_type_infos,
     },
-    utils::error::MyError,
+    structs::Datas,
+    utils::{error::MyError, merge_and_format::merge_and_format_results},
 };
 use chrono::{Local, NaiveDateTime};
 use directories::UserDirs;
@@ -29,7 +30,7 @@ struct CellUpdate {
 
 pub async fn write_to_excel(
     type_name: &str,
-    datas: Vec<HashMap<String, String>>,
+    datas: &Vec<Datas>,
     lock: bool,
 ) -> Result<(), MyError> {
     info!(
@@ -38,6 +39,7 @@ pub async fn write_to_excel(
         datas.len()
     );
     let template_names: Vec<String> = get_type_infos(type_name).await?.0;
+    let datas = merge_and_format_results(datas);
     let datas = Arc::new(datas.clone());
     let template_path = Arc::new(String::from(r"\\192.168.10.142\Excel_Templates\"));
     // let template_path = String::from(r"D:\rust\YY_DPS\");
@@ -151,12 +153,14 @@ pub async fn write_to_excel(
                             cell.set_value(value.to_string());
                         }
                     }
+
                     // 并行生成单元格更新（保留 rayon）
                     let cell_updates: Vec<CellUpdate> = datas
                         .par_iter()
                         .enumerate()
                         .flat_map(|(row_idx, row_data)| {
                             let row = last_row + row_idx as u32 + 1;
+
                             let raw_po_f64 = row_data
                                 .get("po")
                                 .unwrap_or(&"".to_string())

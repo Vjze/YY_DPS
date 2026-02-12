@@ -1,5 +1,5 @@
 use crate::configs::type_config::{Infos, get_type_infos};
-use crate::export::works::carton_query::get_res;
+// use crate::export::works::carton_query::get_res;
 use crate::structs::{Data, Datas};
 use crate::widgets::progress::MyProgressWidgetExt;
 use crate::{
@@ -245,9 +245,22 @@ live_design! {
                 padding: 15,
                 spacing: 10,
                 <ExTable> {}
-                loading_spinner = <LoadingSpinner> {
-                    visible: false
-                }
+                <View> {
+                                    width: Fill,
+                                    height: Fill,
+                                    align: {x: 0.5, y: 0.5}
+                                    loading_spinner = <LoadingSpinner> {
+                                        width: Fit {
+                                            min: 200.0,
+                                            max: 500.0,
+                                        },
+                                        height: Fit {
+                                            min: 200.0,
+                                            max: 500.0,
+                                        },
+                                        visible: false
+                                    }
+                                }
             }
             <StateBar> {}
         }
@@ -262,20 +275,16 @@ pub struct ExportScreen {
     #[rust(None)] // 默认初始化为 None
     pub export_processor: Option<Arc<dyn Exportable>>,
     #[rust]
-    progress_receiver: Option<mpsc::Receiver<Data>>,
-    #[rust]
-    datas: Vec<Datas>,
-    #[rust]
-    data: Vec<Data>,
+    qty: usize,
 }
-#[derive(Debug)]
-pub struct TestMsg {
-    pub name: String,
-    pub age: u32,
+
+#[derive(Clone, Debug, Default)]
+pub struct QtyAction {
+    pub qty: usize,
 }
 #[derive(Clone, Debug, Default)]
-pub struct ExportAction {
-    data: Vec<Datas>,
+pub struct BackAction {
+    pub data: Datas,
 }
 
 impl LiveHook for ExportScreen {
@@ -285,22 +294,6 @@ impl LiveHook for ExportScreen {
 }
 impl Widget for ExportScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
-        if let (Event::Signal, Some(rx)) = (event, &mut self.progress_receiver) {
-            // let mut last_msg = None;
-            // 循环读取直到取到最新的一条（Drain all available results）
-            while let Ok(msg) = rx.try_recv() {
-                //     last_msg = Some(msg);
-                // }
-                // if let Some(progress) = last_msg {
-                self.data.push(msg);
-                info!("msg_len: {}", self.data.len());
-                info!("datas_len: {}", self.datas.len());
-                let p = (self.data.len() as f64 / self.datas.len() as f64) * 100.0;
-                info!("Progress: {:.2}%", p);
-                self.view.my_progress(ids!(progress)).set_value(cx, p);
-                self.view.redraw(cx);
-            }
-        }
         self.ui_runner().handle(cx, event, scope, self);
         self.widget_match_event(cx, event, scope);
         self.view.handle_event(cx, event, scope);
@@ -331,32 +324,30 @@ impl WidgetMatchEvent for ExportScreen {
         let rt = self.rt.handle().clone();
         let ui = self.ui_runner();
         for action in actions {
-            if let Some(data_action) = action.downcast_ref::<ExportAction>() {
-                // if let Some(store) = scope.data.get_mut::<Store>() {
-                // store.datas_store.export_datas = data_action.data.clone();
-                self.datas = data_action.data.clone();
-                let qty = format!("总数量: {} PCS", data_action.data.len());
+            if let Some(data_action) = action.downcast_ref::<QtyAction>() {
+                self.qty += data_action.qty.clone();
+                let qty = format!("总数量: {} PCS", self.qty);
                 qty_label.set_text(cx, &qty);
-                // enqueue_popup_notification(PopupItem {
-                //     kind: PopupKind::Success,
-                //     auto_dismissal_duration: Some(2.5),
-                //     message: "查询完成，可以进行导出.".to_string(),
-                // });
-                // }
             }
-            // if let Some(data_action) = action.downcast_ref::<ExportDatas>() {
-            //     if let Some(store) = scope.data.get_mut::<Store>() {
-            //         store.datas_store.export_datas = data_action.data.clone();
-            //         // self.datas = data_action.data.clone();
-            //         // let qty = format!("总数量: {} PCS", data_action.data.len());
-            //         // qty_label.set_text(cx, &qty);
-            //         enqueue_popup_notification(PopupItem {
-            //             kind: PopupKind::Success,
-            //             auto_dismissal_duration: Some(2.5),
-            //             message: "查询完成，可以进行导出.".to_string(),
-            //         });
-            //     }
-            // }
+            if let Some(data_action) = action.downcast_ref::<BackAction>() {
+                if let Some(store) = scope.data.get_mut::<Store>() {
+                    store
+                        .datas_store
+                        .export_datas
+                        .push(data_action.data.clone());
+                    let now_qty = store.datas_store.export_datas.len();
+                    let p = (now_qty as f64 / self.qty as f64) * 100.0;
+                    self.view.my_progress(ids!(progress)).set_value(cx, p);
+                    if p == 100.0 {
+                        self.view.view(ids!(loading_spinner)).set_visible(cx, false);
+                        store
+                            .datas_store
+                            .export_datas
+                            .sort_by(|a, b| a.pack_data.box_no.cmp(&b.pack_data.box_no));
+                    }
+                    self.view.redraw(cx);
+                }
+            }
         }
         if input.text().is_empty() {
             query_btn.set_text(cx, "批量查询");
@@ -405,48 +396,24 @@ impl WidgetMatchEvent for ExportScreen {
                 qty_label.set_text(cx, "总数量: 0 PCS");
                 pool = store.pool.clone();
             }
-            self.data.clear();
-            self.datas.clear();
+            self.qty = 0;
             self.view.my_progress(ids!(progress)).set_value(cx, 0.);
             let processor = self.export_processor.as_ref().unwrap().clone();
             let carton = input.text().clone();
             let is_multi = query_btn.text() == "批量查询";
             let type_name = type_name.selected_label().clone();
-            let (sender, receiver) = mpsc::channel();
-            self.progress_receiver = Some(receiver);
             rt.spawn(async move {
                 let res = processor
                     .carton_query(carton, type_name, is_multi, &pool.clone().unwrap())
                     .await;
 
                 match res {
-                    Ok(mut data) => {
-                        Cx::post_action(ExportAction { data: data.clone() });
-                        let d = get_res(&mut data, &pool.clone().unwrap(), sender).await;
-                        match d {
-                            Ok(data) => {
-                                // Cx::post_action(ExportDatas { data: data.clone() });
-                                ui.defer_with_redraw(move |me, cx, scope| {
-                                    if let Some(store) = scope.data.get_mut::<Store>() {
-                                        store.datas_store.export_datas = data.clone();
-                                        me.view.view(ids!(loading_spinner)).set_visible(cx, false);
-                                        enqueue_popup_notification(PopupItem {
-                                            kind: PopupKind::Success,
-                                            auto_dismissal_duration: Some(2.5),
-                                            message: "查询完成，可以进行导出.".to_string(),
-                                        });
-                                    }
-                                    me.view.label(ids!(state_label)).set_text(cx, "查询成功");
-                                });
-                            }
-                            Err(e) => {
-                                ui.defer_with_redraw(move |me, cx, _scope| {
-                                    me.view.view(ids!(loading_spinner)).set_visible(cx, false);
-                                    me.view.label(ids!(state_label)).set_text(cx, "查询失败");
-                                });
-                                Cx::post_action(e);
-                            }
-                        }
+                    Ok(_) => {
+                        enqueue_popup_notification(PopupItem {
+                            kind: PopupKind::Success,
+                            auto_dismissal_duration: Some(2.5),
+                            message: "查询完成，可以进行导出.".to_string(),
+                        });
                     }
                     Err(e) => {
                         ui.defer_with_redraw(move |me, cx, _scope| {
@@ -468,7 +435,7 @@ impl WidgetMatchEvent for ExportScreen {
                     let type_name = type_name.clone().selected_label();
                     let data = store.datas_store.export_datas.clone();
                     rt.spawn(async move {
-                        let res = processor.export(&type_name, data, lock).await;
+                        let res = processor.export(&type_name, &data, lock).await;
                         match res {
                             Ok(_) => {
                                 enqueue_popup_notification(PopupItem {

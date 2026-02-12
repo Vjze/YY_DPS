@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::querys::DatasQuery;
+use crate::structs::Datas;
 use crate::widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification};
 use crate::{store::Store, utils::error::MyError};
 use bb8_tiberius::ConnectionManager;
@@ -16,7 +17,7 @@ live_design! {
     use crate::shared::styles::*;
     use crate::shared::modal::*;
     use crate::shared::widgets::*;
-    use crate::querys::tabel::InfosTable;
+    use crate::querys::carton_tabel::CartonTable;
     FirstRow = <View> {
         width: Fill,
         height: Fit,
@@ -391,7 +392,7 @@ live_design! {
             flow: Down,
             <FirstRow> {}
             <SecondRow> {}
-            <InfosTable> {}
+            <CartonTable> {}
         }
     }
 }
@@ -407,7 +408,7 @@ pub struct QueryScreen {
 
 #[derive(Clone, Debug, Default)]
 pub struct QueryAction {
-    data: Vec<HashMap<String, String>>,
+    data: Vec<Datas>,
 }
 impl LiveHook for QueryScreen {
     fn after_new_from_doc(&mut self, _cx: &mut Cx) {
@@ -489,50 +490,50 @@ impl WidgetMatchEvent for QueryScreen {
                     } else {
                         vec![query_input.clone()]
                     };
-                    rt.spawn(async move {
-                        let res = processor
-                            .sn_query_datas(
-                                sns,
-                                query_pn,
-                                use_date,
-                                query_start_time,
-                                query_end_time,
-                                query_result,
-                                query_devices,
-                                query_worker,
-                                &pool.unwrap(),
-                            )
-                            .await;
-                        match res {
-                            Ok(data) => {
-                                Cx::post_action(QueryAction { data });
-                            }
-                            Err(err) => {
-                                Cx::post_action(err);
-                            }
-                        }
-                    });
+                    // rt.spawn(async move {
+                    //     let res = processor
+                    //         .sn_query_datas(
+                    //             sns,
+                    //             query_pn,
+                    //             use_date,
+                    //             query_start_time,
+                    //             query_end_time,
+                    //             query_result,
+                    //             query_devices,
+                    //             query_worker,
+                    //             &pool.unwrap(),
+                    //         )
+                    //         .await;
+                    //     match res {
+                    //         Ok(data) => {
+                    //             // Cx::post_action(QueryAction { data });
+                    //         }
+                    //         Err(err) => {
+                    //             Cx::post_action(err);
+                    //         }
+                    //     }
+                    // });
                 } else if query_type == "盒号" {
-                    rt.spawn(async move {
-                        let res = processor
-                            .box_query(
-                                query_input,
-                                use_date,
-                                query_start_time,
-                                query_end_time,
-                                query_pn,
-                                &pool.unwrap(),
-                            )
-                            .await;
-                        match res {
-                            Ok(data) => {
-                                Cx::post_action(QueryAction { data });
-                            }
-                            Err(err) => {
-                                Cx::post_action(err);
-                            }
-                        }
-                    });
+                    // rt.spawn(async move {
+                    //     let res = processor
+                    //         .box_query(
+                    //             query_input,
+                    //             use_date,
+                    //             query_start_time,
+                    //             query_end_time,
+                    //             query_pn,
+                    //             &pool.unwrap(),
+                    //         )
+                    //         .await;
+                    //     match res {
+                    //         Ok(data) => {
+                    //             // Cx::post_action(QueryAction { data });
+                    //         }
+                    //         Err(err) => {
+                    //             Cx::post_action(err);
+                    //         }
+                    //     }
+                    // });
                 } else {
                     rt.spawn(async move {
                         let res = processor
@@ -562,21 +563,21 @@ impl WidgetMatchEvent for QueryScreen {
             if let Some(store) = scope.data.get::<Store>() {
                 if !store.datas_store.query_datas.is_empty() {
                     let data = store.datas_store.query_datas.clone();
-                    rt.spawn(async move {
-                        let res = processor.data_export(data).await;
-                        match res {
-                            Ok(_path) => {
-                                enqueue_popup_notification(PopupItem {
-                                    kind: PopupKind::Success,
-                                    auto_dismissal_duration: Some(2.5),
-                                    message: "数据导出完成".to_string(),
-                                });
-                            }
-                            Err(e) => {
-                                Cx::post_action(e);
-                            }
-                        }
-                    });
+                    // rt.spawn(async move {
+                    //     let res = processor.data_export(data).await;
+                    //     match res {
+                    //         Ok(_path) => {
+                    //             enqueue_popup_notification(PopupItem {
+                    //                 kind: PopupKind::Success,
+                    //                 auto_dismissal_duration: Some(2.5),
+                    //                 message: "数据导出完成".to_string(),
+                    //             });
+                    //         }
+                    //         Err(e) => {
+                    //             Cx::post_action(e);
+                    //         }
+                    //     }
+                    // });
                 }
             }
         }
@@ -599,29 +600,29 @@ impl WidgetMatchEvent for QueryScreen {
             let query_worker = worker_input.text();
             let query_devices = devices.selected_label();
             let query_result = res.selected_label();
-            rt.spawn(async move {
-                let res = processor
-                    .batch_query(
-                        query_type,
-                        use_date,
-                        query_start_time,
-                        query_end_time,
-                        query_pn,
-                        query_result,
-                        query_devices,
-                        query_worker,
-                        &pool.unwrap(),
-                    )
-                    .await;
-                match res {
-                    Ok(data) => {
-                        Cx::post_action(QueryAction { data });
-                    }
-                    Err(err) => {
-                        Cx::post_action(err);
-                    }
-                }
-            });
+            // rt.spawn(async move {
+            //     let res = processor
+            //         .batch_query(
+            //             query_type,
+            //             use_date,
+            //             query_start_time,
+            //             query_end_time,
+            //             query_pn,
+            //             query_result,
+            //             query_devices,
+            //             query_worker,
+            //             &pool.unwrap(),
+            //         )
+            //         .await;
+            //     match res {
+            //         Ok(data) => {
+            //             // Cx::post_action(QueryAction { data });
+            //         }
+            //         Err(err) => {
+            //             Cx::post_action(err);
+            //         }
+            //     }
+            // });
         }
         if use_date.active(cx) {
             self.view.widget(ids!(date_view)).set_visible(cx, true);

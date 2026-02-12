@@ -26,11 +26,11 @@ pub trait Exportable: Send + Sync {
         typeinfos: String,
         is_multi: bool,
         sql_client: &bb8::Pool<ConnectionManager>,
-    ) -> anyhow::Result<Vec<Datas>, MyError>;
+    ) -> anyhow::Result<(), MyError>;
     async fn export(
         &self,
         type_name: &str,
-        datas: Vec<HashMap<String, String>>,
+        datas: &Vec<Datas>,
         lock: bool,
     ) -> anyhow::Result<(), MyError>;
 }
@@ -45,13 +45,13 @@ impl Exportable for Exporter {
         typeinfos: String,
         is_multi: bool,
         sql_client: &bb8::Pool<ConnectionManager>,
-    ) -> anyhow::Result<Vec<Datas>, MyError> {
+    ) -> anyhow::Result<(), MyError> {
         do_carton_query(carton, typeinfos, is_multi, sql_client).await
     }
     async fn export(
         &self,
         type_name: &str,
-        datas: Vec<HashMap<String, String>>,
+        datas: &Vec<Datas>,
         lock: bool,
     ) -> anyhow::Result<(), MyError> {
         write_to_excel(type_name, datas, lock).await

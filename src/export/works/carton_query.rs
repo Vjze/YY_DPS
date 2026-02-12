@@ -1,7 +1,8 @@
 use crate::{
     configs::type_config::{Infos, get_type_infos},
+    export::export_view::{BackAction, QtyAction},
     structs::{BandData, CartonData, Data, Datas, PackData},
-    utils::{error::MyError, merge_and_format::merge_and_format_results, sql::get_tables},
+    utils::{error::MyError, sql::get_tables},
 };
 use bb8_tiberius::ConnectionManager;
 use chrono::NaiveDateTime;
@@ -9,9 +10,8 @@ use futures::{
     TryStreamExt as _,
     stream::{StreamExt as _, iter},
 };
-use makepad_widgets::SignalToUI;
-use std::collections::{HashMap, HashSet}; // 引入 HashSet
-use std::sync::mpsc;
+use makepad_widgets::Cx;
+use std::collections::HashSet; // 引入 HashSet
 use tiberius_mappers::TryFromRow as _;
 use tokio::{
     fs,
@@ -48,7 +48,7 @@ pub async fn do_carton_query(
     is_multi: bool,
     client: &bb8::Pool<ConnectionManager>,
     // sender: mpsc::Sender<f64>,
-) -> anyhow::Result<Vec<Datas>, MyError> {
+) -> anyhow::Result<(), MyError> {
     info!(
         "开始执行箱号查询: carton={}, typeinfos={}, is_multi={}",
         carton, typeinfos, is_multi
@@ -59,7 +59,7 @@ pub async fn do_carton_query(
     if carton.is_empty() && is_multi {
         info!("执行批量查询模式");
         let cartons = get_info().await?;
-        let mut all_datas = Vec::new();
+        // let mut all_datas = Vec::new();
 
         // --- 优化点 5: 并发执行批量查询 ---
         let mut tasks = iter(cartons)
@@ -76,7 +76,7 @@ pub async fn do_carton_query(
 
         while let Some(result) = tasks.next().await {
             match result {
-                Ok(Ok(res)) => all_datas.extend(res), // 成功, 扩展结果
+                Ok(Ok(_res)) => {} // 成功, 扩展结果
                 Ok(Err(e)) => {
                     info!("批量查询中有一个任务失败: {:?}", e);
                     // 可以选择继续或在这里返回错误
@@ -87,7 +87,7 @@ pub async fn do_carton_query(
                 }
             }
         }
-        Ok(all_datas)
+        Ok(())
     } else {
         info!("执行单箱查询模式");
         carton_query_datas(carton, pool, typeinfos).await
@@ -103,7 +103,7 @@ pub async fn carton_query_datas(
     pool: &bb8::Pool<ConnectionManager>,
     typeinfos: String,
     // sender: mpsc::Sender<f64>,
-) -> anyhow::Result<Vec<Datas>, MyError> {
+) -> anyhow::Result<(), MyError> {
     if carton.is_empty() {
         return Err(MyError::CartonNoEmpty);
     }
@@ -125,13 +125,16 @@ pub async fn carton_query_datas(
         "基础数据和绑定数据获取完毕，共 {} 条，开始查询最新测试数据",
         all_datas.len()
     );
-    Ok(all_datas)
-}
-pub async fn get_res(
-    all_datas: &mut Vec<Datas>,
-    pool: &bb8::Pool<ConnectionManager>,
-    sender: mpsc::Sender<Data>,
-) -> Result<Vec<HashMap<String, String>>, MyError> {
+    Cx::post_action(QtyAction {
+        qty: all_datas.len(),
+    });
+    //     Ok(all_datas)
+    // }
+    // pub async fn get_res(
+    //     all_datas: &mut Vec<Datas>,
+    //     pool: &bb8::Pool<ConnectionManager>,
+    //     sender: mpsc::Sender<Data>,
+    // ) -> Result<Vec<HashMap<String, String>>, MyError> {
     // 3. 提取 SNs 以查询测试数据 (与原逻辑相同)
     let sn_placeholders = all_datas
         .iter()
@@ -144,7 +147,7 @@ pub async fn get_res(
         .map(|chunk| chunk.join(", "))
         .collect::<Vec<String>>();
 
-    let mut datas = Vec::new();
+    // let mut datas = Vec::new();
 
     if sn_list_chunks.is_empty() {
         // 如果基础数据为空 (虽然前面有检查, 但这里做个保险)
@@ -153,7 +156,7 @@ pub async fn get_res(
         // 只有 1 块 (最常见的情况), 正常执行
         info!("开始查询 {} 个SN的测试数据", sn_placeholders.len());
         let sql_text_s = build_query_sql(&sn_list_chunks[0], pool).await?;
-        datas = execute_query(&sql_text_s, pool, sender).await?;
+        execute_query(all_datas, &sql_text_s, pool).await?;
     } else {
         // (优化) 并发执行多个 Chunks
         info!(
@@ -161,35 +164,35 @@ pub async fn get_res(
             sn_placeholders.len(),
             sn_list_chunks.len()
         );
-
+        // let all_datas = all_datas.clone();
         let mut tasks = iter(sn_list_chunks)
             .map(|sn_list_chunk| {
                 let pool = pool.clone();
-                let sender = sender.clone();
+                let all_datas = all_datas.clone();
                 tokio::spawn(async move {
                     let sql_text_s = build_query_sql(&sn_list_chunk, &pool).await?;
-                    execute_query(&sql_text_s, &pool, sender).await
+                    execute_query(all_datas, &sql_text_s, &pool).await
                 })
             })
             .buffer_unordered(5); // 限制 5 个并发 SQL 查询
 
         while let Some(result) = tasks.next().await {
             match result {
-                Ok(Ok(res_chunk)) => datas.extend(res_chunk),
+                Ok(Ok(_res_chunk)) => {}
                 Ok(Err(e)) => info!("一个测试数据块查询失败: {:?}", e),
                 Err(e) => info!("Tokio 任务失败: {:?}", e),
             }
         }
     }
 
-    info!("测试数据获取完毕，开始整合数据");
+    // info!("测试数据获取完毕，开始整合数据");
     // 5. 合并 TestDate 数据并转换为 HashMap (与原逻辑相同)
-    let mut all = merge_and_format_results(all_datas, &datas);
+    // let mut all = merge_and_format_results(all_datas, &datas);
 
-    info!("数据整合完毕,一共{}条，开始排序", all.len());
-    all.sort_by(|a, b| a.get("box_no").unwrap().cmp(b.get("box_no").unwrap()));
-    info!("排序完毕，查询结束");
-    Ok(all)
+    // info!("数据整合完毕,一共{}条，开始排序", all.len());
+    // all.sort_by(|a, b| a.get("box_no").unwrap().cmp(b.get("box_no").unwrap()));
+    // info!("排序完毕，查询结束");
+    Ok(())
 }
 async fn get_base_data_unified(
     carton: String,
@@ -389,10 +392,10 @@ async fn get_base_data_unified(
 }
 
 pub async fn execute_query(
+    mut all_datas: Vec<Datas>,
     sql_text_s: &str,
     pool: &bb8::Pool<ConnectionManager>,
-    sender: mpsc::Sender<Data>,
-) -> Result<Vec<Data>, MyError> {
+) -> Result<(), MyError> {
     // info!("开始执行 carton_query 查询 (已优化): {}", sql_text_s);
     let mut client = pool.get().await.unwrap();
     let stream = client.query(sql_text_s, &[&1i32]).await?;
@@ -400,27 +403,34 @@ pub async fn execute_query(
     let mut rows = stream.into_row_stream();
 
     // 优化: 不再需要 HashMap 去重，SQL 已经保证了唯一性
-    let mut datas: Vec<Data> = Vec::new();
-    let mut row_count = 0;
+    // let mut datas: Vec<Data> = Vec::new();
+    // let mut row_count = 0;
 
     while let Ok(Some(row)) = rows.try_next().await {
         let data = Data::try_from_row(row)
             .map_err(|e| MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e)))?;
-        row_count += 1;
-        datas.push(data.clone());
-        sender.send(data).ok();
-        SignalToUI::set_ui_signal();
+        // row_count += 1;
+        let datas = all_datas
+            .iter_mut()
+            .find(|d| d.sn_data.sn == data.sn)
+            .unwrap();
+        datas.sn_data = data;
+        Cx::post_action(BackAction {
+            data: datas.clone(),
+        });
+        // datas.push(data.clone());
+        // SignalToUI::set_ui_signal();
     }
-    SignalToUI::set_ui_signal();
-    info!(
-        "共处理 {} 行原始数据 (已在SQL去重)，得到 {} 条最新SN数据。",
-        row_count,
-        datas.len()
-    );
-    if datas.is_empty() {
-        return Err(MyError::NoResult(format!("")));
-    }
-    Ok(datas)
+    // SignalToUI::set_ui_signal();
+    // info!(
+    //     "共处理 {} 行原始数据 (已在SQL去重)，得到 {} 条最新SN数据。",
+    //     row_count,
+    //     datas.len()
+    // );
+    // if datas.is_empty() {
+    //     return Err(MyError::NoResult(format!("")));
+    // }
+    Ok(())
 }
 
 pub async fn build_query_sql(

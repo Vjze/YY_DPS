@@ -6,6 +6,7 @@ use crate::{
         type_config::{Infos, get_type_names},
     },
     data_import::data_import_db::DbData,
+    structs::Datas,
     utils::sql::client,
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
@@ -15,8 +16,9 @@ use std::collections::HashMap;
 
 #[derive(Debug, Default, Clone)]
 pub struct DatasStore {
-    pub export_datas: Vec<HashMap<String, String>>,
-    pub query_datas: Vec<HashMap<String, String>>,
+    // pub export_datas: Vec<HashMap<String, String>>,
+    pub export_datas: Vec<Datas>,
+    pub query_datas: Vec<Datas>,
 }
 
 #[derive(Debug, Default, Clone)]
