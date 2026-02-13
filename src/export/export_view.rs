@@ -228,6 +228,15 @@ live_design! {
         progress = <MyProgress> {
             width: Fill, value: .0
         }
+        progress_label = <Label> {
+            text: "进度: "
+            draw_text: {
+                color: #000,
+                text_style: {
+                    font_size:16
+                }
+            }
+        }
     }
     pub ExportScreen = {{ExportScreen}} {
         <View> {
@@ -336,8 +345,13 @@ impl WidgetMatchEvent for ExportScreen {
                         .export_datas
                         .push(data_action.data.clone());
                     let now_qty = store.datas_store.export_datas.len();
-                    let p = (now_qty as f64 / self.qty as f64) * 100.0;
+                    let all_qty = self.qty.clone();
+                    let p = (now_qty as f64 / all_qty as f64) * 100.0;
                     self.view.my_progress(ids!(progress)).set_value(cx, p);
+                    let progress_text = format!("{} / {}", now_qty, all_qty);
+                    self.view
+                        .label(ids!(progress_label))
+                        .set_text(cx, &progress_text);
                     if p == 100.0 {
                         self.view.view(ids!(loading_spinner)).set_visible(cx, false);
                         store
@@ -345,6 +359,7 @@ impl WidgetMatchEvent for ExportScreen {
                             .export_datas
                             .sort_by(|a, b| a.pack_data.box_no.cmp(&b.pack_data.box_no));
                     }
+                    self.view.label(ids!(state_label)).set_text(cx, "查询完成");
                     self.view.redraw(cx);
                 }
             }
@@ -389,15 +404,12 @@ impl WidgetMatchEvent for ExportScreen {
         }
         if query_btn.clicked(actions) {
             self.view.view(ids!(loading_spinner)).set_visible(cx, true);
-            self.view.label(ids!(state_label)).set_text(cx, "查询中");
             let mut pool = None;
             if let Some(store) = scope.data.get_mut::<Store>() {
-                store.datas_store.export_datas.clear();
-                qty_label.set_text(cx, "总数量: 0 PCS");
+                self.init(cx, store);
                 pool = store.pool.clone();
             }
-            self.qty = 0;
-            self.view.my_progress(ids!(progress)).set_value(cx, 0.);
+
             let processor = self.export_processor.as_ref().unwrap().clone();
             let carton = input.text().clone();
             let is_multi = query_btn.text() == "批量查询";
@@ -452,6 +464,18 @@ impl WidgetMatchEvent for ExportScreen {
                 }
             }
         }
+    }
+}
+impl ExportScreen {
+    fn init(&mut self, cx: &mut Cx, store: &mut Store) {
+        self.view
+            .label(ids!(progress_label))
+            .set_text(cx, &format!("0 / {}", self.qty));
+        store.datas_store.export_datas.clear();
+        self.qty = 0;
+        self.view.label(ids!(state_label)).set_text(cx, "查询中");
+        self.label(ids!(qty_label)).set_text(cx, "总数量: 0 PCS");
+        self.view.my_progress(ids!(progress)).set_value(cx, 0.);
     }
 }
 fn bool2string(value: bool) -> String {

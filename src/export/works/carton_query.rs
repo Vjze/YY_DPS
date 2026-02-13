@@ -11,7 +11,7 @@ use futures::{
     stream::{StreamExt as _, iter},
 };
 use makepad_widgets::Cx;
-use std::collections::HashSet; // 引入 HashSet
+use std::collections::{HashMap, HashSet}; // 引入 HashSet
 use tiberius_mappers::TryFromRow as _;
 use tokio::{
     fs,
@@ -62,25 +62,29 @@ pub async fn do_carton_query(
         // let mut all_datas = Vec::new();
 
         // --- 优化点 5: 并发执行批量查询 ---
+        // let mut tasks = iter(cartons)
+        //     .map(|carton| {
+        //         let typeinfos = typeinfos.clone();
+        //         let pool = pool.clone();
+        //         // let sender = sender.clone();
+        //         // 为每个查询创建一个异步任务
+        //         tokio::spawn(
+        //             async move { carton_query_datas(carton.clone(), &pool, typeinfos).await },
+        //         )
+        //     })
+        //     .buffer_unordered(10); // 限制并发数为 10
         let mut tasks = iter(cartons)
             .map(|carton| {
                 let typeinfos = typeinfos.clone();
                 let pool = pool.clone();
-                // let sender = sender.clone();
-                // 为每个查询创建一个异步任务
-                tokio::spawn(
-                    async move { carton_query_datas(carton.clone(), &pool, typeinfos).await },
-                )
+                // 直接返回 Future，由 buffer_unordered 管理并发
+                async move { carton_query_datas(carton, &pool, typeinfos).await }
             })
-            .buffer_unordered(10); // 限制并发数为 10
+            .buffer_unordered(10);
 
         while let Some(result) = tasks.next().await {
             match result {
-                Ok(Ok(_res)) => {} // 成功, 扩展结果
-                Ok(Err(e)) => {
-                    info!("批量查询中有一个任务失败: {:?}", e);
-                    // 可以选择继续或在这里返回错误
-                }
+                Ok(_) => {} // 成功, 扩展结果
                 Err(e) => {
                     info!("批量查询任务执行失败: {:?}", e);
                     // Tokio task join error
@@ -169,17 +173,16 @@ pub async fn carton_query_datas(
             .map(|sn_list_chunk| {
                 let pool = pool.clone();
                 let all_datas = all_datas.clone();
-                tokio::spawn(async move {
+                async move {
                     let sql_text_s = build_query_sql(&sn_list_chunk, &pool).await?;
                     execute_query(all_datas, &sql_text_s, &pool).await
-                })
+                }
             })
-            .buffer_unordered(5); // 限制 5 个并发 SQL 查询
+            .buffer_unordered(10); // 限制 5 个并发 SQL 查询
 
         while let Some(result) = tasks.next().await {
             match result {
-                Ok(Ok(_res_chunk)) => {}
-                Ok(Err(e)) => info!("一个测试数据块查询失败: {:?}", e),
+                Ok(_) => {}
                 Err(e) => info!("Tokio 任务失败: {:?}", e),
             }
         }
@@ -405,31 +408,24 @@ pub async fn execute_query(
     // 优化: 不再需要 HashMap 去重，SQL 已经保证了唯一性
     // let mut datas: Vec<Data> = Vec::new();
     // let mut row_count = 0;
-
+    let sn_to_index: std::collections::HashMap<String, usize> = all_datas
+        .iter()
+        .enumerate()
+        .map(|(i, d)| (d.sn_data.sn.clone(), i))
+        .collect();
     while let Ok(Some(row)) = rows.try_next().await {
         let data = Data::try_from_row(row)
             .map_err(|e| MyError::Zdyknown(format!("从行转换为 Data 结构体失败: {:?}", e)))?;
-        // row_count += 1;
-        let datas = all_datas
-            .iter_mut()
-            .find(|d| d.sn_data.sn == data.sn)
-            .unwrap();
-        datas.sn_data = data;
-        Cx::post_action(BackAction {
-            data: datas.clone(),
-        });
-        // datas.push(data.clone());
-        // SignalToUI::set_ui_signal();
+        if let Some(&idx) = sn_to_index.get(&data.sn) {
+            let target = &mut all_datas[idx];
+            target.sn_data = data;
+
+            // 3. UI 交互
+            Cx::post_action(BackAction {
+                data: target.clone(),
+            });
+        }
     }
-    // SignalToUI::set_ui_signal();
-    // info!(
-    //     "共处理 {} 行原始数据 (已在SQL去重)，得到 {} 条最新SN数据。",
-    //     row_count,
-    //     datas.len()
-    // );
-    // if datas.is_empty() {
-    //     return Err(MyError::NoResult(format!("")));
-    // }
     Ok(())
 }
 
