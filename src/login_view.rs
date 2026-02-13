@@ -9,7 +9,7 @@ script_mod! {
     use mod.prelude.widgets_internal.*
     use mod.widgets.*
 
-    let ICON_LOGO = crate_resource("crate://self/resources/images/logo.png")
+    let ICON_LOGO = crate_resource("self://resources/images/logo.png")
 
     mod.widgets.LoginScreenBase = #(LoginScreen::register_widget(vm))
     mod.widgets.LoginScreen = set_type_default() do mod.widgets.LoginScreenBase {
@@ -40,15 +40,14 @@ script_mod! {
                 align: Align{x: 0.5, y:0.5}
                 Image {
                     width: 50, height: 50,
-                    source +: ICON_LOGO
+                    src: ICON_LOGO
                 }
                 H1 {
-                    draw_text +: {
-                        color: #000,
-                        text_style: {
-                            font_size:20
-                        }
-                    }
+                    
+                        draw_text.color: #000,
+                        draw_text.text_style.font_size: 20
+                        
+                    
                     text: "数据查询导出工具"
                 }
             }
@@ -56,21 +55,15 @@ script_mod! {
                 align: Align{y: 0.5}
                 spacing: 10,
                 Label {
-                    draw_text +: {
-                        color: #000,
-                        text_style: {
-                            font_size:16
-                        }
-                    }
+                    draw_text.color: #000,
+                        draw_text.text_style.font_size: 16
+                        
+                    
                     text: "账户:"
                 }
                 user_name := TextInput {
-                    draw_text +: {
-                        color: #000,
-                        text_style: {
-                            font_size:16
-                        }
-                    }
+                    draw_text.color: #000,
+                        draw_text.text_style.font_size: 16
                     empty_text: "输入用户名..."
                 }
             }
@@ -78,21 +71,13 @@ script_mod! {
                 align: Align{y: 0.5}
                 spacing: 10,
                 Label {
-                    draw_text +: {
-                        color: #000,
-                        text_style: {
-                            font_size:16
-                        }
-                    }
+                    draw_text.color: #000,
+                        draw_text.text_style.font_size: 16
                     text: "密码:"
                 }
                 use_password := TextInput {
-                    draw_text +: {
-                        color: #000,
-                        text_style: {
-                            font_size:16
-                        }
-                    }
+                    draw_text.color: #000,
+                        draw_text.text_style.font_size: 16
                     empty_text: "输入密码...",
                     is_password: true,
 
@@ -103,36 +88,28 @@ script_mod! {
                 spacing: 30,
                 free_btn := Button {
                     text: "跳过登录"
-                    draw_text +: {
-                        color: #000,
-                        text_style: {
-                            font_size:16
-                        }
-                    }
+                    draw_text.color: #000,
+                        draw_text.text_style.font_size: 16
                     draw_bg +: {
-                        uniform border_size: 1.0
-                        uniform border_radius: 5.0
-                        uniform color: #FF7F50
-                        uniform color_hover: #FFB6C1
-                        uniform color_disabled: #A9A9A9
+                        border_size: uniform(1.0)
+                        border_radius: uniform(5.0)
+                         color: uniform(#FF7F50)
+                         color_hover: uniform(#FFB6C1)
+                         color_disabled: (#A9A9A9)
 
                     }
                 }
                 login_btn := Button {
                     width: 100,
                     text: "登录"
-                    draw_text +: {
-                        color: #000000,
-                        text_style: {
-                            font_size:16
-                        }
-                    }
+                    draw_text.color: #000,
+                        draw_text.text_style.font_size: 16
                     draw_bg +: {
-                        uniform border_size: 1.0
-                        uniform border_radius: 5.0
-                        uniform color: #AFEEEE
-                        uniform color_hover: #9370DB
-                        uniform color_disabled: #DCDCDC
+                        border_size: uniform(1.0)
+                        border_radius: uniform(5.0)
+                         color: uniform(#FF7F50)
+                         color_hover: uniform(#FFB6C1)
+                         color_disabled: (#A9A9A9)
 
                     }
                 }

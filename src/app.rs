@@ -38,6 +38,7 @@ pub struct App {
 impl App {
     fn run(vm: &mut ScriptVm) -> Self {
         makepad_widgets::script_mod(vm);
+        crate::script_mod(vm);
         crate::app_ui::script_mod(vm);
         App::from_script_mod(vm, self::script_mod)
     }
