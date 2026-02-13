@@ -5,49 +5,45 @@ use crate::{
     utils::error::{LoginResult, MyError},
 };
 
-live_design! {
+script_mod! {
+    use mod.prelude.widgets_internal.*
+    use mod.widgets.*
 
-    use link::theme::*;
-    use link::shaders::*;
-    use link::widgets::*;
-    use crate::shared::styles::*;
-    use crate::shared::widgets::*;
-    use crate::shared::modal::*;
+    let ICON_LOGO = crate_resource("crate://self/resources/images/logo.png")
 
-    ICON_LOGO = dep("crate://self/resources/images/logo.png")
-    pub LoginScreen = {{LoginScreen}} {
+    mod.widgets.LoginScreenBase = #(LoginScreen::register_widget(vm))
+    mod.widgets.LoginScreen = set_type_default() do mod.widgets.LoginScreenBase {
         width: Fill, height: Fill,
-        align: {x: 0.5, y: 0.5}
-        show_bg: true,
-        draw_bg: {
+        align: Align{x: 0.5, y: 0.5}
+        draw_bg +: {
             color: #FFF
         }
-        flow: Overlay,
-        <RoundedShadowView> {
+        flow: Flow.Overlay,
+        RoundedShadowView {
             padding: 50,
             width: 400,
             height: 400,
             spacing:10,
-            flow: Down,
-            align: {x: 0.5, y: 0.5}
-            draw_bg: {
-                color: (MAIN_BG_COLOR_DARK)
+            flow: Flow.Down,
+            align: Align{x: 0.5, y: 0.5}
+            draw_bg +: {
+                color: #f2f2f2,
                 border_radius: 4.5,
-                uniform shadow_color: #0002
+                shadow_color: #0002
                 shadow_radius: 8.0,
                 shadow_offset: vec2(0.0,-1.5)
             }
-            <View> {
+            View {
                 width: Fill
                 height: Fit
                 spacing:20,
-                align: {x: 0.5, y:0.5}
-                <Image> {
+                align: Align{x: 0.5, y:0.5}
+                Image {
                     width: 50, height: 50,
-                    source: (ICON_LOGO)
+                    source +: ICON_LOGO
                 }
-                <H1> {
-                    draw_text: {
+                H1 {
+                    draw_text +: {
                         color: #000,
                         text_style: {
                             font_size:20
@@ -56,11 +52,11 @@ live_design! {
                     text: "数据查询导出工具"
                 }
             }
-            <View> {
-                align: {y: 0.5}
+            View {
+                align: Align{y: 0.5}
                 spacing: 10,
-                <Label> {
-                    draw_text: {
+                Label {
+                    draw_text +: {
                         color: #000,
                         text_style: {
                             font_size:16
@@ -68,8 +64,8 @@ live_design! {
                     }
                     text: "账户:"
                 }
-                user_name = <TextInput> {
-                    draw_text: {
+                user_name := TextInput {
+                    draw_text +: {
                         color: #000,
                         text_style: {
                             font_size:16
@@ -78,11 +74,11 @@ live_design! {
                     empty_text: "输入用户名..."
                 }
             }
-            <View> {
-                align: {y: 0.5}
+            View {
+                align: Align{y: 0.5}
                 spacing: 10,
-                <Label> {
-                    draw_text: {
+                Label {
+                    draw_text +: {
                         color: #000,
                         text_style: {
                             font_size:16
@@ -90,8 +86,8 @@ live_design! {
                     }
                     text: "密码:"
                 }
-                use_password = <TextInput> {
-                    draw_text: {
+                use_password := TextInput {
+                    draw_text +: {
                         color: #000,
                         text_style: {
                             font_size:16
@@ -102,18 +98,18 @@ live_design! {
 
                 }
             }
-            <View> {
-                align: {x: 0.5, y: 1.0}
+            View {
+                align: Align{x: 0.5, y: 1.0}
                 spacing: 30,
-                free_btn = <Button> {
+                free_btn := Button {
                     text: "跳过登录"
-                    draw_text: {
+                    draw_text +: {
                         color: #000,
                         text_style: {
                             font_size:16
                         }
                     }
-                    draw_bg: {
+                    draw_bg +: {
                         uniform border_size: 1.0
                         uniform border_radius: 5.0
                         uniform color: #FF7F50
@@ -122,16 +118,16 @@ live_design! {
 
                     }
                 }
-                login_btn = <Button> {
+                login_btn := Button {
                     width: 100,
                     text: "登录"
-                    draw_text: {
+                    draw_text +: {
                         color: #000000,
                         text_style: {
                             font_size:16
                         }
                     }
-                    draw_bg: {
+                    draw_bg +: {
                         uniform border_size: 1.0
                         uniform border_radius: 5.0
                         uniform color: #AFEEEE
@@ -145,7 +141,7 @@ live_design! {
     }
 }
 
-#[derive(Widget, LiveHook, Live)]
+#[derive(Script, ScriptHook, Widget)]
 pub struct LoginScreen {
     #[deref]
     view: View,
@@ -162,11 +158,11 @@ impl Widget for LoginScreen {
 }
 
 impl WidgetMatchEvent for LoginScreen {
-    fn handle_actions(&mut self, _cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let user_name = self.view.text_input(ids!(user_name));
-        let user_password = self.view.text_input(ids!(use_password));
-        let free_btn = self.view.button(ids!(free_btn));
-        let login_btn = self.view.button(ids!(login_btn));
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
+        let user_name = self.view.text_input(cx, ids!(user_name));
+        let user_password = self.view.text_input(cx, ids!(use_password));
+        let free_btn = self.view.button(cx, ids!(ree_btn));
+        let login_btn = self.view.button(cx, ids!(login_btn));
         if login_btn.clicked(actions) || user_password.returned(actions).is_some() {
             if user_name.text().is_empty() {
                 Cx::post_action(MyError::LoginError(format!("用户名不能为空!!!")));

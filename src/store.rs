@@ -1,14 +1,14 @@
 use crate::{
-    box_band::work::query_work::BoxBandData,
+    // box_band::work::query_work::BoxBandData,
     configs::{
         decimal_config::{TemplateConfig, get_templates},
         get_all_column_name::load_all_column_names,
         type_config::{Infos, get_type_names},
     },
-    data_import::data_import_db::DbData,
+    // data_import::data_import_db::DbData,
     structs::Datas,
     utils::sql::client,
-    widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
+    // widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
 use bb8_tiberius::ConnectionManager;
 use makepad_widgets::*;
@@ -35,21 +35,21 @@ pub struct LoginStore {
     pub logined: bool,
     pub free_login: bool,
 }
-#[derive(Debug, Default, Clone)]
-pub struct ImportStore {
-    pub import_datas: DbData,
-}
-#[derive(Debug, Default, Clone)]
-pub struct BoxBandStore {
-    pub box_data: Vec<BoxBandData>,
-}
+// #[derive(Debug, Default, Clone)]
+// pub struct ImportStore {
+//     pub import_datas: DbData,
+// }
+// #[derive(Debug, Default, Clone)]
+// pub struct BoxBandStore {
+//     pub box_data: Vec<BoxBandData>,
+// }
 #[derive(Debug, Default, Clone)]
 pub struct Store {
     pub datas_store: DatasStore,
     pub setting_store: SettingStore,
     pub login_store: LoginStore,
-    pub import_store: ImportStore,
-    pub box_band_store: BoxBandStore,
+    // pub import_store: ImportStore,
+    // pub box_band_store: BoxBandStore,
     pub pool: Option<bb8::Pool<ConnectionManager>>,
 }
 
@@ -84,11 +84,11 @@ impl Store {
         };
         let pool = match client().await {
             Ok(client) => {
-                enqueue_popup_notification(PopupItem {
-                    kind: PopupKind::Success,
-                    auto_dismissal_duration: Some(5.0),
-                    message: "数据库连接成功".to_string(),
-                });
+                // enqueue_popup_notification(PopupItem {
+                //     kind: PopupKind::Success,
+                //     auto_dismissal_duration: Some(5.0),
+                //     message: "数据库连接成功".to_string(),
+                // });
                 Some(client)
             }
             Err(e) => {

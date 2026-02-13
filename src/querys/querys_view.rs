@@ -435,20 +435,20 @@ impl Widget for QueryScreen {
 
 impl WidgetMatchEvent for QueryScreen {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
-        let input = self.view.text_input(ids!(query_input));
-        let query_btn = self.view.button(ids!(query_btn));
-        let export_btn = self.view.button(ids!(export_btn));
-        let type_select = self.view.drop_down(ids!(type_selector));
-        let use_date = self.view.check_box(ids!(date));
-        let start_time_input = self.view.text_input(ids!(start_time_input));
-        let end_time_input = self.view.text_input(ids!(end_time_input));
-        let pn_input = self.view.text_input(ids!(pn_input));
-        let worker_input = self.view.text_input(ids!(worker_input));
-        let devices = self.view.drop_down(ids!(devices_selector));
-        let res = self.view.drop_down(ids!(result_selector));
-        let qty_label = self.view.label(ids!(qty_label));
+        let input = self.view.text_input(ids!(cx, query_input));
+        let query_btn = self.view.button(ids!(cx, query_btn));
+        let export_btn = self.view.button(ids!(cx, export_btn));
+        let type_select = self.view.drop_down(ids!(cx, type_selector));
+        let use_date = self.view.check_box(ids!(cx, date));
+        let start_time_input = self.view.text_input(ids!(cx, start_time_input));
+        let end_time_input = self.view.text_input(ids!(cx, end_time_input));
+        let pn_input = self.view.text_input(ids!(cx, pn_input));
+        let worker_input = self.view.text_input(ids!(cx, worker_input));
+        let devices = self.view.drop_down(ids!(cx, devices_selector));
+        let res = self.view.drop_down(ids!(cx, result_selector));
+        let qty_label = self.view.label(ids!(cx, qty_label));
         let processor = self.datas_query_processor.as_ref().unwrap().clone();
-        let batch_query_btn = self.view.button(ids!(batch_query_btn));
+        let batch_query_btn = self.view.button(ids!(cx, batch_query_btn));
         let rt = self.rt.handle().clone();
         for action in actions {
             if let Some(data_action) = action.downcast_ref::<QueryAction>() {

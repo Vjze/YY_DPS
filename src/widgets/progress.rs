@@ -1,16 +1,16 @@
 use makepad_widgets::*;
 
-live_design! {
-    use link::theme::*;
-    use link::shaders::*;
-    use link::widgets::*;
-
-    // MyProgress bar component
-    pub MyProgress = {{MyProgress}} {
+script_mod! {
+    // use link::theme::*;
+    // use link::shaders::*;
+    // use link::widgets::*;
+    use mod.widgets.*
+    mod.widgets.MyProgressBase = #(MyProgress::register_widget(vm))
+    mod.widgets.MyProgress = set_type_default() do mod.widgets.MyMyProgressBase {
         width: Fill,
         height: 8,
 
-        draw_bg: {
+        draw_bg +: {
             instance progress: 0.0
 
             fn pixel(self) -> vec4 {
@@ -52,7 +52,7 @@ live_design! {
 
 }
 
-#[derive(Live, LiveHook, Widget)]
+#[derive(Script, ScriptHook, Widget)]
 pub struct MyProgress {
     #[redraw]
     #[live]
