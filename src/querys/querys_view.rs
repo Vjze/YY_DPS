@@ -2,6 +2,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::querys::DatasQuery;
+use crate::querys::carton_tabel::SnInfosAction;
+use crate::querys::sn_tabel::SnInfosTableWidgetRefExt;
+// use crate::querys::carton_row::SnInfosAction;
 use crate::structs::Datas;
 use crate::widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification};
 use crate::{store::Store, utils::error::MyError};
@@ -18,6 +21,7 @@ live_design! {
     use crate::shared::modal::*;
     use crate::shared::widgets::*;
     use crate::querys::carton_tabel::CartonTable;
+    use crate::querys::infos_modal::InfosModal;
     FirstRow = <View> {
         width: Fill,
         height: Fit,
@@ -384,6 +388,7 @@ live_design! {
         }
     }
     pub QueryScreen = {{QueryScreen}} {
+        flow: Overlay,
         <View> {
             width: Fill,
             height: Fill,
@@ -393,6 +398,12 @@ live_design! {
             <FirstRow> {}
             <SecondRow> {}
             <CartonTable> {}
+        }
+        info_modal = <Modal> {
+            content : {
+                dialog_ui_inner = <InfosModal> {
+                }
+            }
         }
     }
 }
@@ -455,6 +466,13 @@ impl WidgetMatchEvent for QueryScreen {
                 if let Some(store) = scope.data.get_mut::<Store>() {
                     store.datas_store.query_datas = data_action.data.clone();
                 }
+            }
+            if let Some(sn_infos_action) = action.downcast_ref::<SnInfosAction>() {
+                self.view.modal(ids!(info_modal)).open(cx);
+                self.view
+                    .modal(ids!(info_modal))
+                    .sn_infos_table(ids!(infos_tabel))
+                    .set_data(cx, sn_infos_action.data.clone());
             }
         }
         if query_btn.clicked(actions) {

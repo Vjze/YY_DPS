@@ -1,6 +1,5 @@
 use crate::configs::type_config::{Infos, get_type_infos};
-// use crate::export::works::carton_query::get_res;
-use crate::structs::{Data, Datas};
+use crate::structs::Datas;
 use crate::widgets::progress::MyProgressWidgetExt;
 use crate::{
     export::Exportable,
@@ -8,7 +7,7 @@ use crate::{
     widgets::popup_list::{PopupItem, PopupKind, enqueue_popup_notification},
 };
 use makepad_widgets::*;
-use std::sync::{Arc, mpsc};
+use std::sync::Arc;
 use tokio::runtime::Runtime;
 use tracing::info;
 live_design! {

@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-
+use bb8_tiberius::ConnectionManager;
 use makepad_widgets::*;
+use tokio::runtime::Runtime;
 
-use crate::structs::Datas;
+use crate::{export::works::carton_query::do_carton_query, store::Store, structs::Datas};
 
 live_design! {
     use makepad_widgets::base::*;
@@ -123,37 +123,22 @@ impl Widget for DataRow {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         if let Some(data) = scope.data.get::<Datas>() {
             let carton_nos = data.carton_data.carton_no.clone();
-            // .get("carton_no")
-            // .cloned() // 将 Option<&String> 转换为 Option<String>
-            // .unwrap_or_else(|| "".to_string());
             let label = self.label(ids!(h_wrapper.carton_no.label));
             label.set_text(cx, &carton_nos);
 
             let box_nos = data.pack_data.box_no.clone();
-            // .get("box_no")
-            // .cloned() // 将 Option<&String> 转换为 Option<String>
-            // .unwrap_or_else(|| "".to_string());
             let label = self.label(ids!(box_no.label));
             label.set_text(cx, &box_nos.to_string());
 
             let pn = data.carton_data.yypn.clone();
-            // .get("sn")
-            // .cloned() // 将 Option<&String> 转换为 Option<String>
-            // .unwrap_or_else(|| "".to_string());
             let label = self.label(ids!(pn.label));
             label.set_text(cx, &pn);
 
             let pack_time = data.pack_data.pack_packtime.clone();
-            // .get("ith")
-            // .cloned() // 将 Option<&String> 转换为 Option<String>
-            // .unwrap_or_else(|| "".to_string());
             let label = self.label(ids!(pack_time.label));
             label.set_text(cx, &pack_time);
 
             let carton_time = data.carton_data.carton_packtime.clone();
-            // .get("po")
-            // .cloned() // 将 Option<&String> 转换为 Option<String>
-            // .unwrap_or_else(|| "".to_string());
             let label = self.label(ids!(carton_time.label));
             label.set_text(cx, &carton_time);
         };

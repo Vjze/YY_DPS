@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use bb8_tiberius::ConnectionManager;
 use makepad_widgets::Cx;
 use std::{collections::HashMap, sync::Arc};
+pub mod infos_modal;
 pub mod row;
 pub mod tabel;
 use crate::{
@@ -17,6 +18,8 @@ use crate::{
 pub mod carton_row;
 pub mod carton_tabel;
 pub mod querys_view;
+pub mod sn_row;
+pub mod sn_tabel;
 pub mod works;
 pub fn live_design(cx: &mut Cx) {
     querys_view::live_design(cx);
@@ -24,6 +27,9 @@ pub fn live_design(cx: &mut Cx) {
     tabel::live_design(cx);
     carton_row::live_design(cx);
     carton_tabel::live_design(cx);
+    infos_modal::live_design(cx);
+    sn_row::live_design(cx);
+    sn_tabel::live_design(cx);
 }
 
 #[async_trait]
