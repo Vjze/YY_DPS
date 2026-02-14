@@ -4,7 +4,7 @@ use makepad_widgets::*;
 
 use crate::structs::Datas;
 
-live_design! {
+script_mod! {
     use makepad_widgets::base::*;
     use makepad_widgets::widget::*;
     use link::theme::*;

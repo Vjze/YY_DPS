@@ -25,7 +25,7 @@ script_mod! {
             height: 400,
             spacing:10,
             flow: Flow.Down,
-            align: Align{x: 0.5, y: 0.5}
+            align: Center
             draw_bg +: {
                 // color: #f2f2f2,
                 border_radius: 4.5,
@@ -37,7 +37,7 @@ script_mod! {
                 width: Fill
                 height: Fit
                 spacing:20,
-                align: Align{x: 0.5, y:0.5}
+                align: Center
                 Image {
                     width: 50, height: 50,
                     src: ICON_LOGO
@@ -89,9 +89,9 @@ script_mod! {
                     draw_bg +: {
                         border_size: uniform(1.0)
                         border_radius: uniform(5.0)
-                         color: uniform(#FF7F50)
-                         color_hover: uniform(#FFB6C1)
-                         color_disabled: (#A9A9A9)
+                        color: uniform(#FF7F50)
+                        color_hover: uniform(#FFB6C1)
+                        olor_disabled: (#A9A9A9)
 
                     }
                 }
@@ -103,9 +103,9 @@ script_mod! {
                     draw_bg +: {
                         border_size: uniform(1.0)
                         border_radius: uniform(5.0)
-                         color: uniform(#FF7F50)
-                         color_hover: uniform(#FFB6C1)
-                         color_disabled: (#A9A9A9)
+                        color: uniform(#FF7F50)
+                        color_hover: uniform(#FFB6C1)
+                        color_disabled: (#A9A9A9)
 
                     }
                 }

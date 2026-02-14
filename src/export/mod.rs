@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
-pub mod export_row;
-pub mod export_tabel;
-use makepad_widgets::Cx;
+// pub mod export_row;
+// pub mod export_tabel;
+use makepad_widgets::ScriptVm;
 pub mod export_view;
 pub mod works;
 use async_trait::async_trait;
@@ -12,10 +12,10 @@ use crate::{
     structs::Datas,
     utils::error::MyError,
 };
-pub fn live_design(cx: &mut Cx) {
-    export_view::live_design(cx);
-    export_tabel::live_design(cx);
-    export_row::live_design(cx);
+pub fn script_mod(vm: &mut ScriptVm) {
+    export_view::script_mod(vm);
+    // export_tabel::script_mod(vm);
+    // export_row::script_mod(vm);
 }
 
 #[async_trait]

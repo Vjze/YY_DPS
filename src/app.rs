@@ -3,7 +3,7 @@ use tokio::runtime::Runtime;
 
 use crate::{
     store::Store,
-    utils::error::{LoginResult, MyError, MyTip},
+    utils::error::{LoginResult, MyError, MyTip}, widgets::dialog::{ErrorDialogSetWidgetRefExt, ErrorDialogWidgetRefExt, ErrprModalAction},
     // widgets::{
     //     dialog::ErrprModalAction,
     //     // popup_list::{PopupItem, PopupKind, enqueue_popup_notification, set_global_popup_list},
@@ -22,7 +22,7 @@ script_mod! {
 
     let ApplicationPages = RoundedShadowView {
         width: Fill, height: Fill
-        margin: Inset{top: 12, right: 12, bottom: 12}
+        // margin: {top: 12, right: 12, bottom: 12}
         padding: 3.
         flow: Overlay
         // show_bg: true
@@ -33,7 +33,7 @@ script_mod! {
             shadow_radius: uniform(18.0),
             shadow_offset: vec2(0.0,-1.5)
         }
-        // export_frame = <ExportScreen> {visible: true}
+        export_frame := ExportScreen {visible: true}
         // querys_frame = <QueryScreen> {visible: false}
         // box_band_frame = <BoxBandView> {visible: false}
         // data_import_db_frame = <DataImportDb> {visible: false}
@@ -69,25 +69,37 @@ script_mod! {
         }
 
         export_tab := SidebarMenuButton {
-            animator: Animator{active : {default: @on}}
+            width: Fill
+            height: Fit
+            align: Align {x:0.5}
+            // animator: active : {default: @on}
             text: "查询导出",
             draw_icon +: {
                 svg: (ICON_CHAT),
             }
         }
         sn_tab := SidebarMenuButton {
+            width: Fill
+            height: Fit
+            align: Align {x:0.5}
             text: "数据查询",
             draw_icon +: {
                 svg: (ICON_LOCAL),
             }
         }
         box_band_tab := SidebarMenuButton {
+            width: Fill
+            height: Fit
+            align: Align {x:0.5}
             text: "盒号绑定",
             draw_icon +: {
                 svg: (ICON_BAND_VIEW),
             }
         }
         data_import_db_tab := SidebarMenuButton {
+            width: Fill
+            height: Fit
+            align: Align {x:0.5}
             text: "外协数据导入",
             draw_icon +: {
                 svg: (ICON_BAND_VIEW),
@@ -95,7 +107,7 @@ script_mod! {
         }
         Filler{}
         View {
-            align: Align{y: 1.0}
+            align: Align{x: 0.5 y: 1.0}
             // visible: false
             providers_tab := SidebarMenuButton {
                 text: "设置",
@@ -128,7 +140,7 @@ script_mod! {
                         close +: { draw_bg +: {color: #0, color_hover: #E81123, color_down: #FF0015} }
                     }
                 }
-                pass.clear_color: vec4(1.0 1.0 1.0 0.0)
+                pass.clear_color: vec4(1.0 1.0 1.0 1.0)
                 window.inner_size: vec2(1600 900)
 
                 show_bg: true
@@ -167,13 +179,15 @@ script_mod! {
                         }
                     }
                     // <PopupList> {}
+                    dialog_ui := Modal {
+                        can_dismiss: false
+                        content +: {
+                            dialog_ui_inner := ErrorDialog {
+                            }
+                        }
+                    }
                 }
-                // dialog_ui := Modal {
-                //     content : {
-                //         dialog_ui_inner = ErrorDialog {
-                //         }
-                //     }
-                // }
+                
             }
         }
     }
@@ -221,58 +235,40 @@ impl MatchEvent for App {
         self.store = store;
     }
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
-        let mut navigate_to_export = false;
-        let mut navigate_to_sn = false;
-        let mut navigate_to_box_band = false;
-        let mut navigate_to_data_import_db = false;
-        let mut navigate_to_providers = false;
 
-        // TODO: Replace this with a proper navigation widget.
-        if let Some(selected_tab) = self
-            .ui
-            .radio_button_set(
-                cx,
-                ids_array!(
-                    sidebar_menu.export_tab,
-                    sidebar_menu.sn_tab,
-                    sidebar_menu.box_band_tab,
-                    sidebar_menu.data_import_db_tab,
-                    sidebar_menu.providers_tab,
-                ),
-            )
-            .selected(cx, actions)
-        {
-            println!("select: {}", selected_tab);
-            match selected_tab {
-                0 => navigate_to_export = true,
-                1 => navigate_to_sn = true,
-                2 => navigate_to_box_band = true,
-
-                3 => navigate_to_data_import_db = true,
-                4 => navigate_to_providers = true,
-                _ => {}
-            }
-        }
-        // Handle navigation after processing all actions
-        if navigate_to_providers {
-            self.navigate_to(cx, ids!(application_pages.providers_frame));
-        } else if navigate_to_export {
+        if self.ui.radio_button(cx, ids!(export_tab)).clicked(actions) {
             self.navigate_to(cx, ids!(application_pages.export_frame));
-        } else if navigate_to_box_band {
-            self.navigate_to(cx, ids!(application_pages.box_band_frame));
-        } else if navigate_to_data_import_db {
+        };
+        if self
+            .ui
+            .radio_button(cx, ids!(data_import_db_tab))
+            .clicked(actions)
+        {
             self.navigate_to(cx, ids!(application_pages.data_import_db_frame));
-        } else if navigate_to_sn {
+        }
+        if self
+            .ui
+            .radio_button(cx, ids!(box_band_tab))
+            .clicked(actions)
+        {
+            self.navigate_to(cx, ids!(application_pages.box_band_frame));
+        }
+        if self.ui.radio_button(cx, ids!(sn_tab)).clicked(actions) {
             self.navigate_to(cx, ids!(application_pages.querys_frame));
         }
+        if self
+            .ui
+            .radio_button(cx, ids!(providers_tab))
+            .clicked(actions)
+        {
+            self.navigate_to(cx, ids!(application_pages.providers_frame));
+        }
+       
         for action in actions {
             if let Some(err) = action.downcast_ref::<MyError>() {
                 let content = err.to_string();
                 println!("{content}");
-                self.ui
-                    .modal(cx, ids!(dialog_ui.dialog_ui_inner))
-                    .label(cx, ids!(prompt))
-                    .set_text(cx, &content);
+                self.ui.error_dialog(cx, ids!(dialog_ui_inner)).set_err_text(cx, content);
                 self.ui.modal(cx, ids!(dialog_ui)).open(cx);
             }
             if let Some(tip) = action.downcast_ref::<MyTip>() {
@@ -284,9 +280,9 @@ impl MatchEvent for App {
                     .set_text(cx, &content);
                 self.ui.modal(cx, ids!(dialog_ui)).open(cx);
             }
-            // if let Some(ErrprModalAction::Close) = action.downcast_ref() {
-            //     self.ui.modal(cx, ids!(dialog_ui)).close(cx);
-            // }
+            if let Some(ErrprModalAction::Close) = action.downcast_ref() {
+                self.ui.modal(cx, ids!(dialog_ui)).close(cx);
+            }
             if let Some(LoginResult::Logined) = action.downcast_ref() {
                 let store = self.store.clone();
                 // store.logined = true;

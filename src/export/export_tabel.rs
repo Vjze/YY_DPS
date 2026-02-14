@@ -1,7 +1,7 @@
 use crate::store::Store;
 use makepad_widgets::*;
 
-live_design! {
+script_mod! {
     use link::theme::*;
     use link::shaders::*;
     use link::widgets::*;

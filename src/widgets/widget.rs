@@ -96,29 +96,12 @@ script_mod! {
             }
         }
     }
-    mod.widgets.SidebarMenuButtons = mod.widgets.Button {
-        width: 150,
-        height: 80,
-        padding: 8, margin: 0,
-        flow: Right, spacing: 8.0, align: Align{x: 0.5, y: 0.5}
-        text: "Buttons"
-        draw_text.color: #000
-        draw_text.text_style.font_size: 13
-        icon_walk: Walk {
-            width: 25,
-            height: 25
-        }
-        draw_icon +: {
-            color: #1A2533
-            color_hover: uniform(#f9f9f9)
-            color_active: uniform(#f9f9f9)
-        }
-    }
+
     mod.widgets.SidebarMenuButton = mod.widgets.RadioButton {
         width: 150,
         height: 80,
         padding: 8, margin: 0,
-        flow: Right, spacing: 8.0, align: Align{x: 0.5, y: 0.5}
+        flow: Down, spacing: 8.0, align: Align{x: 0.5, y: 0.5}
 
         icon_walk: Walk {
             width: 25,
@@ -129,9 +112,8 @@ script_mod! {
         draw_bg +: {
             radio_type: Tab,
 
-            border_size: 0.0
+            border_size: uniform(0.0)
             border_color: uniform(#0000)
-            inset: vec4(0.0, 0.0, 0.0, 0.0)
             border_radius: 3.5
 
             get_color: fn() {
@@ -172,7 +154,7 @@ script_mod! {
             color_hover: #f9f9f9
             color_active: #f9f9f9
 
-            text_style +: {font_size: 15}
+            // text_style +: {font_size: 15}
 
             get_color: fn() {
                 return mix(
@@ -189,8 +171,8 @@ script_mod! {
 
         draw_icon +: {
             color: #1A2533
-            color_hover: uniform(#f9f9f9)
-            color_active: uniform(#f9f9f9)
+            // color_hover: uniform(#f9f9f9)
+            // color_active: uniform(#f9f9f9)
             // focus: instance(0.0)
             // get_color: fn() {
             //     return mix(

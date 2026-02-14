@@ -1,66 +1,37 @@
 use makepad_widgets::*;
 script_mod!(
-    // use link::theme::*;
-    // use link::shaders::*;
-    // use link::widgets::*;
-    // use crate::shared::style::*;
+    use mod.prelude.widgets_internal.*
+    use mod.widgets.*
+
     mod.widgets.DialogBase =  #(ErrorDialog::register_widget(vm))
 
     mod.widgets.ErrorDialog = mod.widgets.DialogBase {
         width: Fit,
         height: Fit,
 
-        let wrapper = RoundedView {
+        wrapper := RoundedView {
             flow: Down
             width: 600
             height: Fit
-            // padding: {top: 15, right: 25 bottom: 25 left: 25}
-            spacing: 15
-            show_bg: true
-            draw_bg +: {
-                color: #fff
-                uniform border_radius: 4.0
-                fn pixel(self) -> vec4 {
-                    let border_color = #d4;
-                    let border_size = 1;
-                    let sdf = Sdf2d::viewport(self.pos * self.rect_size);
-                    let body = #fff
+            draw_bg.color: #fff
 
-                    sdf.box(
-                        1.,
-                        1.,
-                        self.rect_size.x - 2.0,
-                        self.rect_size.y - 2.0,
-                        self.border_radius
-                    )
-                    sdf.fill_keep(body)
-
-                    sdf.stroke(
-                        border_color,
-                        border_size
-                    )
-                    return sdf.result
-                }
-            }
-
-            let title = RoundedView {
+            title := RoundedView {
                 width: Fill,
                 height: Fit,
-                align: {x: 0.5, y: 0.5}
-                show_bg: true,
+                align: Center
                 draw_bg +: {
-                    uniform border_radius: 4.0
-                    uniform border_color: #0000
-                    fn get_color(self) -> vec4 {
+                    border_radius: 4.0
+                    border_color: #0000
+                    get_color: fn(){
                         return mix(#B0E0E6,#C1CDC1,self.pos.x)
                     }
 
-                    fn get_border_color(self) -> vec4 {
+                    get_border_color: fn(){
                         return self.border_color
                     }
 
-                    fn pixel(self) -> vec4 {
-                        let sdf = Sdf2d::viewport(self.pos * self.rect_size)
+                    pixel: fn(){
+                        let sdf = Sdf2d.viewport(self.pos * self.rect_size)
                         sdf.box(
                             self.border_inset.x + self.border_size,
                             self.border_inset.y + self.border_size,
@@ -79,58 +50,52 @@ script_mod!(
                 Label {
                     text: "提示"
                     draw_text +: {
-                        text_style:{font_size: 16},
+                        text_style +:{font_size: 16},
                         color: #000
                     }
                 }
             }
-            let body = View {
-                width: Fill,
-                height: Fit,
-                flow: Down,
-                padding:{left: 15}
-                spacing: 40
-                prompt = Label {
-                    width: Fill
-                    draw_text +: {
-                        text_style: {
-                            font_size: 14
-                        },
-                        color: #000
-                        wrap: Word
+                RoundedView {
+                    width: Fill,
+                    height: Fit,
+                    draw_bg.color: #DCDCDC
+                    draw_bg.radius: 8.0
+                    padding: 10 spacing: 12
+                    flow: Down align: Center
+                    prompt := Label {
+                        width: Fill
+                        draw_text +: {
+                            text_style +: {
+                                font_size: 14
+                            },
+                            color: #000
+                        }
+                        text: "提示内容"
                     }
-                    text: "提示内容"
-                }
-                View {
-                    width: Fill, height: Fit
-                    flow: Right,
-                    align: {x: 1.0, y: 1.0}
-                    padding: 15
-
-
-                    let accept_button = Button {
+                    accept_button := Button {
                         width: 100
                         height: 40
-                        padding: {left: 15, right: 15}
+                        padding: Inset{left: 15, right: 15}
 
                         text: "确定"
                         draw_text +: {
                             color: #000000,
-                            text_style: {
+                            text_style +: {
                                 font_size:16
                             }
                         }
                         draw_bg +: {
-                            uniform border_size: 1.0
-                            uniform border_radius: 5.0
-                            uniform color: #AFEEEE
-                            uniform color_hover: #9370DB
-                            uniform color_disabled: #DCDCDC
+                            border_size: 1.0
+                            border_radius: 5.0
+                            color: #AFEEEE
+                            color_hover: #9370DB
+                            color_disabled: #DCDCDC
 
-                         }
+                        }
                     }
                 }
-            }
+
+
         }
 
     }
@@ -170,15 +135,15 @@ impl WidgetMatchEvent for ErrorDialog {
     }
 }
 impl ErrorDialog {
-    fn initialize_with_data(&mut self, cx: &mut Cx, error_text: String) {
-        self.label(cx, ids!(prompt)).set_text(cx, &error_text);
+    fn set_err_text(&mut self, cx: &mut Cx, error_text: String) {
+        self.view.label(cx, ids!(prompt)).set_text(cx, &error_text);
     }
 }
 
 impl ErrorDialogRef {
-    pub fn initialize_with_data(&self, cx: &mut Cx, error_text: String) {
+    pub fn set_err_text(&self, cx: &mut Cx, error_text: String) {
         if let Some(mut inner) = self.borrow_mut() {
-            inner.initialize_with_data(cx, error_text);
+            inner.set_err_text(cx, error_text);
         }
     }
 }

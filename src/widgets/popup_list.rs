@@ -28,7 +28,7 @@ pub fn get_global_popup_list(cx: &mut Cx) -> &mut RobrixPopupNotificationRef {
 pub fn set_global_popup_list(cx: &mut Cx, parent_ref: &WidgetRef) {
     Cx::set_global(
         cx,
-        parent_ref.robrix_popup_notification(ids!(popup_notification)),
+        parent_ref.robrix_popup_notification(cx, ids!(popup_notification)),
     );
 }
 
@@ -61,77 +61,76 @@ pub struct PopupItem {
     pub kind: PopupKind,
 }
 
-live_design! {
-    use link::theme::*;
-    use link::shaders::*;
-    use link::widgets::*;
+script_mod! {
+    use mod.prelude.widgets_internal.*
+    use mod.widgets.*
 
-    ICON_CLOSE = dep("crate://self/resources/icons/close.svg");
-    ICON_CHECKMARK       = dep("crate://self/resources/icons/checkmark.svg")
-    ICON_FORBIDDEN       = dep("crate://self/resources/icons/forbidden.svg")
-    ICON_WARNING         = dep("crate://self/resources/icons/warning.svg")
-    ICON_INFO            = dep("crate://self/resources/icons/info.svg")
+    let ICON_CLOSE = crate_resource("self://resources/icons/close.svg");
+    let ICON_CHECKMARK       = crate_resource("self://resources/icons/checkmark.svg")
+    let ICON_FORBIDDEN       = crate_resource("self://resources/icons/forbidden.svg")
+    let ICON_WARNING         = crate_resource("self://resources/icons/warning.svg")
+    let ICON_INFO            = crate_resource("self://resources/icons/info.svg")
 
-    CheckIcon = <View> {
+    let CheckIcon = View {
         width: 28,
         height: 28,
         visible: false,
-        <Icon> {
-            draw_icon: {
-                svg_file: (ICON_CHECKMARK),
+        Icon {
+            draw_icon +: {
+                svg: (ICON_CHECKMARK),
                 color: #ffffff,
             }
-            icon_walk: { width: 22, height: 22 }
+            icon_walk +: { width: 22, height: 22 }
         }
     }
-    ForbiddenIcon = <CheckIcon> {
-        <Icon> {
-            draw_icon: {
-                svg_file: (ICON_FORBIDDEN),
+    let ForbiddenIcon = CheckIcon {
+        Icon {
+            draw_icon +: {
+                svg: (ICON_FORBIDDEN),
                 color: #ffffff,
             }
-            icon_walk: { width: 22, height: 22 }
+            icon_walk +: { width: 22, height: 22 }
         }
     }
-    InfoIcon = <CheckIcon> {
-        <Icon> {
-            draw_icon: {
-                svg_file: (ICON_INFO),
+    let InfoIcon = CheckIcon {
+        Icon {
+            draw_icon +: {
+                svg: (ICON_INFO),
                 color: #ffffff,
             }
-            icon_walk: { width: 22, height: 22 }
+            icon_walk +: { width: 22, height: 22 }
         }
     }
-    WarningIcon = <CheckIcon> {
-        <Icon> {
-            draw_icon: {
-                svg_file: (ICON_WARNING),
+    let WarningIcon = CheckIcon {
+        Icon {
+            draw_icon +: {
+                svg: (ICON_WARNING),
                 color: #ffffff,
             }
-            icon_walk: { width: 22, height: 22 }
+            icon_walk +: { width: 22, height: 22 }
         }
     }
-    RobrixIconButton = <Button> {
+    let RobrixIconButton = Button {
         width: Fit,
         height: Fit,
         spacing: 10,
         padding: 10,
-        align: {x: 0, y: 0.5}
+        align: Align{x: 0, y: 0.5}
 
-        draw_bg: {
-            instance color: #ffffff
+        draw_bg +: {
+             color: #ffffff
             // We set a mid-gray hover color, which gets mixed with the bg color itself
             // in order to create a "lightening" effect upon hover.
-            instance color_hover: #A
-            instance border_size: 0.0
-            instance border_color: #D0D5DD
-            instance border_radius: 3.0
+             color_hover: #A
+             border_size: 0.0
+             border_color: #D0D5DD
+             border_radius: 3.0
 
-            fn get_color(self) -> vec4 {
+            get_color: fn(){
                 return mix(self.color, mix(self.color, self.color_hover, 0.2), self.hover)
             }
 
-            fn pixel(self) -> vec4 {
+            pixel: fn(){
                 let sdf = Sdf2d::viewport(self.pos * self.rect_size)
                 sdf.box(
                     self.border_size,
@@ -148,43 +147,43 @@ live_design! {
             }
         }
 
-        draw_icon: {
-            instance color: #000
-            instance color_hover: #000
-            fn get_color(self) -> vec4 {
+        draw_icon +: {
+             color: #000
+             color_hover: #000
+            get_color: fn(){
                 return mix(self.color, mix(self.color, self.color_hover, 0.2), self.hover)
             }
         }
-        icon_walk: {width: 16, height: 16}
+        icon_walk +: {width: 16, height: 16}
 
-        draw_text: {
-            text_style: {font_size: 10},
+        draw_text +: {
+            text_style +: {font_size: 10},
             color: #000
-            fn get_color(self) -> vec4 {
+            get_color: fn(){
                 return self.color;
             }
         }
         text: ""
     }
-    ProgressBar = <View> {
+    let ProgressBar = View {
         width: Fill,
         height: 10,
         show_bg: true,
-        margin: { bottom: 0 },
+        margin: Inset{ bottom: 0 },
         padding: 0,
-        draw_bg: {
-            uniform direction: 0.0, // Direction of the progress bar: 0.0 is right to left, 1.0 is top to bottom.
-            uniform border_radius: 4.,
-            uniform border_size: 1.0,
-            uniform progress_bar_color: #00000080, //Black with 50% opacity.
-            uniform display_progress_bar: 1.0 // Display progress bar when there is auto_dismissal_duration.
+        draw_bg +: {
+            direction: 0.0, // Direction of the progress bar: 0.0 is right to left, 1.0 is top to bottom.
+            border_radius: 4.,
+            border_size: 1.0,
+            progress_bar_color: #00000080, //Black with 50% opacity.
+            display_progress_bar: 1.0 // Display progress bar when there is auto_dismissal_duration.
             // Display progress bar even when mode.slide is off.
             // 0.0 animate according to anim_time and anim_duration, 1.0 displays oscillating progress bar.
-            uniform debug_progress_bar: 0.0,
-            uniform anim_time: 0.0,
-            uniform anim_duration: 2.0,
-            fn pixel(self) -> vec4 {
-                let sdf = Sdf2d::viewport(self.pos * self.rect_size);
+            debug_progress_bar: 0.0,
+            anim_time: 0.0,
+            anim_duration: 2.0,
+            pixel: fn(){
+                let sdf = Sdf2d.viewport(self.pos * self.rect_size);
                 let rect_size = self.rect_size;
                 let time = self.anim_time / self.anim_duration;
                 if self.debug_progress_bar > 0.5 {
@@ -216,7 +215,7 @@ live_design! {
             }
         }
     }
-    MainContent = <View> {
+    let MainContent = View {
         width: Fill,
         height: Fit,
         align: { x: 0.0, y: 0.5 }
@@ -231,61 +230,61 @@ live_design! {
             }
         }
     }
-    LeftSideView = <View> {
+    let LeftSideView = View {
         width: Fit,
         height: Fit,
-        success_icon = <CheckIcon> {}
-        error_icon = <ForbiddenIcon> {}
-        info_icon = <InfoIcon> {}
-        warning_icon = <WarningIcon> {}
+        success_icon := CheckIcon {}
+        error_icon := ForbiddenIcon {}
+        info_icon := InfoIcon {}
+        warning_icon := WarningIcon {}
     }
-    CloseButtonView = <View> {
+    let CloseButtonView = View {
         width: Fill,
         height: Fit,
         flow: Down,
         padding: { top: 3 }
         align: { x: 0.98 }
         
-        <RoundedView> {
+        RoundedView {
             width: Fit, height: Fit
-            show_bg: true,
-            draw_bg: {
+            // show_bg: true,
+            draw_bg +: {
                 color: #E0E0E0
             }
-            align: { x: 0.5, y: 0.5 }
+            align: Center
             // The "X" close button on the top right
-            close_button = <RobrixIconButton> {
+            close_button := RobrixIconButton {
                 width: Fit, height: Fit,
-                padding: { top: 5, bottom: 5, left: 8, right: 8 },
+                padding: Inset{ top: 5, bottom: 5, left: 8, right: 8 },
                 spacing: 0,
-                align: { x: 0.5, y: 0.5 }
-                draw_bg: {
+                align: Center
+                draw_bg +: {
                     color: #E0E0E0
                 }
-                draw_icon: {
-                    svg_file: (ICON_CLOSE),
+                draw_icon +: {
+                    svg: (ICON_CLOSE),
                     color: #00000044, 
                 }
-                icon_walk: {width: 15, height: 15}
+                icon_walk +: {width: 15, height: 15}
             }
         }
     }
     // Other possible color themes that is not too glaring.
     // COLOR_POPUP_GREEN = #43bb9e;
     // COLOR_POPUP_RED = #e74c3c;
-    PopupDialogRightToLeftProgress = <RoundedView> {
+    let PopupDialogRightToLeftProgress = RoundedView {
         width: 275
         height: Fit
         padding: 0,
         flow: Overlay
-        show_bg: true,
-        draw_bg: {
-            uniform border_radius: 4.0
-            uniform border_color: #000000
-            uniform border_size: 2.0
-            instance background_color: #ffffff
-            fn pixel(self) -> vec4 {
-                let sdf = Sdf2d::viewport(self.pos * self.rect_size);
+        // show_bg: true,
+        draw_bg +: {
+            border_radius: 4.0
+            border_color: #000000
+            border_size: 2.0
+            background_color: #ffffff
+            pixel fn(){
+                let sdf = Sdf2d.viewport(self.pos * self.rect_size);
                 sdf.box(
                     1.,
                     1.,
@@ -306,110 +305,110 @@ live_design! {
             }
         }
 
-        popup_content = <View> {
+        popup_content := View {
             width: Fill, height: Fit,
             flow: Down
             //Right side view with close button
-            close_button_view = <CloseButtonView> {}
-            padding: { right: 2, top: 2}
-            inner = <View> {
+            close_button_view := CloseButtonView {}
+            padding: Inset{ right: 2, top: 2}
+            inner := View {
                 width: Fill, height: Fit,
-                padding: { top: 0, right: 5, bottom: 0, left: 10 }
+                padding: Inset{ top: 0, right: 5, bottom: 0, left: 10 }
                 flow: Right,
                 align: {
                     y: 0,
                 }
                 // Left side with icon for popup kind.
-                <LeftSideView> {}
+                LeftSideView {}
                 // Main content area
-                main_content = <MainContent> {}
+                main_content := MainContent {}
             }
             progress_bar = <ProgressBar> {}
             // Add a small gap between the progress bar and the end of the popup 
             // to ensure the progress bar is within the popup.
-            <View> {
+            View {
                 height: 0.2
             }
         }
 
-        animator: {
-            mode = {
+        animator: Animator{
+            mode : {
                 default: close_slider,
-                close_slider = {
+                close_slider : {
                     redraw: true,
                     from: {all: Forward {duration: 0.0}}
-                    apply: {
-                        popup_content = {
-                            progress_bar = {
-                                draw_bg: {anim_time: 0.0}
+                    apply : {
+                        popup_content := {
+                            progress_bar := {
+                                draw_bg : {anim_time: 0.0}
                             }
                         }
                     }
                 }
-                slide = {
+                slide : {
                     redraw: true,
                     // Maximum auto dismissal duration is 3 minutes.
                     from: {all: Forward {duration: 180.0}}
-                    apply: {
-                        popup_content = {
-                            progress_bar = {
-                                draw_bg: {anim_time: 180.0}
+                    apply : {
+                        popup_content := {
+                            progress_bar := {
+                                draw_bg : {anim_time: 180.0}
                             }
                         }
                     }
                 }
             }
-            hover = {
-                default: off
-                off = {
+            hover : {
+                default: @off
+                off : AnimatorState {
                     apply: { }
                 }
-                on = {
+                on : AnimatorState {
                     apply: { }
                 }
             }
             down = {
-                default: off
-                off = {
+                default: @off
+                off : AnimatorState {
                     apply: { }
                 }
-                on = {
+                on : AnimatorState {
                     apply: { }
                 }
             }
         }
     }
-    PopupDialogTopToBottomProgress = <PopupDialogRightToLeftProgress> {
-        popup_content = <View> {
+    let PopupDialogTopToBottomProgress = PopupDialogRightToLeftProgress {
+        popup_content = View {
             width: Fill,
             height: Fit,
             flow: Right,
             spacing: 0,
-            align: { x: 0.0, y: 0.5 }
+            align: Align{ x: 0.0, y: 0.5 }
             // Left side with for popup kind.
-            <LeftSideView> {
+            LeftSideView {
                 height: Fit,
                 margin: {left: 10 }
                 spacing: 0,
             }
-            inner = <View> {
+            inner := View {
                 width: 230,
                 height: Fit,
                 padding: 0,
                 flow: Down,
-                close_button_view = <CloseButtonView> {}
+                close_button_view := CloseButtonView {}
                 // Main content area
-                main_content = <MainContent> {
+                main_content := MainContent {
                     padding: {left: 0}
                 }
             }
-            progress_bar = <ProgressBar> {
+            progress_bar := ProgressBar {
                 width: 10,
                 height: Fill,
-                draw_bg: {
-                    uniform direction: 1.0,
-                    uniform anim_time: 1.0,
-                    uniform border_radius: 2.,
+                draw_bg +: {
+                    direction: 1.0,
+                    anim_time: 1.0,
+                    border_radius: 2.,
                 }
             }
         }
@@ -445,7 +444,7 @@ live_design! {
 }
 
 /// A widget that displays a vertical list of popups.
-#[derive(Live, Widget)]
+#[derive(Script, Widget)]
 pub struct RobrixPopupNotification {
     #[live]
     pub content: Option<LivePtr>,
@@ -465,7 +464,7 @@ pub struct RobrixPopupNotification {
     pub popups: Vec<(View, PopupItem, Timer)>,
 }
 
-impl LiveHook for RobrixPopupNotification {
+impl ScriptHook for RobrixPopupNotification {
     fn after_apply(&mut self, cx: &mut Cx, apply: &mut Apply, index: usize, nodes: &[LiveNode]) {
         for (view, popup_item, _) in self.popups.iter_mut() {
             if let Some(index) = nodes.child_by_name(index, live_id!(content).as_field()) {
