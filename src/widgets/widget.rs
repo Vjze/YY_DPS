@@ -8,19 +8,18 @@ script_mod! {
     mod.widgets.Line = mod.widgets.View {
         width: Fill,
         height: 1,
-        show_bg: true,
-        draw_bg: {
+        draw_bg +: {
             color: #1C1C1C,
         }
     }
-    pub MAIN_BG_COLOR = #f9f9f9
-    pub MAIN_BG_COLOR_DARK = #f2f2f2
-    pub SIDEBAR_FONT_COLOR = #1A2533
-    pub SIDEBAR_FONT_COLOR_HOVER = (MAIN_BG_COLOR)
-    pub SIDEBAR_FONT_COLOR_SELECTED = (MAIN_BG_COLOR)
+    let MAIN_BG_COLOR = #f9f9f9
+    let MAIN_BG_COLOR_DARK = #f2f2f2
+    let SIDEBAR_FONT_COLOR = #1A2533
+    let SIDEBAR_FONT_COLOR_HOVER = (MAIN_BG_COLOR)
+    let SIDEBAR_FONT_COLOR_SELECTED = (MAIN_BG_COLOR)
 
-    pub SIDEBAR_BG_COLOR_SELECTED = #344054
-    pub SIDEBAR_BG_COLOR_HOVER = #677483
+    let SIDEBAR_BG_COLOR_SELECTED = #344054
+    let SIDEBAR_BG_COLOR_HOVER = #677483
 
 
     mod.widgets.MyDropdown = mod.widgets.DropDownFlat {
@@ -28,7 +27,7 @@ script_mod! {
         height: Fit
 
         padding: Inset{ left: 12, right: 24, top: 8, bottom: 8 }
-        popup_menu_position: BelowInput
+        // popup_menu_position: BelowInput
 
         draw_text +: {
             color: #0a0a0a
@@ -80,7 +79,7 @@ script_mod! {
                 border_radius: 6.0
             }
 
-            menu_item : mod.widgets.PPopupMenuItem {
+            menu_item : mod.widgets.PopupMenuItem {
                 draw_text +: {
                     text_style: theme.font_regular { font_size: 14.0 }
                     color: #0a0a0a
@@ -97,7 +96,114 @@ script_mod! {
             }
         }
     }
+    mod.widgets.SidebarMenuButtons = mod.widgets.Button {
+        width: 150,
+        height: 80,
+        padding: 8, margin: 0,
+        flow: Right, spacing: 8.0, align: Align{x: 0.5, y: 0.5}
+        text: "Buttons"
+        draw_text.color: #000
+        draw_text.text_style.font_size: 13
+        icon_walk: Walk {
+            width: 25,
+            height: 25
+        }
+        draw_icon +: {
+            color: #1A2533
+            color_hover: uniform(#f9f9f9)
+            color_active: uniform(#f9f9f9)
+        }
+    }
+    mod.widgets.SidebarMenuButton = mod.widgets.RadioButton {
+        width: 150,
+        height: 80,
+        padding: 8, margin: 0,
+        flow: Right, spacing: 8.0, align: Align{x: 0.5, y: 0.5}
 
+        icon_walk: Walk {
+            width: 25,
+            height: 25
+        }
+        label_walk: Walk{margin: 0}
 
+        draw_bg +: {
+            radio_type: Tab,
+
+            border_size: 0.0
+            border_color: uniform(#0000)
+            inset: vec4(0.0, 0.0, 0.0, 0.0)
+            border_radius: 3.5
+
+            get_color: fn() {
+                return mix(
+                    mix(
+                        #f2f2f2,
+                        #677483,
+                        self.hover
+                    ),
+                    #344054,
+                    self.active
+                )
+            }
+
+            get_border_color: fn() {
+                return self.border_color
+            }
+
+            pixel: fn() {
+                let sdf = Sdf2d.viewport(self.pos * self.rect_size)
+                sdf.box(
+                    0.0 + self.border_size,
+                    0.0 + self.border_size,
+                    self.rect_size.x - (0.0 + 0.0 + self.border_size * 2.0),
+                    self.rect_size.y - (0.0 + 0.0 + self.border_size * 2.0),
+                    max(1.0, self.border_radius)
+                )
+                sdf.fill_keep(self.get_color())
+                if self.border_size > 0.0 {
+                    sdf.stroke(self.get_border_color(), self.border_size)
+                }
+                return sdf.result;
+            }
+        }
+
+        draw_text +: {
+            color: #1A2533
+            color_hover: #f9f9f9
+            color_active: #f9f9f9
+
+            text_style +: {font_size: 15}
+
+            get_color: fn() {
+                return mix(
+                    mix(
+                        self.color,
+                        self.color_hover,
+                        self.hover
+                    ),
+                    self.color_active,
+                    self.active
+                )
+            }
+        }
+
+        draw_icon +: {
+            color: #1A2533
+            color_hover: uniform(#f9f9f9)
+            color_active: uniform(#f9f9f9)
+            // focus: instance(0.0)
+            // get_color: fn() {
+            //     return mix(
+            //         mix(
+            //             self.color,
+            //             self.color_hover,
+            //             self.focus
+            //         ),
+            //         self.color_active,
+            //         self.active
+            //     )
+            // }
+        }
+    }
 
 }

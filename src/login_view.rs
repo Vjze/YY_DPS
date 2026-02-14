@@ -19,7 +19,7 @@ script_mod! {
             color: #FFF
         }
         flow: Flow.Overlay,
-        RoundedShadowView {
+        RoundedView {
             padding: 50,
             width: 400,
             height: 400,
@@ -27,13 +27,13 @@ script_mod! {
             flow: Flow.Down,
             align: Align{x: 0.5, y: 0.5}
             draw_bg +: {
-                color: #f2f2f2,
+                // color: #f2f2f2,
                 border_radius: 4.5,
-                shadow_color: #0002
+                shadow_color: #E0FFFF,
                 shadow_radius: 8.0,
                 shadow_offset: vec2(0.0,-1.5)
             }
-            View {
+            SolidView {
                 width: Fill
                 height: Fit
                 spacing:20,
@@ -42,23 +42,19 @@ script_mod! {
                     width: 50, height: 50,
                     src: ICON_LOGO
                 }
-                H1 {
-                    
-                        draw_text.color: #000,
-                        draw_text.text_style.font_size: 20
-                        
-                    
-                    text: "数据查询导出工具"
-                }
+                    H1{
+                        text: "数据查询导出工具"
+                            draw_text.color: #000
+                            draw_text.text_style.font_size: 20
+                    }
+
             }
             View {
                 align: Align{y: 0.5}
                 spacing: 10,
                 Label {
                     draw_text.color: #000,
-                        draw_text.text_style.font_size: 16
-                        
-                    
+                    draw_text.text_style.font_size: 16
                     text: "账户:"
                 }
                 user_name := TextInput {
@@ -89,7 +85,7 @@ script_mod! {
                 free_btn := Button {
                     text: "跳过登录"
                     draw_text.color: #000,
-                        draw_text.text_style.font_size: 16
+                    draw_text.text_style.font_size: 16
                     draw_bg +: {
                         border_size: uniform(1.0)
                         border_radius: uniform(5.0)
@@ -138,7 +134,7 @@ impl WidgetMatchEvent for LoginScreen {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
         let user_name = self.view.text_input(cx, ids!(user_name));
         let user_password = self.view.text_input(cx, ids!(use_password));
-        let free_btn = self.view.button(cx, ids!(ree_btn));
+        let free_btn = self.view.button(cx, ids!(free_btn));
         let login_btn = self.view.button(cx, ids!(login_btn));
         if login_btn.clicked(actions) || user_password.returned(actions).is_some() {
             if user_name.text().is_empty() {
