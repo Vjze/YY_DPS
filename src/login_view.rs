@@ -154,6 +154,7 @@ impl WidgetMatchEvent for LoginScreen {
             }
         }
         if free_btn.clicked(actions) {
+            info!("free_button click");
             if let Some(store) = scope.data.get_mut::<Store>() {
                 store.login_store.logined = true;
                 store.login_store.free_login = true;

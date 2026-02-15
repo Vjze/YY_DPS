@@ -30,7 +30,7 @@ script_mod! {
 
         }
         // carton_input = <InputClean> {
-        carton_input := TextInput {
+        carton_input := MyTextInput {
             empty_text: "请输入箱号...."
             width: Fill, height: 40
             padding: 10,
@@ -43,9 +43,6 @@ script_mod! {
             draw_bg +: {
                 border_radius: 5.0
                 border_size: 1.0
-            }
-            draw_cursor +: {
-                color: #FFF
             }
         }
         query_btn := Button {
@@ -74,6 +71,7 @@ script_mod! {
             text: "数据导出"
             draw_text +: {
                 color: #000000,
+                color_disabled: #555
                 text_style +: {
                     font_size:16
                 }
@@ -93,7 +91,7 @@ script_mod! {
                 align: Align{ x: 0., y: .5}
                 active: true
                 draw_text +: {
-                    color: #000000,
+                    color: #000,
                     text_style +: {
                         font_size:14
                     }
@@ -106,7 +104,7 @@ script_mod! {
                     size: 25.0;
                     border_size: 1.0
                     border_radius: 5.0
-                    color: #AFEEEE
+                    color: #fff
                     color_hover: #9370DB
                     color_disabled: #DCDCDC
                 }
@@ -114,13 +112,14 @@ script_mod! {
 
 
 
-        qty_label := Label {
+        qty_label := LabelGradientX {
             padding: Inset{
                 top:5
             }
             text: "总数量: 0 PCS"
             draw_text +: {
-                // color: #000,
+                color: #000,
+                color_2:#000
                 text_style +: {
                     font_size:16
                 }
@@ -132,9 +131,10 @@ script_mod! {
         height: Fit
         align: Align{y: 0.5}
         spacing: 10,
-        Label {
+        TextBox {
             text: "类型信息:"
             draw_text +: {
+                color: #000
                 text_style +: {
                     font_size:16
                 }

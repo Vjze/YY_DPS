@@ -187,5 +187,80 @@ script_mod! {
             // }
         }
     }
+    mod.widgets.MyTextInput = mod.widgets.TextInput{
+        draw_text +: {
+            text_style +:{font_size: 12},
+            get_color: fn()  {
+                return #555
+            }
+        }
 
+        // TODO find a way to override colors
+        draw_cursor +: {
+            focus: 0.0
+            border_radius: 0.5
+            pixel: fn()  {
+                let sdf = Sdf2d.viewport(self.pos * self.rect_size);
+                sdf.box(
+                    0.,
+                    0.,
+                    self.rect_size.x,
+                    self.rect_size.y,
+                    self.border_radius
+                )
+                sdf.fill(mix(#fff, #bbb, self.focus));
+                return sdf.result
+            }
+        }
+
+        // TODO find a way to override colors
+        draw_selection +: {
+            hover: 0.0
+            focus: 0.0
+            border_radius: 2.0
+            pixel: fn()  {
+                let sdf = Sdf2d.viewport(self.pos * self.rect_size);
+                sdf.box(
+                    0.,
+                    0.,
+                    self.rect_size.x,
+                    self.rect_size.y,
+                    self.border_radius
+                )
+                sdf.fill(mix(#eee, #ddd, self.focus)); // Pad color
+                return sdf.result
+            }
+        }
+
+        draw_bg +: {
+            color: #fff
+            border_radius: 2.0
+            border_size: 0.0
+            border_color: #3
+
+            get_color: fn() {
+                return self.color
+            }
+
+            get_border_color: fn() {
+                return self.border_color
+            }
+
+            pixel: fn() {
+                let sdf = Sdf2d.viewport(self.pos * self.rect_size)
+                sdf.box(
+                    0.0 + self.border_size,
+                    0.0 + self.border_size,
+                    self.rect_size.x - (0.0 + 0.0 + self.border_size * 2.0),
+                    self.rect_size.y - (0.0 + 0.0 + self.border_size * 2.0),
+                    max(1.0, self.border_radius)
+                )
+                sdf.fill_keep(self.get_color())
+                if self.border_size > 0.0 {
+                    sdf.stroke(self.get_border_color(), self.border_size)
+                }
+                return sdf.result;
+            }
+        }
+    }
 }
