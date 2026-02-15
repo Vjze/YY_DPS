@@ -21,9 +21,9 @@ script_mod! {
         height: Fit,
         spacing:20,
         // show_bg: true,
-        // draw_bg: {
-        //     color: #D9D9D9
-        // }
+        draw_bg +: {
+            color: #D9D9D9
+        }
         type_selector := MyDropdown {
             width: 100,
             labels:["type_1","type_2","type_3"],
@@ -109,8 +109,6 @@ script_mod! {
                     color_disabled: #DCDCDC
                 }
             }
-
-
 
         qty_label := LabelGradientX {
             padding: Inset{
@@ -234,10 +232,11 @@ script_mod! {
     }
     mod.widgets.ExportScreenBase = #(ExportScreen::register_widget(vm))
     mod.widgets.ExportScreen = set_type_default() do mod.widgets.ExportScreenBase {
-        View {
+        
             width: Fill,
             height: Fill,
             flow: Down,
+            draw_bg.color: #F5F5F5,
             padding: 15,
             spacing: 10,
             FirstRow {}
@@ -267,7 +266,7 @@ script_mod! {
                                 }
             }
             StateBar {}
-        }
+        
     }
 }
 #[derive(Script, Widget)]

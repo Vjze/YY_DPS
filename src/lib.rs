@@ -10,7 +10,7 @@ pub mod utils;
 
 pub mod widgets;
 // pub mod querys;
-// pub mod app_ui;
+pub mod app_ui;
 pub mod login_view;
 // pub mod box_band;
 // pub mod data_import;

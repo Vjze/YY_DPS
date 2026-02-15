@@ -153,12 +153,12 @@ script_mod! {
 
 
                     root_adaptive_view := View {
-                            visible: true
+                            visible: false
                             sidebar_menu := SidebarMenu {}
                             application_pages := ApplicationPages {}
                         }
                         login_view := View {
-                            visible: false
+                            visible: true
                             login_screen := LoginScreen {}
 
                         }
