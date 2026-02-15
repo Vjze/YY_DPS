@@ -142,6 +142,7 @@ impl ErrorDialog {
 
 impl ErrorDialogRef {
     pub fn set_err_text(&self, cx: &mut Cx, error_text: String) {
+        info!("set_err_text: {}", error_text);
         if let Some(mut inner) = self.borrow_mut() {
             inner.set_err_text(cx, error_text);
         }

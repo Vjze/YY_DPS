@@ -182,7 +182,7 @@ script_mod! {
                     dialog_ui := Modal {
                         can_dismiss: false
                         content +: {
-                            dialog_ui_inner := ErrorDialog {
+                            dialog_ui_inner := mod.widgets.ErrorDialog {
                             }
                         }
                     }
@@ -236,32 +236,45 @@ impl MatchEvent for App {
     }
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
 
-        if self.ui.radio_button(cx, ids!(export_tab)).clicked(actions) {
-            self.navigate_to(cx, ids!(application_pages.export_frame));
-        };
-        if self
+        let mut navigate_to_export = false;
+        let mut navigate_to_sn = false;
+        let mut navigate_to_box_band = false;
+        let mut navigate_to_data_import_db = false;
+        let mut navigate_to_providers = false;
+
+        // TODO: Replace this with a proper navigation widget.
+        if let Some(selected_tab) = self
             .ui
-            .radio_button(cx, ids!(data_import_db_tab))
-            .clicked(actions)
+            .radio_button_set(cx,ids_list!(
+                sidebar_menu.export_tab,
+                sidebar_menu.sn_tab,
+                sidebar_menu.box_band_tab,
+                sidebar_menu.data_import_db_tab,
+                sidebar_menu.providers_tab,
+            ))
+            .selected(cx, actions)
         {
-            self.navigate_to(cx, ids!(application_pages.data_import_db_frame));
+            match selected_tab {
+                0 => navigate_to_export = true,
+                1 => navigate_to_sn = true,
+                2 => navigate_to_box_band = true,
+
+                3 => navigate_to_data_import_db = true,
+                4 => navigate_to_providers = true,
+                _ => {}
+            }
         }
-        if self
-            .ui
-            .radio_button(cx, ids!(box_band_tab))
-            .clicked(actions)
-        {
-            self.navigate_to(cx, ids!(application_pages.box_band_frame));
-        }
-        if self.ui.radio_button(cx, ids!(sn_tab)).clicked(actions) {
-            self.navigate_to(cx, ids!(application_pages.querys_frame));
-        }
-        if self
-            .ui
-            .radio_button(cx, ids!(providers_tab))
-            .clicked(actions)
-        {
+        // Handle navigation after processing all actions
+        if navigate_to_providers {
             self.navigate_to(cx, ids!(application_pages.providers_frame));
+        } else if navigate_to_export {
+            self.navigate_to(cx, ids!(application_pages.export_frame));
+        } else if navigate_to_box_band {
+            self.navigate_to(cx, ids!(application_pages.box_band_frame));
+        } else if navigate_to_data_import_db {
+            self.navigate_to(cx, ids!(application_pages.data_import_db_frame));
+        } else if navigate_to_sn {
+            self.navigate_to(cx, ids!(application_pages.querys_frame));
         }
        
         for action in actions {
@@ -304,8 +317,6 @@ impl MatchEvent for App {
             }
             if let Some(LoginResult::FreeLogin) = action.downcast_ref() {
                 let store = self.store.clone();
-                // store.logined = true;
-                // store.free_login = true;
                 let show_login = !store.login_store.logined;
                 self.ui
                     .view(cx, ids!(login_view))
