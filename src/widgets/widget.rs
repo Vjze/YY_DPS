@@ -101,7 +101,7 @@ script_mod! {
         width: 150,
         height: 80,
         padding: 8, margin: 0,
-        flow: Down, spacing: 8.0, align: Align{x: 0.5, y: 0.5}
+        flow: Down, spacing: 8.0, align: Center
 
         icon_walk: Walk {
             width: 25,
